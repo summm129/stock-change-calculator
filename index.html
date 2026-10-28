@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="前日終値から株価と前日比をすぐに計算。インストール不要、オフラインで使える前日比電卓。">
+  <title>前日比電卓</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23665be8'/%3E%3Ctext x='20' y='28' text-anchor='middle' font-family='sans-serif' font-size='26' fill='white'%3E%25%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="calculator.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="pwa.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="前日比電卓 ホーム">
+        <span class="brand-mark" aria-hidden="true">%</span>
+        <span>前日比電卓</span>
+      </a>
+      <div class="header-actions">
+        <span class="offline-badge"><span aria-hidden="true"></span>オフラインで使える</span>
+        <button id="install-app" class="install-button" type="button" hidden>アプリとして追加</button>
+      </div>
+    </header>
+
+    <aside id="app-update" class="update-notice" aria-live="polite" hidden>
+      <p>新しい版があります</p>
+      <button id="update-app" type="button">更新する</button>
+    </aside>
+
+    <main>
+      <div class="intro">
+        <p class="eyebrow">株価のちょっとした計算に</p>
+        <h1>前日比、すぐわかる。</h1>
+        <p class="intro-description">「−7%ならいくら？」「この株価は何％？」を、ひとつの画面で。</p>
+      </div>
+
+      <section class="baseline-card" aria-labelledby="baseline-heading">
+        <div class="baseline-heading">
+          <span class="baseline-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16M8 14l4-5 4 3 4-7"/></svg>
+          </span>
+          <div>
+            <h2 id="baseline-heading"><label for="baseline">前日終値</label><span class="small-tag">共通の基準</span></h2>
+            <p id="baseline-help">この金額を変えると、両方の計算に反映されます。</p>
+          </div>
+        </div>
+        <div class="baseline-field">
+          <div class="input-wrap baseline-input-wrap">
+            <input id="baseline" type="text" inputmode="decimal" value="2,430" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
+            <span class="input-unit" aria-hidden="true">円</span>
+          </div>
+          <p class="field-error" id="baseline-error" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <div class="calculator-grid">
+        <section class="calculator-card" aria-labelledby="percent-heading">
+          <div class="card-heading">
+            <span class="step">01</span>
+            <span class="direction-label">騰落率 <span aria-hidden="true">→</span> 株価</span>
+          </div>
+          <h2 id="percent-heading">何％なら、いくら？</h2>
+          <label class="field-label" for="rate">前日比の騰落率</label>
+          <div class="input-wrap">
+            <button id="toggle-sign" class="sign-toggle" type="button" aria-label="騰落率のプラスとマイナスを切り替え">+ / −</button>
+            <input id="rate" type="text" inputmode="decimal" value="+7" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
+            <span class="input-unit" aria-hidden="true">%</span>
+          </div>
+          <p id="rate-help" class="sr-only">下落はマイナスを付けて入力してください。</p>
+          <div class="presets" role="group" aria-label="よく使う騰落率">
+            <button type="button" data-rate="-8" aria-pressed="false">−8%</button>
+            <button type="button" data-rate="-7" aria-pressed="false">−7%</button>
+            <button type="button" data-rate="-5" aria-pressed="false">−5%</button>
+            <button type="button" data-rate="3" aria-pressed="false">+3%</button>
+            <button type="button" data-rate="5" aria-pressed="false">+5%</button>
+            <button type="button" data-rate="7" aria-pressed="true">+7%</button>
+          </div>
+          <p class="field-error" id="rate-error" aria-live="polite"></p>
+
+          <div id="percent-panel" class="result-panel is-up" aria-live="polite" aria-atomic="true">
+            <div class="result-topline"><span>このときの株価</span><span id="rate-badge" class="result-badge">前日比 +7%</span></div>
+            <output id="percent-result" class="main-result" for="baseline rate"><span id="percent-result-value">2,600.1</span><span class="result-unit">円</span></output>
+            <p id="rounded-price" class="rounded-price">1円単位なら 約 2,600円</p>
+            <div class="delta-row"><span>前日からの値幅</span><strong id="percent-delta">+170.1円</strong></div>
+          </div>
+          <p id="percent-formula" class="formula">2,430 × (1 + 7 ÷ 100)</p>
+        </section>
+
+        <section class="calculator-card" aria-labelledby="price-heading">
+          <div class="card-heading">
+            <span class="step">02</span>
+            <span class="direction-label">株価 <span aria-hidden="true">→</span> 前日比</span>
+          </div>
+          <h2 id="price-heading">この株価、何％？</h2>
+          <label class="field-label" for="price">調べたい株価</label>
+          <div class="input-wrap">
+            <input id="price" type="text" inputmode="decimal" value="2,637" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
+            <span class="input-unit" aria-hidden="true">円</span>
+          </div>
+          <p id="price-help" class="price-help">現在値や目標の株価を入力してください。</p>
+          <p class="field-error" id="price-error" aria-live="polite"></p>
+
+          <div id="price-panel" class="result-panel is-up" aria-live="polite" aria-atomic="true">
+            <div class="result-topline"><span>前日終値に対して</span><span id="price-badge" class="result-badge">2,637円</span></div>
+            <output id="price-result" class="main-result" for="baseline price"><span id="price-result-value">+8.52</span><span class="result-unit">%</span></output>
+            <p id="rate-description" class="rounded-price">前日終値より上昇</p>
+            <div class="delta-row"><span>前日からの値幅</span><strong id="price-delta">+207円</strong></div>
+          </div>
+          <p id="price-formula" class="formula">(2,637 − 2,430) ÷ 2,430 × 100</p>
+        </section>
+      </div>
+
+      <div class="usage-note">
+        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="7.2"/><path d="M10 9v5M10 6v1"/></svg>
+        <p>株価は計算上の値です。注文時の呼値単位への調整は行いません。</p>
+      </div>
+      <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
+    </main>
+
+    <footer class="site-footer">
+      <p id="storage-status">入力はこのブラウザに保存されます</p>
+      <button id="reset" type="button">入力をリセット</button>
+    </footer>
+  </div>
+</body>
+</html>
