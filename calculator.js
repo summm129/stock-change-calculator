@@ -51,6 +51,18 @@
     return { rate: rate === 0 ? 0 : rate, delta: delta === 0 ? 0 : delta };
   }
 
+  function calculateBaselineFromChange(price, change) {
+    if (!isFiniteNumber(price) || price < 0) {
+      throw new RangeError("現在値は0以上の有限の数値を入力してください。");
+    }
+    if (!isFiniteNumber(change)) {
+      throw new RangeError("前日比の値幅は有限の数値を入力してください。");
+    }
+    var base = price - change;
+    validateBase(base);
+    return base;
+  }
+
   function formatNumber(value, maximumFractionDigits) {
     var digits = maximumFractionDigits === undefined ? 6 : maximumFractionDigits;
     if (!isFiniteNumber(value) || !Number.isInteger(digits) || digits < 0 || digits > 20) {
@@ -69,6 +81,7 @@
     parseNumber: parseNumber,
     calculateFromPercent: calculateFromPercent,
     calculateFromPrice: calculateFromPrice,
+    calculateBaselineFromChange: calculateBaselineFromChange,
     formatNumber: formatNumber
   });
 

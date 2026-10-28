@@ -57,27 +57,56 @@
         </div>
       </section>
 
+      <details id="baseline-helper" class="baseline-helper">
+        <summary>前日終値がわからないとき</summary>
+        <div class="helper-grid">
+          <div>
+            <label class="field-label" for="current-price">現在値<span class="sr-only">（円）</span></label>
+            <div class="input-wrap">
+              <input id="current-price" type="text" inputmode="decimal" placeholder="2,637" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
+              <span class="input-unit" aria-hidden="true">円</span>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" for="price-change">前日比<span class="sr-only">（円）</span></label>
+            <div class="input-wrap">
+              <button id="change-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
+              <input id="price-change" type="text" inputmode="decimal" placeholder="207" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
+              <span class="input-unit" aria-hidden="true">円</span>
+            </div>
+          </div>
+        </div>
+        <p id="baseline-helper-error" class="field-error" aria-live="polite"></p>
+        <div class="helper-result">
+          <div>
+            <span class="helper-result-label">計算した基準値</span>
+            <output id="inferred-baseline" for="current-price price-change" aria-live="polite">—</output>
+          </div>
+          <button id="apply-baseline" type="button" disabled>使う</button>
+        </div>
+        <p class="helper-note">分割・権利落ち時は、表示元の比較基準値になります。</p>
+      </details>
+
       <div class="calculator-grid">
         <section class="calculator-card" aria-labelledby="percent-heading">
           <div class="card-heading">
             <span class="step">01</span>
-            <span class="direction-label">騰落率 <span aria-hidden="true">→</span> 株価</span>
+            <h2 id="percent-heading" class="direction-label">前日比から見る</h2>
           </div>
-          <h2 id="percent-heading">何％なら、いくら？</h2>
-          <label class="field-label" for="rate">前日比の騰落率</label>
-          <div class="input-wrap">
-            <button id="toggle-sign" class="sign-toggle" type="button" aria-label="騰落率のプラスとマイナスを切り替え">+ / −</button>
-            <input id="rate" type="text" inputmode="decimal" value="+7" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
+          <label class="sr-only" for="rate">前日比（％）</label>
+          <div class="input-wrap rate-input-wrap">
+            <button id="toggle-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
+            <input id="rate" type="text" inputmode="decimal" value="7" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
             <span class="input-unit" aria-hidden="true">%</span>
           </div>
-          <p id="rate-help" class="sr-only">下落はマイナスを付けて入力してください。</p>
+          <p id="rate-help" class="sr-only">数字を入力してください。左の符号ボタンでプラスとマイナスを切り替えられます。</p>
           <div class="presets" role="group" aria-label="よく使う騰落率">
-            <button type="button" data-rate="-8" aria-pressed="false">−8%</button>
-            <button type="button" data-rate="-7" aria-pressed="false">−7%</button>
-            <button type="button" data-rate="-5" aria-pressed="false">−5%</button>
-            <button type="button" data-rate="3" aria-pressed="false">+3%</button>
-            <button type="button" data-rate="5" aria-pressed="false">+5%</button>
-            <button type="button" data-rate="7" aria-pressed="true">+7%</button>
+            <button type="button" data-rate="1" aria-pressed="false">1%</button>
+            <button type="button" data-rate="2" aria-pressed="false">2%</button>
+            <button type="button" data-rate="3" aria-pressed="false">3%</button>
+            <button type="button" data-rate="4" aria-pressed="false">4%</button>
+            <button type="button" data-rate="5" aria-pressed="false">5%</button>
+            <button type="button" data-rate="7" aria-pressed="true">7%</button>
           </div>
           <p class="field-error" id="rate-error" aria-live="polite"></p>
 

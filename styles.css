@@ -47,10 +47,25 @@ h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); letter-spacing: .035em; font-
 .input-wrap:has([aria-invalid="true"]) { border-color: #c74b55; }
 .input-wrap input { width: 100%; min-width: 0; height: 56px; padding: 8px 15px; border: 0; border-radius: inherit; outline: 0; background: transparent; color: #2f3449; font-size: 25px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .015em; }
 .input-unit { padding: 0 17px 0 4px; color: #687185; font-size: 14px; }
-.sign-toggle { flex-shrink: 0; margin-left: 10px; padding: 8px; border: 0; border-radius: 6px; background: #f0eefe; color: var(--accent); font-size: 12px; }
+.sign-toggle { flex-shrink: 0; min-width: 44px; height: 44px; margin-left: 6px; padding: 4px 8px; border: 0; border-radius: 6px; background: #f0eefe; color: var(--accent); font-size: 27px; line-height: 1; }
 .sign-toggle:hover { background: #e4e0ff; }
 .baseline-input-wrap { border-color: #d3cee9; }
 .baseline-input-wrap input { text-align: right; }
+.baseline-helper { margin-top: 12px; }
+.baseline-helper summary { padding: 8px 2px; color: #5144bb; font-size: 12px; line-height: 1.8; cursor: pointer; }
+.baseline-helper summary:focus-visible { outline: 3px solid #a69eff; outline-offset: 3px; }
+.baseline-helper[open] { padding: 0 18px 16px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.baseline-helper[open] summary { padding: 13px 0; font-weight: 650; }
+.helper-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.helper-grid .input-wrap input { height: 54px; font-size: 23px; }
+.helper-result { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }
+.helper-result > div { min-width: 0; }
+.helper-result-label { color: var(--muted); font-size: 11px; }
+.helper-result output { display: block; margin-top: 4px; color: #3e355e; font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.helper-result button { flex-shrink: 0; min-height: 44px; padding: 9px 20px; border: 0; border-radius: 7px; background: var(--accent); color: #fff; font-size: 13px; }
+.helper-result button:hover { background: #5144bb; }
+.helper-result button:disabled { cursor: default; opacity: .4; }
+.helper-note { margin: 12px 0 0; color: var(--muted); font-size: 10px; line-height: 1.8; }
 .calculator-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; margin-top: 24px; }
 .calculator-card { display: flex; flex-direction: column; min-width: 0; padding: 26px; background: #fff; border: 1px solid var(--border); border-radius: 17px; box-shadow: 0 3px 8px #252b3d02; }
 .card-heading { display: flex; align-items: center; gap: 9px; }
@@ -58,6 +73,8 @@ h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); letter-spacing: .035em; font-
 .direction-label { color: #687185; font-size: 11px; letter-spacing: .04em; }
 .direction-label > span { padding: 0 6px; color: #b3b6c4; }
 .calculator-card h2 { margin: 14px 0 26px; font-size: 21px; letter-spacing: .015em; font-weight: 700; }
+.calculator-card .card-heading h2 { margin: 0; font-size: 14px; font-weight: 650; }
+.rate-input-wrap { margin-top: 20px; }
 .field-label { display: block; margin-bottom: 9px; color: #626b7f; font-size: 12px; font-weight: 500; }
 .presets { display: flex; gap: 6px; margin-top: 12px; min-height: 30px; }
 .presets button { flex: 1; min-width: 0; padding: 7px 2px; background: #f7f8fb; border: 1px solid #eceef4; border-radius: 6px; color: #626b7f; font-size: 12px; font-variant-numeric: tabular-nums; transition: background .15s, color .15s; }
@@ -103,6 +120,7 @@ h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); letter-spacing: .035em; font-
   .baseline-icon { width: 37px; height: 37px; padding: 8px; }
   .baseline-field { width: 100%; margin-top: 16px; }
   .baseline-input-wrap input { text-align: left; }
+  .helper-grid { grid-template-columns: minmax(0, 1fr); }
   .calculator-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 19px; }
   .calculator-card { padding: 23px; }
   .calculator-card h2 { margin-bottom: 22px; }
