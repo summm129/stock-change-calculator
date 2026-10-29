@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-market="jp">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,6 +20,10 @@
         <span class="brand-mark" aria-hidden="true">%</span>
         <h1 class="brand-title">TickShift</h1>
       </a>
+      <div class="market-switch" role="group" aria-label="市場を切り替え">
+        <button type="button" data-market-select="jp" aria-pressed="true">JP Stock</button>
+        <button type="button" data-market-select="us" aria-pressed="false">US Stock</button>
+      </div>
       <div class="header-actions">
         <button id="install-app" class="install-button" type="button" hidden>アプリとして追加</button>
       </div>
@@ -56,7 +60,7 @@
         <div class="helper-grid">
           <div>
             <div class="field-heading">
-              <label class="field-label" for="current-price">現在値<span class="sr-only">（円）</span></label>
+              <label class="field-label" for="current-price">現在値<span class="sr-only unit-name">（円）</span></label>
               <button class="input-clear" type="button" data-clear="current-price" aria-label="現在値をクリア" disabled>クリア</button>
             </div>
             <div class="money-entry">
@@ -68,7 +72,7 @@
           </div>
           <div>
             <div class="field-heading">
-              <label class="field-label" for="price-change">前日比<span class="sr-only">（円）</span></label>
+              <label class="field-label" for="price-change">前日比<span class="sr-only unit-name">（円）</span></label>
               <button class="input-clear" type="button" data-clear="price-change" aria-label="前日比の金額をクリア" disabled>クリア</button>
             </div>
             <div class="money-entry">
@@ -127,7 +131,7 @@
 
           <div id="percent-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
             <div class="result-topline sr-only"><span>株価</span><span id="rate-badge" class="result-badge">入力待ち</span></div>
-            <output id="percent-result" class="main-result" for="baseline rate"><span id="percent-result-value">—</span><span class="result-unit">円</span></output>
+            <output id="percent-result" class="main-result" for="baseline rate"><span id="percent-result-value">—</span><span class="result-unit money-unit">円</span></output>
             <p id="rounded-price" class="rounded-price"></p>
             <div class="delta-row"><span>値幅</span><strong id="percent-delta">—</strong></div>
           </div>
@@ -140,18 +144,22 @@
             <h2 id="price-heading" class="direction-label">株価 → 前日比(%)</h2>
             <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" disabled>クリア</button>
           </div>
-          <label class="sr-only" for="price">株価（円）</label>
+          <label class="sr-only" for="price">株価<span class="unit-name">（円）</span></label>
           <div class="money-entry price-entry">
             <div class="input-wrap price-input-wrap">
               <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
             </div>
             <span class="input-unit" aria-hidden="true">円</span>
-            <div class="rate-stepper" role="group" aria-label="株価を1円ずつ調整">
+            <div id="price-stepper" class="rate-stepper" role="group" aria-label="株価を1円ずつ調整">
               <button id="price-up" type="button" aria-label="1円増やす"><span aria-hidden="true">▲</span></button>
               <button id="price-down" type="button" aria-label="1円減らす"><span aria-hidden="true">▼</span></button>
             </div>
+            <div id="price-fine-stepper" class="rate-stepper" role="group" aria-label="株価を0.1円ずつ調整">
+              <button id="price-fine-up" type="button" aria-label="0.1円増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button>
+              <button id="price-fine-down" type="button" aria-label="0.1円減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button>
+            </div>
           </div>
-          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の上下ボタンで1円ずつ増減できます。</p>
+          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の一重三角で1円ずつ、二重三角で0.1円ずつ増減できます。</p>
           <p class="field-error" id="price-error" aria-live="polite"></p>
 
           <div id="price-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">

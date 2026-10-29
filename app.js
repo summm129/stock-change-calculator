@@ -2,7 +2,13 @@
   "use strict";
 
   const { parseNumber, calculateFromPercent, calculateFromPrice, calculateBaselineFromChange, formatNumber } = StockCalculator;
-  const STORAGE_KEY = "stock-change-calculator:v1";
+  const STORAGE_KEY = "stock-change-calculator:v2";
+  const LEGACY_STORAGE_KEY = "stock-change-calculator:v1";
+  // 市場ごとの表示設定。JPは円を後置・6桁、USはドル記号を前置・4桁。率はどちらも2桁。
+  const MARKETS = {
+    jp: { unit: "円", symbol: "円", priceDigits: 6, fineDigits: 1, fineLabel: "0.1円" },
+    us: { unit: "ドル", symbol: "$", priceDigits: 4, fineDigits: 2, fineLabel: "1セント" }
+  };
   const defaults = { baseline: "", rate: "", price: "" };
   const fields = Object.fromEntries(Object.keys(defaults).map((key) => [key, document.getElementById(key)]));
   const get = (id) => document.getElementById(id);
@@ -10,11 +16,88 @@
   const helperInputs = Object.values(helper);
   const inputs = [...Object.values(fields), ...helperInputs];
   let storageAvailable = true;
+  let market = "jp";
   let rateSign = 1;
   let changeSign = 1;
   let inferredBaseline = null;
   let baselineEdited = false;
   let baselineBeforeEdit = null;
+  const states = { jp: emptyState(), us: emptyState() };
+
+  function emptyState() {
+    return { baseline: "", rate: "", price: "", rateSign: 1, currentPrice: "", priceChange: "", changeSign: 1 };
+  }
+
+  function snapshot() {
+    return {
+      baseline: fields.baseline.value,
+      rate: fields.rate.value,
+      price: fields.price.value,
+      rateSign,
+      currentPrice: helper.price.value,
+      priceChange: helper.change.value,
+      changeSign
+    };
+  }
+
+  function restore(state) {
+    fields.baseline.value = state.baseline;
+    fields.rate.value = state.rate;
+    fields.price.value = state.price;
+    rateSign = state.rateSign;
+    helper.price.value = state.currentPrice;
+    helper.change.value = state.priceChange;
+    changeSign = state.changeSign;
+  }
+
+  function isObject(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function readState(saved) {
+    const state = emptyState();
+    for (const key of Object.keys(fields)) {
+      // Computed or copied baseline values can have more digits than a typed value.
+      const maxLength = key === "rate" ? 32 : 350;
+      if (typeof saved[key] === "string" && saved[key].length <= maxLength) state[key] = saved[key];
+    }
+    if (saved.rateSign === -1 || saved.rateSign === 1) state.rateSign = saved.rateSign;
+    if (typeof saved.currentPrice === "string" && saved.currentPrice.length <= 32) state.currentPrice = saved.currentPrice;
+    if (typeof saved.priceChange === "string" && saved.priceChange.length <= 32) state.priceChange = saved.priceChange;
+    if (saved.changeSign === -1 || saved.changeSign === 1) state.changeSign = saved.changeSign;
+    return state;
+  }
+
+  const priceDigits = () => MARKETS[market].priceDigits;
+  const unitName = () => MARKETS[market].unit;
+
+  function money(value, digits = priceDigits()) {
+    const text = formatNumber(value, digits);
+    return market === "us" ? `$${text}` : `${text}円`;
+  }
+
+  function signedMoney(value) {
+    const magnitude = Math.abs(value);
+    if (formatNumber(magnitude, priceDigits()) === "0") return money(0);
+    return `${value < 0 ? "−" : "+"}${money(magnitude)}`;
+  }
+
+  function applyMarket() {
+    const config = MARKETS[market];
+    document.documentElement.dataset.market = market;
+    for (const button of document.querySelectorAll("[data-market-select]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.marketSelect === market));
+    }
+    for (const element of document.querySelectorAll(".input-unit, .money-unit")) element.textContent = config.symbol;
+    for (const element of document.querySelectorAll(".unit-name")) element.textContent = `（${config.unit}）`;
+    get("price-stepper").setAttribute("aria-label", `株価を1${config.unit}ずつ調整`);
+    get("price-up").setAttribute("aria-label", `1${config.unit}増やす`);
+    get("price-down").setAttribute("aria-label", `1${config.unit}減らす`);
+    get("price-fine-stepper").setAttribute("aria-label", `株価を${config.fineLabel}ずつ調整`);
+    get("price-fine-up").setAttribute("aria-label", `${config.fineLabel}増やす`);
+    get("price-fine-down").setAttribute("aria-label", `${config.fineLabel}減らす`);
+    get("price-help").textContent = `現在値や目標の株価を入力してください。右の一重三角で1${config.unit}ずつ、二重三角で${config.fineLabel}ずつ増減できます。`;
+  }
 
   function normalizeMagnitudeInput(field, sign, removeGrouping = true) {
     const normalized = field.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").trim();
@@ -80,25 +163,26 @@
     if ((hasPrice && price === null) || (hasChange && (magnitude === null || magnitude < 0))) {
       error = "数字で入力してください。";
     } else if (hasPrice && price < 0) {
-      error = "現在値は0円以上で入力してください。";
+      error = `現在値は0${unitName()}以上で入力してください。`;
     } else if ((hasPrice && price > 1e9) || (hasChange && magnitude > 1e9)) {
-      error = "金額は10億円以下で入力してください。";
+      error = `金額は10億${unitName()}以下で入力してください。`;
     } else if (hasPrice && hasChange) {
       try {
         const baseline = calculateBaselineFromChange(price, magnitude * changeSign);
-        if (baseline > 1e9) error = "基準値が10億円を超えています。";
+        if (baseline > 1e9) error = `基準値が10億${unitName()}を超えています。`;
         else inferredBaseline = baseline;
       } catch {
-        error = "基準値は0円より大きくしてください。";
+        error = `基準値は0${unitName()}より大きくしてください。`;
       }
     }
     const visibleError = helperInputs.includes(document.activeElement) ? "" : error;
     helper.price.setAttribute("aria-invalid", String(Boolean(visibleError && hasPrice && (price === null || price < 0 || price > 1e9))));
     helper.change.setAttribute("aria-invalid", String(Boolean(visibleError && hasChange && (magnitude === null || magnitude < 0 || magnitude > 1e9))));
     get("baseline-helper-error").textContent = visibleError;
+    const digits = priceDigits();
     get("inferred-baseline").textContent = inferredBaseline === null ? "—"
-      : parseNumber(formatNumber(inferredBaseline)) === 0 ? "0.000001円未満"
-      : `${formatNumber(inferredBaseline)}円`;
+      : parseNumber(formatNumber(inferredBaseline, digits)) === 0 ? `${money(10 ** -digits)}未満`
+      : money(inferredBaseline);
     get("apply-baseline").disabled = inferredBaseline === null;
     updateClearButtons();
   }
@@ -115,9 +199,9 @@
     }
     if (value === null) return "数字で入力してください。";
     if (key === "baseline" && value <= 0) return "前日終値は0より大きい金額にしてください。";
-    if (key === "baseline" && value > 1e9) return "前日終値は10億円以下で入力してください。";
-    if (key === "price" && value < 0) return "株価は0円以上で入力してください。";
-    if (key === "price" && value > 1e9) return "株価は10億円以下で入力してください。";
+    if (key === "baseline" && value > 1e9) return `前日終値は10億${unitName()}以下で入力してください。`;
+    if (key === "price" && value < 0) return `株価は0${unitName()}以上で入力してください。`;
+    if (key === "price" && value > 1e9) return `株価は10億${unitName()}以下で入力してください。`;
     if (key === "rate" && value < -100) return "騰落率は−100%以上で入力してください。";
     if (key === "rate" && value > 10000) return "騰落率は10,000%以下で入力してください。";
     return "";
@@ -134,6 +218,15 @@
     get(`${kind === "percent" ? "rate" : "price"}-badge`).textContent = "入力待ち";
     get(kind === "percent" ? "rounded-price" : "rate-description").textContent = "";
     get(`${kind}-formula`).textContent = "計算に使う値を入力してください。";
+  }
+
+  function roundedPriceNote(price) {
+    if (market === "us") {
+      const cents = Math.round(price * 100) / 100;
+      return Math.abs(price - cents) > 1e-9 ? `約 ${money(cents, 2)}（1セント単位）` : "";
+    }
+    const rounded = Math.round(price);
+    return Math.abs(price - rounded) > 1e-7 ? `約 ${money(rounded, 0)}（1円単位）` : "";
   }
 
   function update() {
@@ -161,8 +254,8 @@
     get("rate-whole-down").disabled = !canStepRate || magnitude <= 0;
     const steppingPrice = fields.price.value.trim() === "" ? 0 : values.price;
     const canStepPrice = steppingPrice !== null && steppingPrice >= 0 && steppingPrice <= 1e9;
-    get("price-up").disabled = !canStepPrice || steppingPrice >= 1e9;
-    get("price-down").disabled = !canStepPrice || steppingPrice <= 0;
+    for (const id of ["price-up", "price-fine-up"]) get(id).disabled = !canStepPrice || steppingPrice >= 1e9;
+    for (const id of ["price-down", "price-fine-down"]) get(id).disabled = !canStepPrice || steppingPrice <= 0;
     updateClearButtons();
 
     if (errors.baseline || errors.rate) {
@@ -170,12 +263,10 @@
     } else {
       const { price, delta } = calculateFromPercent(values.baseline, values.rate);
       setDirection(get("percent-panel"), delta);
-      get("percent-result-value").textContent = formatNumber(price);
+      get("percent-result-value").textContent = formatNumber(price, priceDigits());
       get("rate-badge").textContent = `前日比 ${signed(values.rate)}%`;
-      get("percent-delta").textContent = `${signed(delta)}円`;
-      const rounded = Math.round(price);
-      const approximate = Math.abs(price - rounded) > 1e-7;
-      get("rounded-price").textContent = approximate ? `約 ${formatNumber(rounded, 0)}円（1円単位）` : "";
+      get("percent-delta").textContent = signedMoney(delta);
+      get("rounded-price").textContent = roundedPriceNote(price);
       get("percent-formula").textContent = `${formatNumber(values.baseline)} × (1 ${values.rate < 0 ? "−" : "+"} ${formatNumber(Math.abs(values.rate))} ÷ 100)`;
     }
 
@@ -185,8 +276,8 @@
       const { rate, delta } = calculateFromPrice(values.baseline, values.price);
       setDirection(get("price-panel"), delta);
       get("price-result-value").textContent = signed(rate, 2);
-      get("price-badge").textContent = `${formatNumber(values.price)}円`;
-      get("price-delta").textContent = `${signed(delta)}円`;
+      get("price-badge").textContent = money(values.price);
+      get("price-delta").textContent = signedMoney(delta);
       get("rate-description").textContent = delta > 0 ? "前日終値より上昇" : delta < 0 ? "前日終値より下落" : "前日終値と同じ";
       get("price-formula").textContent = `(${formatNumber(values.price)} − ${formatNumber(values.baseline)}) ÷ ${formatNumber(values.baseline)} × 100`;
     }
@@ -199,13 +290,9 @@
   }
 
   function save() {
+    states[market] = snapshot();
     try {
-      const state = Object.fromEntries(Object.entries(fields).map(([key, field]) => [key, field.value]));
-      state.rateSign = rateSign;
-      state.currentPrice = helper.price.value;
-      state.priceChange = helper.change.value;
-      state.changeSign = changeSign;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ market, jp: states.jp, us: states.us }));
       storageAvailable = true;
     } catch {
       storageAvailable = false;
@@ -216,20 +303,20 @@
   function load() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (saved && typeof saved === "object" && !Array.isArray(saved)) {
-        for (const key of Object.keys(fields)) {
-          // Computed or copied baseline values can have more digits than a typed value.
-          const maxLength = key === "rate" ? 32 : 350;
-          if (typeof saved[key] === "string" && saved[key].length <= maxLength) fields[key].value = saved[key];
+      if (isObject(saved)) {
+        if (Object.hasOwn(MARKETS, saved.market)) market = saved.market;
+        for (const key of Object.keys(MARKETS)) {
+          if (isObject(saved[key])) states[key] = readState(saved[key]);
         }
-        if (saved.rateSign === -1 || saved.rateSign === 1) rateSign = saved.rateSign;
-        if (typeof saved.currentPrice === "string" && saved.currentPrice.length <= 32) helper.price.value = saved.currentPrice;
-        if (typeof saved.priceChange === "string" && saved.priceChange.length <= 32) helper.change.value = saved.priceChange;
-        if (saved.changeSign === -1 || saved.changeSign === 1) changeSign = saved.changeSign;
+      } else {
+        // 市場切替より前の版は日本株のみだったので、その保存値はJPへ引き継ぐ。
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY));
+        if (isObject(legacy)) states.jp = readState(legacy);
       }
     } catch {
       // Broken saved JSON is ignored. A storage access error is caught by save().
     }
+    restore(states[market]);
   }
 
   function onInput() {
@@ -341,20 +428,33 @@
     });
   }
 
-  for (const [id, direction] of [["price-up", 1], ["price-down", -1]]) {
-    get(id).addEventListener("click", () => {
-      const value = fields.price.value.trim() === "" ? 0 : parseNumber(fields.price.value);
-      if (value === null || value < 0 || value > 1e9) return;
-      const text = fields.price.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").replaceAll(",", "").trim();
-      const [integer, fraction] = text.replace(/^[+-]/, "").split(".");
-      const next = Number(integer || "0") + direction;
-      const clamped = next < 0 || next >= 1e9;
-      const bounded = Math.max(0, Math.min(1e9, next));
-      const integerText = document.activeElement === fields.price ? String(bounded) : formatNumber(bounded, 0);
-      fields.price.value = `${integerText}${!clamped && fraction !== undefined ? `.${fraction}` : ""}`;
-      onInput();
-    });
+  // 一重三角は1円/1ドル、二重三角は市場の最小単位（0.1円 / 1セント）で株価を増減する。
+  function stepPrice(direction, digits) {
+    const value = fields.price.value.trim() === "" ? 0 : parseNumber(fields.price.value);
+    if (value === null || value < 0 || value > 1e9) return;
+    const text = fields.price.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").replaceAll(",", "").trim();
+    const [integer, fraction] = text.replace(/^[+-]/, "").split(".");
+    const scale = 10 ** digits;
+    // Only the first `digits` decimals change; the remaining digits are kept as typed.
+    const head = (fraction ?? "").slice(0, digits).padEnd(digits, "0");
+    const tail = (fraction ?? "").slice(digits);
+    const units = Number(integer || "0") * scale + Number(head || "0") + direction;
+    const maxUnits = 1e9 * scale;
+    const clamped = units < 0 || units >= maxUnits;
+    const bounded = Math.max(0, Math.min(maxUnits, units));
+    const integerPart = Math.floor(bounded / scale);
+    const integerText = document.activeElement === fields.price ? String(integerPart) : formatNumber(integerPart, 0);
+    let fractionText = "";
+    if (digits === 0) fractionText = !clamped && fraction !== undefined ? `.${fraction}` : "";
+    else if (!clamped) fractionText = `.${String(bounded % scale).padStart(digits, "0")}${tail}`;
+    fields.price.value = `${integerText}${fractionText}`;
+    onInput();
   }
+
+  get("price-up").addEventListener("click", () => stepPrice(1, 0));
+  get("price-down").addEventListener("click", () => stepPrice(-1, 0));
+  get("price-fine-up").addEventListener("click", () => stepPrice(1, MARKETS[market].fineDigits));
+  get("price-fine-down").addEventListener("click", () => stepPrice(-1, MARKETS[market].fineDigits));
 
   function onHelperInput() {
     updateBaselineHelper();
@@ -378,6 +478,24 @@
     get("baseline-helper").querySelector("summary").focus({ preventScroll: true });
   });
 
+  for (const button of document.querySelectorAll("[data-market-select]")) {
+    button.addEventListener("click", () => {
+      const next = button.dataset.marketSelect;
+      if (next === market || !Object.hasOwn(MARKETS, next)) return;
+      // 入力値は市場ごとに持つ。切替前の値を退避し、切替先の値を戻す。
+      states[market] = snapshot();
+      market = next;
+      restore(states[market]);
+      baselineEdited = false;
+      baselineBeforeEdit = null;
+      applyMarket();
+      normalizeRateInput();
+      updateBaselineHelper();
+      update();
+      save();
+    });
+  }
+
   get("reset").addEventListener("click", () => {
     baselineEdited = false;
     baselineBeforeEdit = null;
@@ -391,6 +509,7 @@
   });
 
   load();
+  applyMarket();
   normalizeRateInput();
   updateBaselineHelper();
   update();

@@ -43,9 +43,11 @@ a:focus-visible {
 }
 .site-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px 14px;
   min-height: 72px;
+  padding: 8px 0;
   border-bottom: 1px solid var(--border);
 }
 .brand {
@@ -76,6 +78,54 @@ a:focus-visible {
 }
 .header-actions {
   flex-shrink: 0;
+}
+/* 「アプリとして追加」が隠れている間は、空の領域が横の間隔を取らないようにする。 */
+.header-actions:not(:has(.install-button:not([hidden]))) {
+  display: none;
+}
+.market-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 3px;
+  border: 1px solid #dedbf4;
+  border-radius: 9px;
+  background: #f0effb;
+}
+.market-switch button {
+  min-height: 30px;
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b6490;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.market-switch button:hover {
+  color: #5144bb;
+}
+.market-switch button[aria-pressed="true"] {
+  background: #fff;
+  color: #5144bb;
+  box-shadow: 0 1px 2px #252b3d1a;
+  cursor: default;
+}
+/* 米株はドル記号を数字の前に置く。 */
+[data-market="us"] .input-unit,
+[data-market="us"] .money-unit {
+  order: -1;
+}
+[data-market="us"] .input-unit {
+  font-size: 16px;
+}
+[data-market="us"] .main-result:has(.money-unit) {
+  gap: 2px;
 }
 .install-button {
   padding: 9px 11px;
@@ -643,7 +693,13 @@ main {
     padding: 0 18px;
   }
   .site-header {
+    gap: 6px 10px;
     min-height: 56px;
+    padding: 6px 0;
+  }
+  .market-switch button {
+    padding: 4px 9px;
+    font-size: 11px;
   }
   .brand {
     gap: 8px;
