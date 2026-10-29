@@ -157,6 +157,10 @@
     get("rate-whole-up").disabled = !canStepRate || magnitude >= rateLimit;
     get("rate-down").disabled = !canStepRate || magnitude <= 0;
     get("rate-whole-down").disabled = !canStepRate || magnitude <= 0;
+    const steppingPrice = fields.price.value.trim() === "" ? 0 : values.price;
+    const canStepPrice = steppingPrice !== null && steppingPrice >= 0 && steppingPrice <= 1e9;
+    get("price-up").disabled = !canStepPrice || steppingPrice >= 1e9;
+    get("price-down").disabled = !canStepPrice || steppingPrice <= 0;
     updateClearButtons();
 
     if (errors.baseline || errors.rate) {
@@ -213,7 +217,7 @@
       if (saved && typeof saved === "object" && !Array.isArray(saved)) {
         for (const key of Object.keys(fields)) {
           // Computed values can have more digits than a typed value.
-          const maxLength = key === "baseline" ? 350 : 32;
+          const maxLength = key === "baseline" ? 350 : key === "price" ? 40 : 32;
           if (typeof saved[key] === "string" && saved[key].length <= maxLength) fields[key].value = saved[key];
         }
         if (saved.rateSign === -1 || saved.rateSign === 1) rateSign = saved.rateSign;
@@ -319,6 +323,21 @@
       if (tenths < 0) fields.rate.value = `0.${"0".repeat(decimalPlaces)}`;
       else if (tenths >= limit * 10) fields.rate.value = `${limit}.${"0".repeat(decimalPlaces)}`;
       else fields.rate.value = `${Math.floor(tenths / 10)}.${tenths % 10}${fraction.slice(1)}`;
+      onInput();
+    });
+  }
+
+  for (const [id, direction] of [["price-up", 1], ["price-down", -1]]) {
+    get(id).addEventListener("click", () => {
+      const value = fields.price.value.trim() === "" ? 0 : parseNumber(fields.price.value);
+      if (value === null || value < 0 || value > 1e9) return;
+      const text = fields.price.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").replaceAll(",", "").trim();
+      const [integer, fraction] = text.replace(/^[+-]/, "").split(".");
+      const next = Number(integer || "0") + direction;
+      const clamped = next < 0 || next >= 1e9;
+      const bounded = Math.max(0, Math.min(1e9, next));
+      const integerText = document.activeElement === fields.price ? String(bounded) : formatNumber(bounded, 0);
+      fields.price.value = `${integerText}${!clamped && fraction !== undefined ? `.${fraction}` : ""}`;
       onInput();
     });
   }

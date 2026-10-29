@@ -143,8 +143,12 @@
               <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
             </div>
             <span class="input-unit" aria-hidden="true">円</span>
+            <div class="rate-stepper" role="group" aria-label="株価を1円ずつ調整">
+              <button id="price-up" type="button" aria-label="1円増やす"><span aria-hidden="true">▲</span></button>
+              <button id="price-down" type="button" aria-label="1円減らす"><span aria-hidden="true">▼</span></button>
+            </div>
           </div>
-          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。</p>
+          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の上下ボタンで1円ずつ増減できます。</p>
           <p class="field-error" id="price-error" aria-live="polite"></p>
 
           <div id="price-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
