@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <title>TickShift | デザイン見本</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23595959'/%3E%3Ctext x='20' y='28' text-anchor='middle' font-family='sans-serif' font-size='26' fill='white'%3E%25%3C/text%3E%3C/svg%3E">
+  <style>
+    :root { font-family: "BIZ UDPGothic", "BIZ UDPゴシック", "Yu Gothic", Meiryo, sans-serif; color: #595959; background: #fff; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    button:disabled { cursor: default; }
+    button:focus-visible, summary:focus-visible { outline: 2px solid #ce8d60; outline-offset: 4px; }
+    [hidden] { display: none !important; }
+    .page { --card-shadow: 0 4px 8px rgba(0,0,0,.2), 0 6px 20px rgba(0,0,0,.19); --control-shadow: 0 4px 8px rgba(0,0,0,.2), 0 6px 20px rgba(0,0,0,.19); max-width: 510px; margin: 0 auto; padding: 26px 24px 40px; }
+    .page[data-shadow="soft"] { --card-shadow: 0 3px 10px rgba(0,0,0,.09), 0 6px 18px rgba(0,0,0,.06); --control-shadow: 0 2px 5px rgba(0,0,0,.09); }
+    .page-heading { display: flex; align-items: center; gap: 12px; }
+    h1 { margin: 0; font-size: 25px; font-weight: 700; letter-spacing: .025em; }
+    .sample-badge { padding: 4px 7px; border: 1px solid #d9d9d9; border-radius: 5px; font-size: 10px; white-space: nowrap; }
+    .intro { margin: 12px 0 17px; font-size: 12px; line-height: 1.9; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 23px; }
+    .shadow-controls { display: flex; align-items: center; gap: 7px; }
+    .shadow-controls > span { font-size: 11px; }
+    .shadow-buttons { display: flex; gap: 4px; }
+    .shadow-buttons button { min-height: 32px; padding: 5px 8px; border: 1px solid #d9d9d9; border-radius: 5px; background: #fff; color: #595959; font-size: 10px; }
+    .shadow-buttons button[aria-pressed="true"] { border-color: #595959; background: #595959; color: #fff; }
+    .restore-button { min-height: 34px; padding: 6px 12px; border: 0; border-radius: 5px; background: #595959; color: #fff; font-size: 11px; }
+    .reference-card { min-width: 0; padding: 30px 30px 27px; border-radius: 60px; background: #fff; box-shadow: var(--card-shadow); }
+    .row-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 34px; margin-bottom: 10px; }
+    h2, h3 { margin: 0; color: #595959; font-size: 14px; font-weight: 500; line-height: 1.6; }
+    .clear-link { flex-shrink: 0; min-width: 44px; min-height: 32px; padding: 5px 0 5px 6px; border: 0; background: transparent; color: #777; font-size: 10px; text-decoration: underline; text-decoration-color: #b7b7b7; text-underline-offset: 3px; }
+    .clear-link:disabled { visibility: hidden; }
+    .clear-link:hover { color: #595959; text-decoration-color: currentColor; }
+    .entry { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .entry > input { flex: 1 1 0; min-width: 0; width: 100%; }
+    input { height: 44px; padding: 7px 9px; border: 1px solid #f4b183; border-radius: 5px; background: #fff; color: #595959; box-shadow: var(--control-shadow); font-size: 21px; font-variant-numeric: tabular-nums; text-align: center; }
+    input:focus { outline: 2px solid #f4b18366; outline-offset: 2px; }
+    .unit { flex-shrink: 0; min-width: 14px; font-size: 14px; }
+    .helper { margin: 11px 0 24px; }
+    .helper summary { min-height: 29px; padding: 7px 0; color: #737373; font-size: 11px; line-height: 1.6; cursor: pointer; }
+    .helper[open] summary { margin-bottom: 12px; }
+    .helper-content { padding: 0 0 17px; border-bottom: 1px solid #e4e4e4; }
+    .helper-field + .helper-field { margin-top: 14px; }
+    .helper .row-heading { margin-bottom: 7px; }
+    .helper h3 { font-size: 12px; }
+    .helper-result { margin-top: 19px; }
+    .helper-result label { display: block; margin-bottom: 9px; font-size: 11px; }
+    .apply-button { display: block; min-width: 90px; min-height: 34px; margin: 15px auto 0; padding: 6px 16px; border: 0; border-radius: 5px; background: #595959; color: #fff; font-size: 12px; box-shadow: var(--control-shadow); }
+    .apply-button:disabled { opacity: .35; }
+    .converter + .converter { margin-top: 26px; padding-top: 21px; border-top: 1px solid #e4e4e4; }
+    .sign-button { flex: 0 0 32px; height: 44px; padding: 0; border: 0; border-radius: 5px; background: #595959; color: #fff; box-shadow: var(--control-shadow); font-size: 25px; }
+    .stepper { display: grid; flex-shrink: 0; gap: 4px; }
+    .stepper button { display: grid; place-items: center; width: 28px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: #595959; color: #fff; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,.13); }
+    .stepper button:disabled { opacity: .3; }
+    .stepper button:hover, .sign-button:hover, .restore-button:hover, .apply-button:hover { background: #707070; }
+    .double-triangle { display: grid; grid-template-rows: repeat(2, 1fr); gap: .5px; width: 9px; height: 12px; }
+    .double-triangle > span { background: currentColor; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .double-triangle.is-down { transform: rotate(180deg); }
+    .presets { display: flex; gap: 4px; margin-top: 15px; }
+    .presets button { flex: 1; min-width: 0; min-height: 30px; padding: 5px 0; border: 1px solid #595959; border-radius: 5px; background: #595959; color: #fff; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .presets button[aria-pressed="true"] { border-color: #f4b183; background: #f4b183; color: #595959; }
+    .output-group { margin-top: 23px; }
+    .output-group label { display: block; margin-bottom: 10px; font-size: 13px; }
+    input[readonly] { border-color: #d9d9d9; background: #d9d9d9; color: #595959; font-size: 25px; }
+    input[readonly]:focus { outline-color: #bdbdbd; }
+    .delta-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; margin-top: 18px; padding: 7px 12px; border: 1px solid #d9d9d9; border-radius: 15px; font-size: 11px; }
+    .delta-row strong { min-width: 0; font-weight: 500; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+    .sample-note { margin: 23px 0 0; color: #888; font-size: 10px; line-height: 1.7; text-align: center; }
+    .restore-status { min-height: 20px; margin: 18px 0 0; color: #777; font-size: 11px; text-align: center; }
+    @media (max-width: 420px) {
+      .page { padding: 22px 18px 32px; }
+      .reference-card { padding: 27px 23px 25px; }
+      .entry { gap: 6px; }
+    }
+    @media (max-width: 350px) {
+      .page { padding: 20px 12px 28px; }
+      .reference-card { padding: 26px 18px 24px; }
+      .entry { gap: 5px; }
+      .sign-button { flex-basis: 29px; }
+      .stepper button { width: 26px; }
+      input { padding: 6px; font-size: 20px; }
+      input[readonly] { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page" data-shadow="reference">
+    <header class="page-heading"><h1>TickShift</h1><span class="sample-badge">デザイン見本</span></header>
+    <p class="intro">参考アプリに寄せた見本。本番の入力は変わりません。</p>
+    <div class="toolbar">
+      <div class="shadow-controls"><span>影</span><div class="shadow-buttons" role="group" aria-label="影の強さ">
+        <button type="button" data-shadow="reference" aria-pressed="true">参考寄り</button>
+        <button type="button" data-shadow="soft" aria-pressed="false">控えめ</button>
+      </div></div>
+      <button class="restore-button" id="restore-samples" type="button">値を戻す</button>
+    </div>
+
+    <div class="reference-card" data-preview="reference">
+      <section class="baseline" aria-labelledby="baseline-heading">
+        <div class="row-heading"><h2 id="baseline-heading"><label for="sample-baseline">前日終値</label></h2><button class="clear-link" type="button" data-clear="baseline" aria-label="前日終値をクリア">クリア</button></div>
+        <div class="entry"><input id="sample-baseline" data-field="baseline" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" maxlength="24" aria-label="前日終値（円）"><span class="unit" aria-hidden="true">円</span></div>
+      </section>
+
+      <details class="helper" id="baseline-helper">
+        <summary>前日終値を計算する</summary>
+        <div class="helper-content">
+          <div class="helper-field"><div class="row-heading"><h3><label for="sample-current-price">現在値</label></h3><button class="clear-link" type="button" data-clear="current-price" aria-label="現在値をクリア">クリア</button></div><div class="entry"><input id="sample-current-price" data-field="current-price" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" maxlength="24" aria-label="現在値（円）"><span class="unit" aria-hidden="true">円</span></div></div>
+          <div class="helper-field"><div class="row-heading"><h3><label for="sample-price-change">前日比</label></h3><button class="clear-link" type="button" data-clear="price-change" aria-label="前日比の金額をクリア">クリア</button></div><div class="entry"><button class="sign-button" type="button" data-sign="price-change" aria-label="前日比の金額の符号を切り替え">+</button><input id="sample-price-change" data-field="price-change" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" maxlength="24" aria-label="前日比の金額（円）"><span class="unit" aria-hidden="true">円</span></div></div>
+          <div class="helper-result"><label for="sample-inferred">計算した前日終値</label><div class="entry"><input id="sample-inferred" data-result="inferred" readonly tabindex="-1" value="—" aria-label="計算した前日終値"><span class="unit" aria-hidden="true">円</span></div><button class="apply-button" id="apply-baseline" type="button" disabled>使う</button></div>
+        </div>
+      </details>
+
+      <section class="converter" aria-labelledby="rate-heading">
+        <div class="row-heading"><h2 id="rate-heading"><label for="sample-rate">前日比</label></h2><button class="clear-link" type="button" data-clear="rate" aria-label="前日比の率をクリア">クリア</button></div>
+        <div class="entry rate-entry">
+          <button class="sign-button" type="button" data-sign="rate" aria-label="前日比の率の符号を切り替え">−</button>
+          <input id="sample-rate" data-field="rate" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" maxlength="24" aria-label="前日比の率（％）">
+          <span class="unit" aria-hidden="true">%</span>
+          <div class="stepper" role="group" aria-label="前日比を1ずつ調整"><button type="button" data-step-field="rate" data-step="1" aria-label="前日比を1増やす">▲</button><button type="button" data-step-field="rate" data-step="-1" aria-label="前日比を1減らす">▼</button></div>
+          <div class="stepper" role="group" aria-label="前日比を0.1ずつ調整"><button type="button" data-step-field="rate" data-step="0.1" aria-label="前日比を0.1増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button><button type="button" data-step-field="rate" data-step="-0.1" aria-label="前日比を0.1減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button></div>
+        </div>
+        <div class="presets" role="group" aria-label="前日比のプリセット"><button type="button" data-preset="1">1%</button><button type="button" data-preset="2">2%</button><button type="button" data-preset="3">3%</button><button type="button" data-preset="4">4%</button><button type="button" data-preset="5">5%</button><button type="button" data-preset="7">7%</button><button type="button" data-preset="10">10%</button></div>
+        <div class="output-group"><label for="sample-target">株価</label><div class="entry"><input id="sample-target" data-result="target" readonly tabindex="-1" value="—" aria-label="前日比から計算した株価"><span class="unit" aria-hidden="true">円</span></div></div>
+        <div class="delta-row"><span>値幅</span><strong data-delta="target">—</strong></div>
+      </section>
+
+      <section class="converter" aria-labelledby="price-heading">
+        <div class="row-heading"><h2 id="price-heading"><label for="sample-price">株価</label></h2><button class="clear-link" type="button" data-clear="price" aria-label="株価をクリア">クリア</button></div>
+        <div class="entry"><input id="sample-price" data-field="price" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" maxlength="24" aria-label="株価（円）"><span class="unit" aria-hidden="true">円</span><div class="stepper" role="group" aria-label="株価を1円ずつ調整"><button type="button" data-step-field="price" data-step="1" aria-label="株価を1円増やす">▲</button><button type="button" data-step-field="price" data-step="-1" aria-label="株価を1円減らす">▼</button></div></div>
+        <div class="output-group"><label for="sample-change">前日比</label><div class="entry"><input id="sample-change" data-result="change" readonly tabindex="-1" value="—" aria-label="株価から計算した前日比"><span class="unit" aria-hidden="true">%</span></div></div>
+        <div class="delta-row"><span>値幅</span><strong data-delta="change">—</strong></div>
+      </section>
+      <p class="sample-note">操作用のサンプル値です</p>
+    </div>
+    <p id="restore-status" class="restore-status" role="status" aria-live="polite"></p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const page = document.querySelector(".page");
+      const inputs = Object.fromEntries(Array.from(document.querySelectorAll("[data-field]"), field => [field.dataset.field, field]));
+      const formatter = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 6 });
+      const percentFormatter = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 });
+      let rateSign = -1;
+      let changeSign = 1;
+      let inferred = null;
+      const normalize = value => value.normalize("NFKC").replace(/[−–—﹣]/g, "-").trim();
+      function number(raw) {
+        const value = normalize(raw);
+        if (!/^[+-]?(?:(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?|\.\d+)$/.test(value)) return null;
+        const result = Number(value.replaceAll(",", ""));
+        return Number.isFinite(result) ? result : null;
+      }
+      const money = (value, zero = true) => value !== null && (zero ? value >= 0 : value > 0) && value <= 1e9;
+      function signed(value, format = formatter) {
+        const text = format.format(Math.abs(value));
+        return text === "0" ? "0" : `${value < 0 ? "−" : "+"}${text}`;
+      }
+      function magnitude(field) {
+        const value = normalize(field.value);
+        if (number(value) === null && !/^[+-]$/.test(value)) return;
+        if (/^[+-]/.test(value)) {
+          const sign = value.startsWith("-") ? -1 : 1;
+          if (field === inputs.rate) rateSign = sign;
+          else changeSign = sign;
+        }
+        field.value = value.replace(/^[+-]/, "").replaceAll(",", "");
+      }
+      function display(result, value, delta) {
+        document.querySelector(`[data-result="${result}"]`).value = value;
+        const deltaLabel = document.querySelector(`[data-delta="${result}"]`);
+        if (deltaLabel) deltaLabel.textContent = delta === null ? "—" : `${signed(delta)}円`;
+      }
+      function update() {
+        const base = number(inputs.baseline.value);
+        const rate = number(inputs.rate.value);
+        const price = number(inputs.price.value);
+        const limit = rateSign < 0 ? 100 : 10000;
+        const validRate = rate !== null && rate >= 0 && rate <= limit;
+        document.querySelector('[data-sign="rate"]').textContent = rateSign < 0 ? "−" : "+";
+        document.querySelector('[data-sign="price-change"]').textContent = changeSign < 0 ? "−" : "+";
+        for (const button of document.querySelectorAll("[data-clear]")) button.disabled = inputs[button.dataset.clear].value.trim() === "";
+        for (const button of document.querySelectorAll("[data-preset]")) button.setAttribute("aria-pressed", String(validRate && rate === Number(button.dataset.preset)));
+        for (const button of document.querySelectorAll("[data-step-field]")) {
+          const field = inputs[button.dataset.stepField];
+          const value = field.value.trim() === "" ? 0 : number(field.value);
+          const maximum = field === inputs.rate ? limit : 1e9;
+          button.disabled = value === null || value < 0 || value > maximum || (Number(button.dataset.step) < 0 ? value === 0 : value === maximum);
+        }
+        if (money(base, false) && validRate) {
+          const target = base * (1 + rate * rateSign / 100);
+          display("target", formatter.format(target), target - base);
+        } else display("target", "—", null);
+        if (money(base, false) && money(price)) display("change", signed((price - base) / base * 100, percentFormatter), price - base);
+        else display("change", "—", null);
+        const current = number(inputs["current-price"].value);
+        const difference = number(inputs["price-change"].value);
+        inferred = money(current) && money(difference) && money(current - difference * changeSign, false) ? current - difference * changeSign : null;
+        display("inferred", inferred === null ? "—" : formatter.format(inferred), null);
+        document.getElementById("apply-baseline").disabled = inferred === null;
+      }
+      function format(field) {
+        const value = number(field.value);
+        if (value === null) return;
+        const raw = normalize(field.value).replaceAll(",", "");
+        const [integer, fraction] = raw.replace(/^[+-]/, "").split(".");
+        const whole = field === inputs.rate ? integer || "0" : new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 }).format(Number(integer || "0"));
+        field.value = `${raw.startsWith("-") ? "−" : ""}${whole}${fraction === undefined ? "" : `.${fraction}`}`;
+      }
+      for (const field of Object.values(inputs)) {
+        field.addEventListener("focus", () => {
+          if (number(field.value) === null) return;
+          const raw = field.value;
+          const start = field.selectionStart;
+          const end = field.selectionEnd;
+          field.value = raw.replace(/[,，]/g, "");
+          if (start !== null && end !== null) field.setSelectionRange(raw.slice(0, start).replace(/[,，]/g, "").length, raw.slice(0, end).replace(/[,，]/g, "").length);
+        });
+        const changed = () => { if (field === inputs.rate || field === inputs["price-change"]) magnitude(field); update(); };
+        field.addEventListener("input", event => { if (!event.isComposing) changed(); });
+        field.addEventListener("compositionend", changed);
+        field.addEventListener("blur", () => { if (field === inputs.rate || field === inputs["price-change"]) magnitude(field); format(field); update(); });
+        field.addEventListener("keydown", event => { if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) { event.preventDefault(); field.blur(); } });
+      }
+      for (const button of document.querySelectorAll("[data-clear]")) {
+        const field = inputs[button.dataset.clear];
+        button.addEventListener("pointerdown", event => { if (document.activeElement === field) event.preventDefault(); });
+        button.addEventListener("click", () => { field.value = ""; update(); });
+      }
+      for (const button of document.querySelectorAll("[data-sign]")) button.addEventListener("click", () => {
+        if (button.dataset.sign === "rate") rateSign *= -1;
+        else changeSign *= -1;
+        update();
+      });
+      for (const button of document.querySelectorAll("[data-preset]")) button.addEventListener("click", () => { inputs.rate.value = button.dataset.preset; update(); });
+      for (const button of document.querySelectorAll("[data-step-field]")) button.addEventListener("click", () => {
+        const field = inputs[button.dataset.stepField];
+        const raw = normalize(field.value).replaceAll(",", "");
+        const value = raw === "" ? 0 : number(raw);
+        const maximum = field === inputs.rate ? rateSign < 0 ? 100 : 10000 : 1e9;
+        if (value === null || value < 0 || value > maximum) return;
+        const digits = Math.min(8, Math.max(field === inputs.rate ? 1 : 0, (raw.split(".")[1] || "").length));
+        field.value = Math.max(0, Math.min(maximum, value + Number(button.dataset.step))).toFixed(digits);
+        format(field);
+        update();
+      });
+      document.getElementById("apply-baseline").addEventListener("click", () => {
+        if (inferred === null) return;
+        inputs.baseline.value = String(inferred);
+        inputs.price.value = inputs.baseline.value;
+        format(inputs.baseline);
+        format(inputs.price);
+        document.getElementById("baseline-helper").open = false;
+        document.querySelector(".helper summary").focus({ preventScroll: true });
+        update();
+      });
+      function restore() {
+        inputs.baseline.value = "2,882";
+        inputs.rate.value = "7";
+        inputs.price.value = "2,899";
+        inputs["current-price"].value = "";
+        inputs["price-change"].value = "";
+        rateSign = -1;
+        changeSign = 1;
+        update();
+      }
+      document.getElementById("restore-samples").addEventListener("click", () => { restore(); document.getElementById("restore-status").textContent = "見本の値を戻しました。"; });
+      for (const button of document.querySelectorAll("button[data-shadow]")) button.addEventListener("click", () => {
+        page.dataset.shadow = button.dataset.shadow;
+        for (const other of document.querySelectorAll("button[data-shadow]")) other.setAttribute("aria-pressed", String(other === button));
+      });
+      restore();
+    })();
+  </script>
+</body>
+</html>

@@ -372,7 +372,7 @@
     baselineEdited = false;
     baselineBeforeEdit = null;
     fields.baseline.value = baselineInputValue(inferredBaseline);
-    fields.price.value = helper.price.value;
+    fields.price.value = fields.baseline.value;
     onInput();
     get("baseline-helper").open = false;
     get("baseline-helper").querySelector("summary").focus({ preventScroll: true });
