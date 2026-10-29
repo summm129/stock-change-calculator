@@ -123,6 +123,11 @@
     for (const button of document.querySelectorAll("[data-rate]")) {
       button.setAttribute("aria-pressed", String(!errors.rate && Number(button.dataset.rate) === Math.abs(values.rate)));
     }
+    const magnitude = fields.rate.value.trim() === "" ? 0 : parseNumber(fields.rate.value);
+    const rateLimit = rateSign < 0 ? 100 : 10000;
+    const canStepRate = magnitude !== null && magnitude >= 0 && magnitude <= rateLimit;
+    get("rate-up").disabled = !canStepRate || magnitude >= rateLimit;
+    get("rate-down").disabled = !canStepRate || magnitude <= 0;
 
     if (errors.baseline || errors.rate) {
       clearResult("percent", errors.baseline || errors.rate);
@@ -134,7 +139,7 @@
       get("percent-delta").textContent = `${signed(delta)}円`;
       const rounded = Math.round(price);
       const approximate = Math.abs(price - rounded) > 1e-7;
-      get("rounded-price").textContent = `1円単位なら ${approximate ? "約 " : ""}${formatNumber(rounded, 0)}円`;
+      get("rounded-price").textContent = approximate ? `約 ${formatNumber(rounded, 0)}円（1円単位）` : "";
       get("percent-formula").textContent = `${formatNumber(values.baseline)} × (1 ${values.rate < 0 ? "−" : "+"} ${formatNumber(Math.abs(values.rate))} ÷ 100)`;
     }
 
@@ -177,8 +182,9 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (saved && typeof saved === "object" && !Array.isArray(saved)) {
         for (const key of Object.keys(fields)) {
-          // An inferred baseline can need more decimal places than a typed value.
-          if (typeof saved[key] === "string" && saved[key].length <= (key === "baseline" ? 350 : 24)) fields[key].value = saved[key];
+          // Computed values can have more digits than a typed value.
+          const maxLength = key === "baseline" ? 350 : key === "rate" ? 32 : 24;
+          if (typeof saved[key] === "string" && saved[key].length <= maxLength) fields[key].value = saved[key];
         }
         if (saved.rateSign === -1 || saved.rateSign === 1) rateSign = saved.rateSign;
         if (typeof saved.currentPrice === "string" && saved.currentPrice.length <= 24) helper.price.value = saved.currentPrice;
@@ -230,6 +236,23 @@
     rateSign *= -1;
     onInput();
   });
+
+  for (const [id, direction] of [["rate-up", 1], ["rate-down", -1]]) {
+    get(id).addEventListener("click", () => {
+      const text = fields.rate.value.trim();
+      const magnitude = text === "" ? 0 : parseNumber(text);
+      const limit = rateSign < 0 ? 100 : 10000;
+      if (magnitude === null || magnitude < 0 || magnitude > limit) return;
+      const [integer, fraction = ""] = text.split(".");
+      const decimalPlaces = Math.max(1, fraction.length);
+      // Only the tenths change; retain the remaining digits without floating-point noise.
+      const tenths = Number(integer || "0") * 10 + Number(fraction[0] || "0") + direction;
+      if (tenths < 0) fields.rate.value = `0.${"0".repeat(decimalPlaces)}`;
+      else if (tenths >= limit * 10) fields.rate.value = `${limit}.${"0".repeat(decimalPlaces)}`;
+      else fields.rate.value = `${Math.floor(tenths / 10)}.${tenths % 10}${fraction.slice(1)}`;
+      onInput();
+    });
+  }
 
   function onHelperInput() {
     updateBaselineHelper();

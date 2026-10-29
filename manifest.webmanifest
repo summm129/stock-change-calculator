@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "前日比電卓",
-  "short_name": "前日比電卓",
+  "name": "TickShift",
+  "short_name": "TickShift",
   "description": "前日終値から株価と前日比をすぐに計算。オフラインでも使える電卓。",
   "lang": "ja",
   "start_url": "./",
