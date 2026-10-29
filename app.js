@@ -276,11 +276,11 @@
     const set = (id, html) => { get(id).innerHTML = html; };
     set("be-buy-fee-on", centsText(buyCents));
     set("be-buy-free", centsText(buyCents));
-    set("be-commission-on", `${centsText(commissionOn)}<small>${fromApp ? "アプリ表示から逆算" : "0.495%・概算"}</small>`);
+    set("be-commission-on", centsText(commissionOn));
     set("be-commission-free", "$0");
     set("be-cost-on", centsText(costOn));
     set("be-cost-free", centsText(buyCents));
-    set("be-sell-fee-on", `${centsText(sellFeeOn)}<small>約定代金の0.495%</small>`);
+    set("be-sell-fee-on", centsText(sellFeeOn));
     set("be-sell-fee-free", "$0");
     set("be-sec-on", centsText(secFeeCents(profitOn)));
     set("be-sec-free", centsText(secFeeCents(profitFree)));

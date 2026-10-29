@@ -411,17 +411,30 @@ main {
 }
 .breakeven-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+.breakeven-table col.breakeven-col-label {
+  width: 38%;
+}
+.breakeven-table col.breakeven-col-value {
+  width: 31%;
 }
 .breakeven-table th,
 .breakeven-table td {
   padding: 8px 10px;
   border-top: 1px solid #bbc0cd33;
   text-align: right;
-  vertical-align: top;
+  vertical-align: middle;
   overflow-wrap: anywhere;
+}
+/* 項目と①②の列は薄い縦線で区切り、数字は右端で揃える。 */
+.breakeven-table th + th,
+.breakeven-table th + td,
+.breakeven-table td + td {
+  border-left: 1px solid #bbc0cd4d;
 }
 .breakeven-table thead th {
   border-top: 0;
@@ -430,8 +443,10 @@ main {
   font-weight: 600;
   background: #efedff80;
 }
+.breakeven-table thead th:first-child {
+  text-align: left;
+}
 .breakeven-table th[scope="row"] {
-  width: 34%;
   color: #6e6977;
   font-weight: 500;
   text-align: left;
@@ -439,12 +454,6 @@ main {
 .breakeven-table td {
   color: #3e355e;
   font-weight: 600;
-}
-.breakeven-table td small {
-  display: block;
-  color: #8a8fa0;
-  font-size: 10px;
-  font-weight: 400;
 }
 .breakeven-key td {
   color: #b34443;
@@ -810,10 +819,16 @@ main {
   }
   .breakeven-table th,
   .breakeven-table td {
-    padding: 7px 8px;
+    padding: 7px 6px;
   }
-  .breakeven-table th[scope="row"] {
-    width: 36%;
+  .breakeven-table col.breakeven-col-label {
+    width: 42%;
+  }
+  .breakeven-table col.breakeven-col-value {
+    width: 29%;
+  }
+  .breakeven-key td {
+    font-size: 12px;
   }
   .main-result > span:first-child {
     font-size: clamp(32px, 9vw, 38px);

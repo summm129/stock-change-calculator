@@ -207,8 +207,13 @@
         <p id="breakeven-error" class="field-error" aria-live="polite"></p>
         <div class="breakeven-table-wrap">
           <table class="breakeven-table" aria-live="polite">
+            <colgroup>
+              <col class="breakeven-col-label">
+              <col class="breakeven-col-value">
+              <col class="breakeven-col-value">
+            </colgroup>
             <thead>
-              <tr><th scope="col">項目</th><th scope="col">① 手数料あり</th><th scope="col">② NISA</th></tr>
+              <tr><th scope="col">項目</th><th scope="col">① 特定口座</th><th scope="col">② NISA口座</th></tr>
             </thead>
             <tbody>
               <tr><th scope="row">買付約定価格</th><td id="be-buy-fee-on">—</td><td id="be-buy-free">—</td></tr>
@@ -221,7 +226,7 @@
             </tbody>
           </table>
         </div>
-        <p id="breakeven-note" class="breakeven-note">1株あたり・外貨決済の概算。通常口座の買付手数料は税抜0.45%と消費税10%をそれぞれ1セント未満切り捨て（楽天証券アプリの取得単価と一致する計算）、売却手数料は税込0.495%を1セント単位に四捨五入。売却手数料とSEC Feeは「利益が出始める株価」で売った場合の額。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
+        <p id="breakeven-note" class="breakeven-note">1株あたり・外貨決済の概算。特定口座の買付手数料は税抜0.45%と消費税10%をそれぞれ1セント未満切り捨て（楽天証券アプリの取得単価と一致する計算）、売却手数料は税込0.495%を1セント単位に四捨五入。取得単価を入れた場合は、約定価格との差を買付手数料として使う。売却手数料とSEC Feeは「利益が出始める株価」で売った場合の額。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
       </section>
 
       <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
