@@ -9,12 +9,17 @@
     jp: { unit: "円", symbol: "円", priceDigits: 6, fineDigits: null, fineLabel: "" },
     us: { unit: "ドル", symbol: "$", priceDigits: 4, fineDigits: 2, fineLabel: "1セント" }
   };
+  // 楽天証券・米国株の手数料（2026-10時点）。通常口座は税抜0.45%＋消費税10%（税込0.495%）、NISAは無料。
+  // SEC Feeは売却代金×0.0000206ドル（2026-04-02公表の料率）、最低1セント。
+  const RAKUTEN_US = { commissionRate: 0.0045, taxRate: 0.1, secFeeRate: 0.0000206 };
   const defaults = { baseline: "", rate: "", price: "" };
   const fields = Object.fromEntries(Object.keys(defaults).map((key) => [key, document.getElementById(key)]));
   const get = (id) => document.getElementById(id);
   const helper = { price: get("current-price"), change: get("price-change") };
   const helperInputs = Object.values(helper);
-  const inputs = [...Object.values(fields), ...helperInputs];
+  const breakeven = { buy: get("buy-price"), cost: get("cost-basis") };
+  const breakevenInputs = Object.values(breakeven);
+  const inputs = [...Object.values(fields), ...helperInputs, ...breakevenInputs];
   let storageAvailable = true;
   let market = "jp";
   let rateSign = 1;
@@ -25,7 +30,7 @@
   const states = { jp: emptyState(), us: emptyState() };
 
   function emptyState() {
-    return { baseline: "", rate: "", price: "", rateSign: 1, currentPrice: "", priceChange: "", changeSign: 1 };
+    return { baseline: "", rate: "", price: "", rateSign: 1, currentPrice: "", priceChange: "", changeSign: 1, buyPrice: "", costBasis: "" };
   }
 
   function snapshot() {
@@ -36,7 +41,9 @@
       rateSign,
       currentPrice: helper.price.value,
       priceChange: helper.change.value,
-      changeSign
+      changeSign,
+      buyPrice: breakeven.buy.value,
+      costBasis: breakeven.cost.value
     };
   }
 
@@ -48,6 +55,8 @@
     helper.price.value = state.currentPrice;
     helper.change.value = state.priceChange;
     changeSign = state.changeSign;
+    breakeven.buy.value = state.buyPrice;
+    breakeven.cost.value = state.costBasis;
   }
 
   function isObject(value) {
@@ -65,6 +74,8 @@
     if (typeof saved.currentPrice === "string" && saved.currentPrice.length <= 32) state.currentPrice = saved.currentPrice;
     if (typeof saved.priceChange === "string" && saved.priceChange.length <= 32) state.priceChange = saved.priceChange;
     if (saved.changeSign === -1 || saved.changeSign === 1) state.changeSign = saved.changeSign;
+    if (typeof saved.buyPrice === "string" && saved.buyPrice.length <= 32) state.buyPrice = saved.buyPrice;
+    if (typeof saved.costBasis === "string" && saved.costBasis.length <= 32) state.costBasis = saved.costBasis;
     return state;
   }
 
@@ -99,6 +110,7 @@
     get("price-fine-stepper").setAttribute("aria-label", hasFine ? `株価を${config.fineLabel}ずつ調整` : "");
     get("price-fine-up").setAttribute("aria-label", hasFine ? `${config.fineLabel}増やす` : "");
     get("price-fine-down").setAttribute("aria-label", hasFine ? `${config.fineLabel}減らす` : "");
+    get("breakeven-card").hidden = market !== "us";
     get("price-help").textContent = hasFine
       ? `現在値や目標の株価を入力してください。右の一重三角で1${config.unit}ずつ、二重三角で${config.fineLabel}ずつ増減できます。`
       : `現在値や目標の株価を入力してください。右の上下ボタンで1${config.unit}ずつ増減できます。`;
@@ -190,6 +202,87 @@
       : money(inferredBaseline);
     get("apply-baseline").disabled = inferredBaseline === null;
     updateClearButtons();
+  }
+
+  // --- 損益分岐点（米国株・楽天証券） ---------------------------------------
+  // 金額はセント単位の整数で扱い、浮動小数の誤差を避ける。
+  const toCents = (value) => Math.round(value * 100);
+  const centsText = (cents) => `$${new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)}`;
+
+  // 通常口座の売買手数料: 税抜0.45%を1セント未満切り捨て、消費税10%も切り捨て。
+  function commissionCents(amountCents) {
+    const base = Math.floor(amountCents * RAKUTEN_US.commissionRate + 1e-9);
+    const tax = Math.floor(base * RAKUTEN_US.taxRate + 1e-9);
+    return base + tax;
+  }
+
+  // SEC Fee: 売却代金×料率を1セント未満切り上げ、最低1セント。
+  function secFeeCents(amountCents) {
+    return Math.max(1, Math.ceil(amountCents * RAKUTEN_US.secFeeRate - 1e-9));
+  }
+
+  function sellProfitCents(sellCents, costCents, withCommission) {
+    return sellCents - (withCommission ? commissionCents(sellCents) : 0) - secFeeCents(sellCents) - costCents;
+  }
+
+  // 損益がプラスになる最小の売却価格（セント）。目安の近くから1セントずつ探す。
+  function firstProfitCents(costCents, withCommission) {
+    const estimate = withCommission
+      ? Math.floor((costCents + 1) / (1 - RAKUTEN_US.commissionRate * (1 + RAKUTEN_US.taxRate)))
+      : costCents + 1;
+    let cents = Math.max(1, estimate - 3);
+    while (sellProfitCents(cents, costCents, withCommission) <= 0) cents += 1;
+    return cents;
+  }
+
+  function clearBreakeven() {
+    for (const cell of document.querySelectorAll(".breakeven-table td")) cell.textContent = "—";
+  }
+
+  function updateBreakeven() {
+    const hasBuy = breakeven.buy.value.trim() !== "";
+    const hasCost = breakeven.cost.value.trim() !== "";
+    const buy = parseNumber(breakeven.buy.value);
+    const cost = parseNumber(breakeven.cost.value);
+    let error = "";
+    if ((hasBuy && buy === null) || (hasCost && cost === null)) error = "数字で入力してください。";
+    else if (hasBuy && buy <= 0) error = "買付約定価格は0ドルより大きくしてください。";
+    else if ((hasBuy && buy > 1e9) || (hasCost && cost > 1e9)) error = "金額は10億ドル以下で入力してください。";
+    else if (hasBuy && hasCost && cost < buy) error = "取得単価は買付約定価格以上で入力してください。";
+    const visibleError = breakevenInputs.includes(document.activeElement) ? "" : error;
+    breakeven.buy.setAttribute("aria-invalid", String(Boolean(visibleError && hasBuy && (buy === null || buy <= 0 || buy > 1e9))));
+    breakeven.cost.setAttribute("aria-invalid", String(Boolean(visibleError && hasCost && (cost === null || cost > 1e9 || (buy !== null && cost < buy)))));
+    get("breakeven-error").textContent = visibleError;
+    updateClearButtons();
+    if (!hasBuy || error) {
+      clearBreakeven();
+      return;
+    }
+    const buyCents = toCents(buy);
+    const fromApp = hasCost;
+    const costOn = fromApp ? toCents(cost) : buyCents + commissionCents(buyCents);
+    const commissionOn = costOn - buyCents;
+    const profitOn = firstProfitCents(costOn, true);
+    const profitFree = firstProfitCents(buyCents, false);
+    const sellFeeOn = commissionCents(profitOn);
+    // 損益分岐点: 手数料・SEC Feeを差し引いて損益が0以下になる最大の価格（利益が出始める1セント手前）。
+    const evenOn = profitOn - 1;
+    const evenFree = profitFree - 1;
+    const set = (id, html) => { get(id).innerHTML = html; };
+    set("be-buy-fee-on", centsText(buyCents));
+    set("be-buy-free", centsText(buyCents));
+    set("be-commission-on", `${centsText(commissionOn)}<small>${fromApp ? "アプリ表示から逆算" : "0.495%・概算"}</small>`);
+    set("be-commission-free", "$0");
+    set("be-cost-on", centsText(costOn));
+    set("be-cost-free", centsText(buyCents));
+    set("be-sell-fee-on", `約${centsText(sellFeeOn)}<small>約定代金の0.495%</small>`);
+    set("be-sell-fee-free", "$0");
+    set("be-sec-on", centsText(secFeeCents(profitOn)));
+    set("be-sec-free", centsText(secFeeCents(profitFree)));
+    set("be-even-on", centsText(evenOn));
+    set("be-even-free", centsText(evenFree));
+    set("be-profit-on", `${centsText(profitOn)}以上`);
+    set("be-profit-free", `${centsText(profitFree)}以上`);
   }
 
   function signed(value, digits = 6) {
@@ -331,12 +424,15 @@
   }
 
   for (const field of inputs) {
-    const notifyInput = helperInputs.includes(field) ? onHelperInput : onInput;
+    const notifyInput = helperInputs.includes(field) ? onHelperInput : breakevenInputs.includes(field) ? onBreakevenInput : onInput;
     field.addEventListener("focus", () => {
       if (field === fields.baseline) baselineBeforeEdit = parseNumber(field.value);
       if (helperInputs.includes(field)) {
         get("baseline-helper-error").textContent = "";
         for (const helperField of helperInputs) helperField.setAttribute("aria-invalid", "false");
+      } else if (breakevenInputs.includes(field)) {
+        get("breakeven-error").textContent = "";
+        for (const other of breakevenInputs) other.setAttribute("aria-invalid", "false");
       } else {
         get(`${field.id}-error`).textContent = "";
         field.setAttribute("aria-invalid", "false");
@@ -395,6 +491,7 @@
       }
       field.value = "";
       if (helperInputs.includes(field)) onHelperInput();
+      else if (breakevenInputs.includes(field)) onBreakevenInput();
       else onInput();
     });
   }
@@ -466,6 +563,11 @@
     save();
   }
 
+  function onBreakevenInput() {
+    updateBreakeven();
+    save();
+  }
+
   get("change-sign").addEventListener("click", () => {
     changeSign *= -1;
     onHelperInput();
@@ -496,6 +598,7 @@
       applyMarket();
       normalizeRateInput();
       updateBaselineHelper();
+      updateBreakeven();
       update();
       save();
     });
@@ -509,6 +612,9 @@
     helper.price.value = "";
     helper.change.value = "";
     updateBaselineHelper();
+    breakeven.buy.value = "";
+    breakeven.cost.value = "";
+    updateBreakeven();
     for (const [key, value] of Object.entries(defaults)) fields[key].value = value;
     onInput();
   });
@@ -517,6 +623,7 @@
   applyMarket();
   normalizeRateInput();
   updateBaselineHelper();
+  updateBreakeven();
   update();
   save();
 })();

@@ -172,6 +172,58 @@
         </section>
       </div>
 
+      <section id="breakeven-card" class="calculator-card breakeven-card" aria-labelledby="breakeven-heading" hidden>
+        <div class="card-heading">
+          <span class="step">03</span>
+          <h2 id="breakeven-heading" class="direction-label">損益分岐点（楽天証券・米国株）</h2>
+        </div>
+        <div class="helper-grid breakeven-grid">
+          <div>
+            <div class="field-heading">
+              <label class="field-label" for="buy-price">買付約定価格<span class="sr-only unit-name">（ドル）</span></label>
+              <button class="input-clear" type="button" data-clear="buy-price" aria-label="買付約定価格をクリア" disabled>クリア</button>
+            </div>
+            <div class="money-entry">
+              <div class="input-wrap">
+                <input id="buy-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="breakeven-help breakeven-error" maxlength="24">
+              </div>
+              <span class="input-unit" aria-hidden="true">$</span>
+            </div>
+          </div>
+          <div>
+            <div class="field-heading">
+              <label class="field-label" for="cost-basis">取得単価<span class="field-note">アプリ表示・任意</span></label>
+              <button class="input-clear" type="button" data-clear="cost-basis" aria-label="取得単価をクリア" disabled>クリア</button>
+            </div>
+            <div class="money-entry">
+              <div class="input-wrap">
+                <input id="cost-basis" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="breakeven-help breakeven-error" maxlength="24">
+              </div>
+              <span class="input-unit" aria-hidden="true">$</span>
+            </div>
+          </div>
+        </div>
+        <p id="breakeven-help" class="sr-only">約定価格を入れると、通常口座とNISAの損益分岐点を1株あたりで比較します。取得単価を入れた場合は、その金額から買付手数料を逆算します。</p>
+        <p id="breakeven-error" class="field-error" aria-live="polite"></p>
+        <div class="breakeven-table-wrap">
+          <table class="breakeven-table" aria-live="polite">
+            <thead>
+              <tr><th scope="col">項目</th><th scope="col">① 手数料あり</th><th scope="col">② NISA</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">買付約定価格</th><td id="be-buy-fee-on">—</td><td id="be-buy-free">—</td></tr>
+              <tr><th scope="row">買付手数料</th><td id="be-commission-on">—</td><td id="be-commission-free">—</td></tr>
+              <tr><th scope="row">実質取得費用</th><td id="be-cost-on">—</td><td id="be-cost-free">—</td></tr>
+              <tr><th scope="row">売却手数料</th><td id="be-sell-fee-on">—</td><td id="be-sell-fee-free">—</td></tr>
+              <tr><th scope="row">SEC Fee</th><td id="be-sec-on">—</td><td id="be-sec-free">—</td></tr>
+              <tr><th scope="row">損益分岐点</th><td id="be-even-on">—</td><td id="be-even-free">—</td></tr>
+              <tr class="breakeven-key"><th scope="row">利益が出始める株価</th><td id="be-profit-on">—</td><td id="be-profit-free">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="breakeven-note" class="breakeven-note">1株あたり・外貨決済の概算。通常口座の手数料は税抜0.45%と消費税10%をそれぞれ1セント未満切り捨て（楽天証券アプリの取得単価と一致する計算）。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。実際の端数処理で数セントの差が出ることがある。</p>
+      </section>
+
       <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
     </main>
 
