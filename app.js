@@ -127,7 +127,9 @@
     const rateLimit = rateSign < 0 ? 100 : 10000;
     const canStepRate = magnitude !== null && magnitude >= 0 && magnitude <= rateLimit;
     get("rate-up").disabled = !canStepRate || magnitude >= rateLimit;
+    get("rate-whole-up").disabled = !canStepRate || magnitude >= rateLimit;
     get("rate-down").disabled = !canStepRate || magnitude <= 0;
+    get("rate-whole-down").disabled = !canStepRate || magnitude <= 0;
 
     if (errors.baseline || errors.rate) {
       clearResult("percent", errors.baseline || errors.rate);
@@ -237,7 +239,10 @@
     onInput();
   });
 
-  for (const [id, direction] of [["rate-up", 1], ["rate-down", -1]]) {
+  for (const [id, direction, stepTenths] of [
+    ["rate-up", 1, 1], ["rate-down", -1, 1],
+    ["rate-whole-up", 1, 10], ["rate-whole-down", -1, 10]
+  ]) {
     get(id).addEventListener("click", () => {
       const text = fields.rate.value.trim();
       const magnitude = text === "" ? 0 : parseNumber(text);
@@ -246,7 +251,7 @@
       const [integer, fraction = ""] = text.split(".");
       const decimalPlaces = Math.max(1, fraction.length);
       // Only the tenths change; retain the remaining digits without floating-point noise.
-      const tenths = Number(integer || "0") * 10 + Number(fraction[0] || "0") + direction;
+      const tenths = Number(integer || "0") * 10 + Number(fraction[0] || "0") + direction * stepTenths;
       if (tenths < 0) fields.rate.value = `0.${"0".repeat(decimalPlaces)}`;
       else if (tenths >= limit * 10) fields.rate.value = `${limit}.${"0".repeat(decimalPlaces)}`;
       else fields.rate.value = `${Math.floor(tenths / 10)}.${tenths % 10}${fraction.slice(1)}`;

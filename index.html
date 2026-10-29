@@ -33,6 +33,9 @@
     <main aria-label="株価と前日比の計算">
       <section class="baseline-card" aria-labelledby="baseline-heading">
         <div class="baseline-heading">
+          <span id="baseline-icon" class="baseline-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16M8 14l4-5 4 3 4-7"/></svg>
+          </span>
           <h2 id="baseline-heading"><label for="baseline">前日終値</label></h2>
           <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
         </div>
@@ -92,8 +95,12 @@
               <button id="rate-up" type="button" aria-label="0.1増やす"><span aria-hidden="true">▲</span></button>
               <button id="rate-down" type="button" aria-label="0.1減らす"><span aria-hidden="true">▼</span></button>
             </div>
+            <div class="rate-stepper" role="group" aria-label="前日比を1ずつ調整">
+              <button id="rate-whole-up" type="button" aria-label="1増やす"><svg class="double-triangle" viewBox="0 0 18 20" aria-hidden="true" focusable="false"><path d="M9 8 2 17h14Z"/><path d="M9 1 2 10h14Z"/></svg></button>
+              <button id="rate-whole-down" type="button" aria-label="1減らす"><svg class="double-triangle is-down" viewBox="0 0 18 20" aria-hidden="true" focusable="false"><path d="M9 8 2 17h14Z"/><path d="M9 1 2 10h14Z"/></svg></button>
+            </div>
           </div>
-          <p id="rate-help" class="sr-only">左のボタンで符号を切り替え、右の上下ボタンで数字を0.1ずつ増減できます。</p>
+          <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で0.1ずつ、二重三角で1ずつ数字を増減できます。</p>
           <div class="presets" role="group" aria-label="よく使う騰落率">
             <button type="button" data-rate="1" aria-pressed="false">1%</button>
             <button type="button" data-rate="2" aria-pressed="false">2%</button>
@@ -101,6 +108,7 @@
             <button type="button" data-rate="4" aria-pressed="false">4%</button>
             <button type="button" data-rate="5" aria-pressed="false">5%</button>
             <button type="button" data-rate="7" aria-pressed="true">7%</button>
+            <button type="button" data-rate="10" aria-pressed="false">10%</button>
           </div>
           <p class="field-error" id="rate-error" aria-live="polite"></p>
 
