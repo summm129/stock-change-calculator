@@ -13,6 +13,8 @@
   let rateSign = 1;
   let changeSign = 1;
   let inferredBaseline = null;
+  let baselineEdited = false;
+  let baselineBeforeEdit = null;
 
   function normalizeMagnitudeInput(field, sign, removeGrouping = true) {
     const normalized = field.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").trim();
@@ -216,8 +218,8 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (saved && typeof saved === "object" && !Array.isArray(saved)) {
         for (const key of Object.keys(fields)) {
-          // Computed values can have more digits than a typed value.
-          const maxLength = key === "baseline" ? 350 : key === "price" ? 40 : 32;
+          // Computed or copied baseline values can have more digits than a typed value.
+          const maxLength = key === "rate" ? 32 : 350;
           if (typeof saved[key] === "string" && saved[key].length <= maxLength) fields[key].value = saved[key];
         }
         if (saved.rateSign === -1 || saved.rateSign === 1) rateSign = saved.rateSign;
@@ -239,6 +241,7 @@
   for (const field of inputs) {
     const notifyInput = helperInputs.includes(field) ? onHelperInput : onInput;
     field.addEventListener("focus", () => {
+      if (field === fields.baseline) baselineBeforeEdit = parseNumber(field.value);
       if (helperInputs.includes(field)) {
         get("baseline-helper-error").textContent = "";
         for (const helperField of helperInputs) helperField.setAttribute("aria-invalid", "false");
@@ -250,11 +253,13 @@
     });
     field.addEventListener("input", (event) => {
       if (!event.isComposing) {
+        if (field === fields.baseline) baselineEdited = true;
         ungroupForEditing(field);
         notifyInput();
       }
     });
     field.addEventListener("compositionend", () => {
+      if (field === fields.baseline) baselineEdited = true;
       ungroupForEditing(field);
       notifyInput();
     });
@@ -278,6 +283,10 @@
         const integerText = formatNumber(Math.abs(integerValue), 0);
         field.value = `${sign}${field === fields.rate ? integerText.replaceAll(",", "") : integerText}${fraction !== undefined ? `.${fraction}` : ""}`;
       }
+      if (field === fields.baseline) {
+        if (baselineEdited && value !== null && value > 0 && value <= 1e9 && value !== baselineBeforeEdit) fields.price.value = field.value;
+        baselineEdited = false;
+      }
       notifyInput();
     });
   }
@@ -288,6 +297,10 @@
       if (document.activeElement === field) event.preventDefault();
     });
     button.addEventListener("click", () => {
+      if (field === fields.baseline) {
+        baselineEdited = false;
+        baselineBeforeEdit = null;
+      }
       field.value = "";
       if (helperInputs.includes(field)) onHelperInput();
       else onInput();
@@ -356,6 +369,8 @@
   get("apply-baseline").addEventListener("click", () => {
     updateBaselineHelper();
     if (inferredBaseline === null) return;
+    baselineEdited = false;
+    baselineBeforeEdit = null;
     fields.baseline.value = baselineInputValue(inferredBaseline);
     fields.price.value = helper.price.value;
     onInput();
@@ -364,6 +379,8 @@
   });
 
   get("reset").addEventListener("click", () => {
+    baselineEdited = false;
+    baselineBeforeEdit = null;
     rateSign = 1;
     changeSign = 1;
     helper.price.value = "";

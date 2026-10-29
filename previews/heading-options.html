@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>見出しの比較 | TickShift</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23665be8'/%3E%3Ctext x='20' y='28' text-anchor='middle' font-family='sans-serif' font-size='26' fill='white'%3E%25%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      color: #252b3d;
+      background: #f6f7fb;
+      font-synthesis: none;
+      --accent: #665be8;
+      --muted: #687185;
+      --border: #e4e7f0;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #b1a9f7; outline-offset: 3px; }
+    button:disabled { cursor: default; }
+    [hidden] { display: none !important; }
+    .page { max-width: 900px; margin: 0 auto; padding: 28px 22px 36px; }
+    .page-header { display: flex; align-items: center; gap: 10px; }
+    .brand-mark { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 10px; background: var(--accent); color: #fff; font-size: 21px; }
+    h1 { margin: 0; font-size: 21px; font-weight: 700; line-height: 1.5; }
+    .intro { margin: 12px 0 5px; font-size: 13px; line-height: 1.8; }
+    .instruction { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .view-tabs { position: sticky; top: 8px; z-index: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin: 22px 0 13px; padding: 5px; border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: 0 3px 12px #343a5908; }
+    .view-tabs button { min-width: 0; min-height: 48px; padding: 6px 3px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); }
+    .view-tabs button strong { display: block; font-size: 14px; line-height: 1.5; }
+    .view-tabs button small { display: block; font-size: 10px; line-height: 1.5; white-space: nowrap; }
+    .view-tabs button[aria-selected="true"] { background: #efedff; color: #5144bb; }
+    .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin-bottom: 19px; }
+    .spacing { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; }
+    .spacing legend { float: left; padding: 7px 0; color: var(--muted); font-size: 12px; }
+    .spacing-buttons { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+    .spacing button { min-height: 32px; padding: 5px 9px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 11px; }
+    .spacing button[aria-pressed="true"] { background: #f0eefe; color: #5144bb; }
+    .restore { min-height: 40px; padding: 6px 11px; border: 1px solid #d8dce8; border-radius: 8px; background: #fff; color: #535d75; font-size: 12px; }
+    .restore:hover { border-color: #aaa1ed; color: #5144bb; }
+    .comparison { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 24px; }
+    .comparison[data-view="all"] { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .option { min-width: 0; width: 100%; max-width: 375px; }
+    .option-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-height: 30px; margin-bottom: 9px; }
+    .option-key { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 7px; background: #e9e5fb; color: #5144bb; font-size: 13px; font-weight: 700; }
+    .option h2 { margin: 0; font-size: 14px; font-weight: 650; }
+    .option-note { min-height: 20px; margin: 0 0 10px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+    .recommendation { padding: 3px 6px; border-radius: 4px; background: #ece9fc; color: #6456a5; font-size: 10px; }
+    .phone { --card-padding: 14px; --stack-gap: 12px; --input-height: 46px; width: 100%; padding: 15px; border: 1px solid #dfe2ed; border-radius: 17px; background: #f6f7fb; box-shadow: 0 5px 20px #343a5910; }
+    [data-spacing="airy"] .phone { --card-padding: 19px; --stack-gap: 20px; --input-height: 52px; }
+    .phone-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 37px; margin-bottom: 13px; }
+    .phone-brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+    .phone-brand .brand-mark { width: 25px; height: 25px; border-radius: 8px; font-size: 18px; }
+    .sample-badge { padding: 3px 6px; border: 1px solid #e2e4ed; border-radius: 5px; color: var(--muted); font-size: 10px; }
+    .baseline { display: flex; align-items: center; gap: 10px; padding: 11px; border: 1px solid #dedbf4; border-radius: 10px; background: #f0effb; }
+    .baseline.baseline-stacked { display: block; }
+    .baseline-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; }
+    .baseline-stacked .money-entry { margin-top: 6px; }
+    .baseline-label { display: flex; align-items: center; gap: 7px; flex-shrink: 0; font-size: 12px; font-weight: 650; white-space: nowrap; }
+    .baseline-icon { display: grid; place-items: center; flex-shrink: 0; width: 27px; height: 27px; padding: 6px; border-radius: 8px; background: #e5e1fa; color: var(--accent); }
+    .baseline-icon svg { width: 100%; height: 100%; }
+    .baseline .money-entry { flex: 1; min-width: 0; }
+    .helper-row { display: flex; justify-content: space-between; align-items: center; gap: 5px; min-height: 40px; margin: 2px 1px 7px; }
+    .helper-label { color: #70658f; font-size: 10px; line-height: 1.6; }
+    .calc-card { min-width: 0; padding: var(--card-padding); border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+    .calc-card + .calc-card { margin-top: var(--stack-gap); }
+    .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-height: 40px; margin-bottom: 8px; }
+    .card-heading h3 { display: flex; align-items: center; gap: 7px; min-width: 0; margin: 0; font-size: 12px; font-weight: 650; line-height: 1.5; }
+    .option[data-option="a"] .card-heading { min-height: 38px; margin-bottom: 7px; }
+    .option[data-option="a"] .card-heading h3 { color: #626b7f; font-size: 13px; font-weight: 600; }
+    .option[data-option="b"] .card-heading { min-height: 42px; margin-bottom: 13px; }
+    .option[data-option="b"] .card-heading h3 { color: #30364b; font-size: 15px; font-weight: 750; letter-spacing: .02em; }
+    .option[data-option="c"] .card-heading { min-height: 44px; margin-bottom: 10px; }
+    .option[data-option="c"] .card-heading h3 { color: #6556a4; font-size: 18px; font-weight: 600; letter-spacing: .025em; }
+    .money-entry, .rate-entry { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .input-wrap { display: flex; align-items: center; flex: 1 1 0; min-width: 0; border: 1px solid #dce0eb; border-radius: 8px; background: #fff; }
+    .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px #665be815; }
+    .input-wrap input { width: 100%; min-width: 0; height: var(--input-height); padding: 6px 8px; border: 0; border-radius: inherit; outline: 0; background: transparent; color: #30364b; font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
+    .baseline input { height: 42px; font-size: 20px; }
+    .rate-entry input { text-align: center; }
+    .input-unit { flex-shrink: 0; color: #737a8d; font-size: 13px; }
+    .sign-button { flex: 0 0 32px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: #f0eefe; color: #6556ba; font-size: 24px; }
+    .stepper { display: grid; flex-shrink: 0; gap: 3px; }
+    .stepper button { display: grid; place-items: center; width: 28px; height: 24px; padding: 0; border: 1px solid #dedbf4; border-radius: 5px; background: #f0eefe; color: #6556ba; font-size: 9px; }
+    .stepper button:hover, .sign-button:hover { background: #e5e0ff; }
+    .stepper button:disabled { opacity: .3; }
+    .double-triangle { display: grid; grid-template-rows: repeat(2, 1fr); gap: 0; width: 10px; height: 13px; }
+    .double-triangle > span { background: currentColor; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .double-triangle.is-down { transform: rotate(180deg); }
+    .clear-button { flex-shrink: 0; color: #737a8d; white-space: nowrap; }
+    .clear-button:disabled { visibility: hidden; }
+    .clear-link { min-width: 44px; min-height: 38px; padding: 7px 1px 7px 5px; border: 0; background: transparent; color: #8a829c; font-size: 10px; text-decoration: underline; text-decoration-color: #c8c1d6; text-underline-offset: 3px; }
+    .clear-button:hover { color: #5144bb; }
+    .clear-link:hover { text-decoration-color: currentColor; }
+    .presets { display: flex; gap: 4px; margin-top: 10px; }
+    .presets button { flex: 1; min-width: 0; min-height: 29px; padding: 5px 0; border: 1px solid #eceef4; border-radius: 5px; background: #f7f8fb; color: #687185; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .presets button[aria-pressed="true"] { border-color: #d6d1fb; background: #efedff; color: #6556ba; font-weight: 700; }
+    .result { --result-color: #687185; margin-top: 13px; padding: 13px 12px 0; border: 1px solid #e9eaf0; border-radius: 9px; background: #f7f8fb; }
+    .result[data-direction="up"] { --result-color: #b34443; border-color: #f4e5e4; background: #fdf5f4; }
+    .result[data-direction="down"] { --result-color: #3469ad; border-color: #e0ebfb; background: #f0f6fe; }
+    .result-number { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; min-height: 42px; color: var(--result-color); }
+    .result-number output { max-width: 100%; font-size: 31px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -.035em; overflow-wrap: anywhere; }
+    .result-number > span { font-size: 13px; }
+    .delta { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 35px; margin: 9px 0 0; border-top: 1px solid #bbc0cd33; color: #777285; font-size: 10px; }
+    .delta strong { color: var(--result-color); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+    .sample-note { margin: 12px 0 0; color: #8a8fa1; font-size: 10px; line-height: 1.7; text-align: center; }
+    .restore-status { min-height: 20px; margin: 16px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 740px) {
+      .page { padding: 20px 12px 28px; }
+      h1 { font-size: 19px; }
+      .comparison[data-view="all"] { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 360px) {
+      .phone { padding: 12px; }
+      .baseline { gap: 7px; padding: 9px; }
+      .baseline-label { gap: 5px; font-size: 11px; }
+      .baseline-icon { width: 24px; height: 24px; }
+      .baseline input { padding: 5px 6px; font-size: 19px; }
+      .rate-entry { gap: 5px; }
+      .sign-button { flex-basis: 29px; }
+      .stepper button { width: 26px; }
+      .card-heading h3 { gap: 5px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page" data-spacing="compact">
+    <header class="page-header"><span class="brand-mark" aria-hidden="true">%</span><h1>見出しの比較</h1></header>
+    <p class="intro">見出しの比較。実アプリの見出しは選択後に変更します。</p>
+    <p class="instruction">本番入力は変わりません。A〜Cをチャットで教えてください。</p>
+
+    <div class="view-tabs" role="tablist" aria-label="表示する見出し案">
+      <button id="tab-a" type="button" role="tab" data-view="a" aria-controls="comparison" aria-selected="false" tabindex="-1"><strong>A</strong><small>番号なし</small></button>
+      <button id="tab-b" type="button" role="tab" data-view="b" aria-controls="comparison" aria-selected="true" tabindex="0"><strong>B</strong><small>自然な言葉</small></button>
+      <button id="tab-c" type="button" role="tab" data-view="c" aria-controls="comparison" aria-selected="false" tabindex="-1"><strong>C</strong><small>単位だけ</small></button>
+      <button id="tab-all" type="button" role="tab" data-view="all" aria-controls="comparison" aria-selected="false" tabindex="-1"><strong>全部</strong><small>並べて比較</small></button>
+    </div>
+
+    <div class="toolbar">
+      <fieldset class="spacing">
+        <legend>余白</legend>
+        <div class="spacing-buttons">
+          <button type="button" data-spacing="compact" aria-pressed="true">コンパクト</button>
+          <button type="button" data-spacing="airy" aria-pressed="false">ゆったり</button>
+        </div>
+      </fieldset>
+      <button class="restore" type="button" id="restore-samples">値を戻す</button>
+    </div>
+
+    <div id="comparison" class="comparison" role="tabpanel" aria-labelledby="tab-b" data-view="b" tabindex="0"></div>
+    <p class="restore-status" id="restore-status" role="status" aria-live="polite"></p>
+    <noscript><p>操作見本を表示するにはJavaScriptを有効にしてください。</p></noscript>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const definitions = [
+        { key: "a", name: "番号なし", note: "今の表記を残して、番号を外す。", rateHeading: "前日比(%) → 株価", priceHeading: "株価 → 前日比(%)", clearClass: "clear-link" },
+        { key: "b", name: "自然な見出し", note: "何をする欄か、言葉でわかる。", rateHeading: "株価を計算", priceHeading: "前日比を計算", clearClass: "clear-link" },
+        { key: "c", name: "単位だけ", note: "短い表記で、入力欄を主役に。", rateHeading: "% → 円", priceHeading: "円 → %", clearClass: "clear-link" }
+      ];
+      const comparison = document.getElementById("comparison");
+      const page = document.querySelector(".page");
+      const states = new Map();
+      const formatter = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 6 });
+      const rateFormatter = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 });
+      const fieldLabels = { baseline: "前日終値", rate: "前日比", price: "株価" };
+
+      function clearButton(option, field) {
+        const mark = "クリア";
+        return `<button class="clear-button ${option.clearClass}" type="button" data-clear="${field}" aria-label="${fieldLabels[field]}をクリア"><span aria-hidden="true">${mark}</span></button>`;
+      }
+
+      function inputFrame(option, field) {
+        const id = `preview-${option.key}-${field}`;
+        return `<div class="input-wrap"><input id="${id}" data-field="${field}" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" maxlength="24" aria-label="${fieldLabels[field]}${field === "rate" ? "（％）" : "（円）"}"></div>`;
+      }
+
+      function stepper(field, amount, double) {
+        const glyph = direction => double
+          ? `<span class="double-triangle${direction < 0 ? " is-down" : ""}" aria-hidden="true"><span></span><span></span></span>`
+          : `<span aria-hidden="true">${direction > 0 ? "▲" : "▼"}</span>`;
+        return `<div class="stepper" role="group" aria-label="${fieldLabels[field]}を${amount}${field === "price" ? "円" : ""}ずつ調整">${[1, -1].map(direction => `<button type="button" data-step-field="${field}" data-step="${direction * amount}" aria-label="${fieldLabels[field]}を${amount}${field === "price" ? "円" : ""}${direction > 0 ? "増やす" : "減らす"}">${glyph(direction)}</button>`).join("")}</div>`;
+      }
+
+      function result(kind, unit) {
+        return `<div class="result" data-result-panel="${kind}"><div class="result-number"><output data-result="${kind}" aria-live="polite">—</output><span>${unit}</span></div><div class="delta"><span>値幅</span><strong data-delta="${kind}">—</strong></div></div>`;
+      }
+
+      function renderOption(option) {
+        const external = field => clearButton(option, field);
+        const baselineLabel = `<label class="baseline-label" for="preview-${option.key}-baseline"><span class="baseline-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16M8 14l4-5 4 3 4-7"/></svg></span>前日終値</label>`;
+        const baselineInput = `<div class="money-entry">${inputFrame(option, "baseline")}<span class="input-unit" aria-hidden="true">円</span></div>`;
+        const section = document.createElement("section");
+        section.className = "option";
+        section.dataset.option = option.key;
+        section.hidden = option.key !== "b";
+        section.innerHTML = `
+          <header class="option-heading"><span class="option-key">${option.key.toUpperCase()}</span><h2>${option.name}</h2>${option.key === "b" ? '<span class="recommendation">おすすめ候補</span>' : ""}</header>
+          <p class="option-note">${option.note}</p>
+          <div class="phone">
+            <div class="phone-header"><div class="phone-brand"><span class="brand-mark" aria-hidden="true">%</span>TickShift</div><span class="sample-badge">操作見本</span></div>
+            <div class="baseline baseline-stacked">
+              <div class="baseline-top">${baselineLabel}${external("baseline")}</div>${baselineInput}
+            </div>
+            <div class="helper-row"><span class="helper-label">前日終値を計算する</span></div>
+            <section class="calc-card" aria-labelledby="preview-${option.key}-rate-heading">
+              <div class="card-heading"><h3 id="preview-${option.key}-rate-heading" aria-label="${option.key === "c" ? "% → 円：前日比の率から株価を計算" : option.rateHeading}">${option.rateHeading}</h3>${external("rate")}</div>
+              <div class="rate-entry"><button class="sign-button" type="button" data-sign aria-label="前日比の符号を切り替え">−</button>${inputFrame(option, "rate")}<span class="input-unit" aria-hidden="true">%</span>${stepper("rate", 1, false)}${stepper("rate", 0.1, true)}</div>
+              <div class="presets" role="group" aria-label="前日比のプリセット">${[1, 2, 3, 4, 5, 7, 10].map(value => `<button type="button" data-preset="${value}" aria-pressed="false">${value}%</button>`).join("")}</div>
+              ${result("target", "円")}
+            </section>
+            <section class="calc-card" aria-labelledby="preview-${option.key}-price-heading">
+              <div class="card-heading"><h3 id="preview-${option.key}-price-heading" aria-label="${option.key === "c" ? "円 → %：株価から前日比の率を計算" : option.priceHeading}">${option.priceHeading}</h3>${external("price")}</div>
+              <div class="money-entry">${inputFrame(option, "price")}<span class="input-unit" aria-hidden="true">円</span>${stepper("price", 1, false)}</div>
+              ${result("change", "%")}
+            </section>
+            <p class="sample-note">サンプル入力での計算です</p>
+          </div>`;
+        comparison.append(section);
+        const state = { element: section, sign: -1, inputs: Object.fromEntries(["baseline", "rate", "price"].map(field => [field, section.querySelector(`[data-field="${field}"]`)])) };
+        states.set(option.key, state);
+        bindInputs(state);
+        restore(state);
+      }
+
+      function normalized(value) {
+        return value.normalize("NFKC").replace(/[−–—﹣]/g, "-").trim();
+      }
+
+      function number(value) {
+        const text = normalized(value);
+        if (!/^[+-]?(?:(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+        const parsed = Number(text.replaceAll(",", ""));
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      function validMoney(value, allowZero) {
+        return value !== null && (allowZero ? value >= 0 : value > 0) && value <= 1e9;
+      }
+
+      function normalizeRate(state) {
+        const field = state.inputs.rate;
+        const text = normalized(field.value);
+        if (number(text) === null && !/^[+-]$/.test(text)) return;
+        if (/^[+-]/.test(text)) state.sign = text.startsWith("-") ? -1 : 1;
+        field.value = text.replace(/^[+-]/, "").replaceAll(",", "");
+      }
+
+      function signed(value) {
+        const text = formatter.format(Math.abs(value));
+        return text === "0" ? "0" : `${value < 0 ? "−" : "+"}${text}`;
+      }
+
+      function setResult(state, kind, value, delta) {
+        state.element.querySelector(`[data-result="${kind}"]`).textContent = value;
+        state.element.querySelector(`[data-delta="${kind}"]`).textContent = delta === null ? "—" : `${signed(delta)}円`;
+        state.element.querySelector(`[data-result-panel="${kind}"]`).dataset.direction = delta === null || delta === 0 ? "flat" : delta > 0 ? "up" : "down";
+      }
+
+      function update(state) {
+        const baseline = number(state.inputs.baseline.value);
+        const magnitude = number(state.inputs.rate.value);
+        const price = number(state.inputs.price.value);
+        const rateLimit = state.sign < 0 ? 100 : 10000;
+        const validRate = magnitude !== null && magnitude >= 0 && magnitude <= rateLimit;
+        const sign = state.element.querySelector("[data-sign]");
+        sign.textContent = state.sign < 0 ? "−" : "+";
+        sign.setAttribute("aria-label", state.sign < 0 ? "現在マイナス。プラスに切り替え" : "現在プラス。マイナスに切り替え");
+        for (const button of state.element.querySelectorAll("[data-clear]")) button.disabled = state.inputs[button.dataset.clear].value.trim() === "";
+        for (const button of state.element.querySelectorAll("[data-preset]")) button.setAttribute("aria-pressed", String(validRate && Number(button.dataset.preset) === magnitude));
+        for (const button of state.element.querySelectorAll("[data-step-field]")) {
+          const field = button.dataset.stepField;
+          const empty = state.inputs[field].value.trim() === "";
+          const value = empty ? 0 : number(state.inputs[field].value);
+          const limit = field === "rate" ? rateLimit : 1e9;
+          button.disabled = value === null || value < 0 || value > limit || (Number(button.dataset.step) < 0 ? value === 0 : value === limit);
+        }
+        if (validMoney(baseline, false) && validRate) {
+          const target = baseline * (1 + state.sign * magnitude / 100);
+          setResult(state, "target", formatter.format(target), target - baseline);
+        } else setResult(state, "target", "—", null);
+        if (validMoney(baseline, false) && validMoney(price, true)) {
+          const delta = price - baseline;
+          const rate = delta / baseline * 100;
+          const text = rateFormatter.format(Math.abs(rate));
+          setResult(state, "change", text === "0" ? "0" : `${delta < 0 ? "−" : "+"}${text}`, delta);
+        } else setResult(state, "change", "—", null);
+      }
+
+      function formatInput(field, currency) {
+        const value = number(field.value);
+        if (value === null) return;
+        const text = normalized(field.value).replaceAll(",", "");
+        const [integer, fraction] = text.replace(/^[+-]/, "").split(".");
+        const sign = text.startsWith("-") ? "−" : "";
+        const whole = currency ? new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 }).format(Number(integer || "0")) : integer || "0";
+        field.value = `${sign}${whole}${fraction === undefined ? "" : `.${fraction}`}`;
+      }
+
+      function ungroupInput(field) {
+        if (number(field.value) === null) return;
+        const original = field.value;
+        const start = field.selectionStart;
+        const end = field.selectionEnd;
+        const direction = field.selectionDirection;
+        const clean = original.replace(/[,，]/g, "");
+        if (clean !== original) {
+          field.value = clean;
+          if (start !== null && end !== null) field.setSelectionRange(original.slice(0, start).replace(/[,，]/g, "").length, original.slice(0, end).replace(/[,，]/g, "").length, direction);
+        }
+      }
+
+      function bindInputs(state) {
+        for (const [name, field] of Object.entries(state.inputs)) {
+          field.addEventListener("focus", () => ungroupInput(field));
+          field.addEventListener("input", event => {
+            if (event.isComposing) return;
+            ungroupInput(field);
+            if (name === "rate") normalizeRate(state);
+            update(state);
+          });
+          field.addEventListener("compositionend", () => { ungroupInput(field); if (name === "rate") normalizeRate(state); update(state); });
+          field.addEventListener("blur", () => { if (name === "rate") normalizeRate(state); formatInput(field, name !== "rate"); update(state); });
+          field.addEventListener("keydown", event => {
+            if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) { event.preventDefault(); field.blur(); }
+          });
+        }
+        for (const button of state.element.querySelectorAll("[data-clear]")) {
+          const field = state.inputs[button.dataset.clear];
+          button.addEventListener("pointerdown", event => { if (document.activeElement === field) event.preventDefault(); });
+          button.addEventListener("click", () => { field.value = ""; update(state); });
+        }
+        state.element.querySelector("[data-sign]").addEventListener("click", () => { state.sign *= -1; update(state); });
+        for (const button of state.element.querySelectorAll("[data-preset]")) button.addEventListener("click", () => { state.inputs.rate.value = button.dataset.preset; update(state); });
+        for (const button of state.element.querySelectorAll("[data-step-field]")) button.addEventListener("click", () => {
+          const name = button.dataset.stepField;
+          const field = state.inputs[name];
+          const raw = normalized(field.value).replaceAll(",", "");
+          const value = raw === "" ? 0 : number(raw);
+          const limit = name === "rate" ? state.sign < 0 ? 100 : 10000 : 1e9;
+          if (value === null || value < 0 || value > limit) return;
+          const digits = Math.min(8, Math.max(name === "rate" ? 1 : 0, (raw.split(".")[1] || "").length));
+          field.value = Math.max(0, Math.min(limit, value + Number(button.dataset.step))).toFixed(digits);
+          formatInput(field, name !== "rate");
+          update(state);
+        });
+      }
+
+      function restore(state) {
+        state.inputs.baseline.value = "2,882";
+        state.inputs.rate.value = "7.0";
+        state.inputs.price.value = "2,899";
+        state.sign = -1;
+        update(state);
+      }
+
+      for (const definition of definitions) renderOption(definition);
+      const tabs = Array.from(document.querySelectorAll("[role=tab]"));
+      function selectView(value) {
+        comparison.dataset.view = value;
+        comparison.setAttribute("aria-labelledby", `tab-${value}`);
+        for (const tab of tabs) { const selected = tab.dataset.view === value; tab.setAttribute("aria-selected", String(selected)); tab.tabIndex = selected ? 0 : -1; }
+        for (const [key, state] of states) state.element.hidden = value !== "all" && key !== value;
+      }
+      for (const tab of tabs) {
+        tab.addEventListener("click", () => selectView(tab.dataset.view));
+        tab.addEventListener("keydown", event => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          const current = tabs.indexOf(tab);
+          const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+          tabs[next].focus();
+          selectView(tabs[next].dataset.view);
+        });
+      }
+      for (const button of document.querySelectorAll("button[data-spacing]")) button.addEventListener("click", () => {
+        page.dataset.spacing = button.dataset.spacing;
+        for (const other of document.querySelectorAll("button[data-spacing]")) other.setAttribute("aria-pressed", String(other === button));
+      });
+      document.getElementById("restore-samples").addEventListener("click", () => {
+        for (const state of states.values()) restore(state);
+        document.getElementById("restore-status").textContent = "3案の見本の値を戻しました。";
+      });
+      selectView(matchMedia("(min-width: 741px)").matches ? "all" : "b");
+    })();
+  </script>
+</body>
+</html>
