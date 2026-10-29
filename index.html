@@ -40,13 +40,15 @@
           <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
         </div>
         <div class="baseline-field">
-          <div class="input-wrap baseline-input-wrap">
-            <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
-            <button class="input-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+          <div class="money-entry">
+            <div class="input-wrap baseline-input-wrap">
+              <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
+              <button class="input-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+            </div>
             <span class="input-unit" aria-hidden="true">円</span>
           </div>
-          <p class="field-error" id="baseline-error" aria-live="polite"></p>
         </div>
+        <p class="field-error" id="baseline-error" aria-live="polite"></p>
       </section>
 
       <details id="baseline-helper" class="baseline-helper">
@@ -54,18 +56,22 @@
         <div class="helper-grid">
           <div>
             <label class="field-label" for="current-price">現在値<span class="sr-only">（円）</span></label>
-            <div class="input-wrap">
-              <input id="current-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
-              <button class="input-clear" type="button" data-clear="current-price" aria-label="現在値をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+            <div class="money-entry">
+              <div class="input-wrap">
+                <input id="current-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
+                <button class="input-clear" type="button" data-clear="current-price" aria-label="現在値をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+              </div>
               <span class="input-unit" aria-hidden="true">円</span>
             </div>
           </div>
           <div>
             <label class="field-label" for="price-change">前日比<span class="sr-only">（円）</span></label>
-            <div class="input-wrap">
-              <button id="change-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
-              <input id="price-change" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
-              <button class="input-clear" type="button" data-clear="price-change" aria-label="前日比の金額をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+            <div class="money-entry">
+              <div class="input-wrap">
+                <button id="change-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
+                <input id="price-change" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
+                <button class="input-clear" type="button" data-clear="price-change" aria-label="前日比の金額をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+              </div>
               <span class="input-unit" aria-hidden="true">円</span>
             </div>
           </div>
@@ -100,8 +106,8 @@
               <button id="rate-down" type="button" aria-label="0.1減らす"><span aria-hidden="true">▼</span></button>
             </div>
             <div class="rate-stepper" role="group" aria-label="前日比を1ずつ調整">
-              <button id="rate-whole-up" type="button" aria-label="1増やす"><svg class="double-triangle" viewBox="0 0 18 20" aria-hidden="true" focusable="false"><path d="M9 1 2 8h14Z"/><path d="M9 11 2 18h14Z"/></svg></button>
-              <button id="rate-whole-down" type="button" aria-label="1減らす"><svg class="double-triangle is-down" viewBox="0 0 18 20" aria-hidden="true" focusable="false"><path d="M9 1 2 8h14Z"/><path d="M9 11 2 18h14Z"/></svg></button>
+              <button id="rate-whole-up" type="button" aria-label="1増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button>
+              <button id="rate-whole-down" type="button" aria-label="1減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button>
             </div>
           </div>
           <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で0.1ずつ、二重三角で1ずつ数字を増減できます。</p>
@@ -131,9 +137,11 @@
             <h2 id="price-heading" class="direction-label">株価 → 前日比(%)</h2>
           </div>
           <label class="sr-only" for="price">株価（円）</label>
-          <div class="input-wrap price-input-wrap">
-            <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
-            <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+          <div class="money-entry price-entry">
+            <div class="input-wrap price-input-wrap">
+              <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
+              <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
+            </div>
             <span class="input-unit" aria-hidden="true">円</span>
           </div>
           <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。</p>
