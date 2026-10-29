@@ -3,26 +3,53 @@
 
   const { parseNumber, calculateFromPercent, calculateFromPrice, calculateBaselineFromChange, formatNumber } = StockCalculator;
   const STORAGE_KEY = "stock-change-calculator:v1";
-  const defaults = { baseline: "2,430", rate: "7", price: "2,637" };
+  const defaults = { baseline: "", rate: "", price: "" };
   const fields = Object.fromEntries(Object.keys(defaults).map((key) => [key, document.getElementById(key)]));
   const get = (id) => document.getElementById(id);
   const helper = { price: get("current-price"), change: get("price-change") };
+  const helperInputs = Object.values(helper);
+  const inputs = [...Object.values(fields), ...helperInputs];
   let storageAvailable = true;
   let rateSign = 1;
   let changeSign = 1;
   let inferredBaseline = null;
 
-  function normalizeMagnitudeInput(field, sign) {
+  function normalizeMagnitudeInput(field, sign, removeGrouping = true) {
     const normalized = field.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").trim();
     if (parseNumber(normalized) === null && !/^[+-]$/.test(normalized)) return sign;
     // Move a pasted sign to the separate control; unsigned edits keep its state.
     if (/^[+-]/.test(normalized)) sign = normalized.startsWith("-") ? -1 : 1;
-    field.value = normalized.replace(/^[+-]/, "").replaceAll(",", "");
+    const magnitude = normalized.replace(/^[+-]/, "");
+    field.value = removeGrouping ? magnitude.replaceAll(",", "") : magnitude;
     return sign;
   }
 
   function normalizeRateInput() {
     rateSign = normalizeMagnitudeInput(fields.rate, rateSign);
+  }
+
+  function updateClearButtons() {
+    for (const button of document.querySelectorAll("[data-clear]")) {
+      button.disabled = get(button.dataset.clear).value.trim() === "";
+    }
+  }
+
+  function ungroupForEditing(field) {
+    const original = field.value;
+    if (parseNumber(original) === null) return;
+    const ungrouped = original.replace(/[,，]/g, "");
+    if (ungrouped === original) return;
+    const start = field.selectionStart;
+    const end = field.selectionEnd;
+    const direction = field.selectionDirection;
+    field.value = ungrouped;
+    if (start !== null && end !== null) {
+      field.setSelectionRange(
+        original.slice(0, start).replace(/[,，]/g, "").length,
+        original.slice(0, end).replace(/[,，]/g, "").length,
+        direction
+      );
+    }
   }
 
   function baselineInputValue(value) {
@@ -37,42 +64,41 @@
   }
 
   function updateBaselineHelper() {
-    changeSign = normalizeMagnitudeInput(helper.change, changeSign);
+    changeSign = normalizeMagnitudeInput(helper.change, changeSign, document.activeElement === helper.change);
     get("change-sign").textContent = changeSign < 0 ? "−" : "+";
     get("change-sign").setAttribute("aria-label", changeSign < 0
       ? "現在マイナス。プラスに切り替え"
       : "現在プラス。マイナスに切り替え");
     const price = parseNumber(helper.price.value);
     const magnitude = parseNumber(helper.change.value);
-    const empty = !helper.price.value.trim() && !helper.change.value.trim();
+    const hasPrice = helper.price.value.trim() !== "";
+    const hasChange = helper.change.value.trim() !== "";
     let error = "";
     inferredBaseline = null;
-    if (!empty) {
-      if (!helper.price.value.trim() || !helper.change.value.trim()) {
-        error = "現在値と前日比を入力してください。";
-      } else if (price === null || magnitude === null || magnitude < 0) {
-        error = "数字で入力してください。";
-      } else if (price < 0) {
-        error = "現在値は0円以上で入力してください。";
-      } else if (price > 1e9 || magnitude > 1e9) {
-        error = "金額は10億円以下で入力してください。";
-      } else {
-        try {
-          const baseline = calculateBaselineFromChange(price, magnitude * changeSign);
-          if (baseline > 1e9) error = "基準値が10億円を超えています。";
-          else inferredBaseline = baseline;
-        } catch {
-          error = "基準値が0円以下です。入力を確認してください。";
-        }
+    if ((hasPrice && price === null) || (hasChange && (magnitude === null || magnitude < 0))) {
+      error = "数字で入力してください。";
+    } else if (hasPrice && price < 0) {
+      error = "現在値は0円以上で入力してください。";
+    } else if ((hasPrice && price > 1e9) || (hasChange && magnitude > 1e9)) {
+      error = "金額は10億円以下で入力してください。";
+    } else if (hasPrice && hasChange) {
+      try {
+        const baseline = calculateBaselineFromChange(price, magnitude * changeSign);
+        if (baseline > 1e9) error = "基準値が10億円を超えています。";
+        else inferredBaseline = baseline;
+      } catch {
+        error = "基準値は0円より大きくしてください。";
       }
     }
-    helper.price.setAttribute("aria-invalid", String(Boolean(error && (price === null || price < 0 || price > 1e9))));
-    helper.change.setAttribute("aria-invalid", String(Boolean(error && (magnitude === null || magnitude < 0 || magnitude > 1e9))));
-    get("baseline-helper-error").textContent = error;
+    const visibleError = helperInputs.includes(document.activeElement) ? "" : error;
+    helper.price.setAttribute("aria-invalid", String(Boolean(visibleError && hasPrice && (price === null || price < 0 || price > 1e9))));
+    helper.change.setAttribute("aria-invalid", String(Boolean(visibleError && hasChange && (magnitude === null || magnitude < 0 || magnitude > 1e9))));
+    get("baseline-helper-error").textContent = visibleError;
     get("inferred-baseline").textContent = inferredBaseline === null ? "—"
       : parseNumber(formatNumber(inferredBaseline)) === 0 ? "0.000001円未満"
       : `${formatNumber(inferredBaseline)}円`;
     get("apply-baseline").disabled = inferredBaseline === null;
+    updateClearButtons();
   }
 
   function signed(value, digits = 6) {
@@ -99,12 +125,12 @@
     panel.className = `result-panel ${value > 0 ? "is-up" : value < 0 ? "is-down" : "is-flat"}`;
   }
 
-  function clearResult(kind, message) {
+  function clearResult(kind) {
     setDirection(get(`${kind}-panel`), 0);
     get(`${kind}-result-value`).textContent = "—";
     get(`${kind}-delta`).textContent = "—";
     get(`${kind === "percent" ? "rate" : "price"}-badge`).textContent = "入力待ち";
-    get(kind === "percent" ? "rounded-price" : "rate-description").textContent = message;
+    get(kind === "percent" ? "rounded-price" : "rate-description").textContent = "";
     get(`${kind}-formula`).textContent = "計算に使う値を入力してください。";
   }
 
@@ -117,8 +143,9 @@
       : "現在プラス。マイナスに切り替え");
     const errors = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, validation(key, value)]));
     for (const key of Object.keys(fields)) {
-      fields[key].setAttribute("aria-invalid", String(Boolean(errors[key])));
-      get(`${key}-error`).textContent = errors[key];
+      const visibleError = fields[key].value.trim() && document.activeElement !== fields[key] ? errors[key] : "";
+      fields[key].setAttribute("aria-invalid", String(Boolean(visibleError)));
+      get(`${key}-error`).textContent = visibleError;
     }
     for (const button of document.querySelectorAll("[data-rate]")) {
       button.setAttribute("aria-pressed", String(!errors.rate && Number(button.dataset.rate) === Math.abs(values.rate)));
@@ -130,9 +157,10 @@
     get("rate-whole-up").disabled = !canStepRate || magnitude >= rateLimit;
     get("rate-down").disabled = !canStepRate || magnitude <= 0;
     get("rate-whole-down").disabled = !canStepRate || magnitude <= 0;
+    updateClearButtons();
 
     if (errors.baseline || errors.rate) {
-      clearResult("percent", errors.baseline || errors.rate);
+      clearResult("percent");
     } else {
       const { price, delta } = calculateFromPercent(values.baseline, values.rate);
       setDirection(get("percent-panel"), delta);
@@ -146,7 +174,7 @@
     }
 
     if (errors.baseline || errors.price) {
-      clearResult("price", errors.baseline || errors.price);
+      clearResult("price");
     } else {
       const { rate, delta } = calculateFromPrice(values.baseline, values.price);
       setDirection(get("price-panel"), delta);
@@ -185,12 +213,12 @@
       if (saved && typeof saved === "object" && !Array.isArray(saved)) {
         for (const key of Object.keys(fields)) {
           // Computed values can have more digits than a typed value.
-          const maxLength = key === "baseline" ? 350 : key === "rate" ? 32 : 24;
+          const maxLength = key === "baseline" ? 350 : 32;
           if (typeof saved[key] === "string" && saved[key].length <= maxLength) fields[key].value = saved[key];
         }
         if (saved.rateSign === -1 || saved.rateSign === 1) rateSign = saved.rateSign;
-        if (typeof saved.currentPrice === "string" && saved.currentPrice.length <= 24) helper.price.value = saved.currentPrice;
-        if (typeof saved.priceChange === "string" && saved.priceChange.length <= 24) helper.change.value = saved.priceChange;
+        if (typeof saved.currentPrice === "string" && saved.currentPrice.length <= 32) helper.price.value = saved.currentPrice;
+        if (typeof saved.priceChange === "string" && saved.priceChange.length <= 32) helper.change.value = saved.priceChange;
         if (saved.changeSign === -1 || saved.changeSign === 1) changeSign = saved.changeSign;
       }
     } catch {
@@ -204,13 +232,37 @@
     save();
   }
 
-  for (const field of Object.values(fields)) {
-    field.addEventListener("input", (event) => {
-      if (!event.isComposing) onInput();
+  for (const field of inputs) {
+    const notifyInput = helperInputs.includes(field) ? onHelperInput : onInput;
+    field.addEventListener("focus", () => {
+      if (helperInputs.includes(field)) {
+        get("baseline-helper-error").textContent = "";
+        for (const helperField of helperInputs) helperField.setAttribute("aria-invalid", "false");
+      } else {
+        get(`${field.id}-error`).textContent = "";
+        field.setAttribute("aria-invalid", "false");
+      }
+      ungroupForEditing(field);
     });
-    field.addEventListener("compositionend", onInput);
+    field.addEventListener("input", (event) => {
+      if (!event.isComposing) {
+        ungroupForEditing(field);
+        notifyInput();
+      }
+    });
+    field.addEventListener("compositionend", () => {
+      ungroupForEditing(field);
+      notifyInput();
+    });
+    field.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) {
+        event.preventDefault();
+        field.blur();
+      }
+    });
     field.addEventListener("blur", () => {
       if (field === fields.rate) normalizeRateInput();
+      if (field === helper.change) changeSign = normalizeMagnitudeInput(field, changeSign);
       const value = parseNumber(field.value);
       if (value !== null) {
         // Group the integer part without rounding the user's decimal digits.
@@ -218,11 +270,23 @@
         const unsigned = normalized.replace(/^[+-]/, "");
         const [integer, fraction] = unsigned.split(".");
         const integerValue = Number(integer || "0");
-        const sign = field === fields.rate ? "" : value < 0 || /^-/.test(normalized) ? "−" : "";
+        const sign = field === fields.rate || field === helper.change ? "" : value < 0 || /^-/.test(normalized) ? "−" : "";
         const integerText = formatNumber(Math.abs(integerValue), 0);
         field.value = `${sign}${field === fields.rate ? integerText.replaceAll(",", "") : integerText}${fraction !== undefined ? `.${fraction}` : ""}`;
-        onInput();
       }
+      notifyInput();
+    });
+  }
+
+  for (const button of document.querySelectorAll("[data-clear]")) {
+    const field = get(button.dataset.clear);
+    button.addEventListener("pointerdown", (event) => {
+      if (document.activeElement === field) event.preventDefault();
+    });
+    button.addEventListener("click", () => {
+      field.value = "";
+      if (helperInputs.includes(field)) onHelperInput();
+      else onInput();
     });
   }
 
@@ -264,13 +328,6 @@
     save();
   }
 
-  for (const field of Object.values(helper)) {
-    field.addEventListener("input", (event) => {
-      if (!event.isComposing) onHelperInput();
-    });
-    field.addEventListener("compositionend", onHelperInput);
-  }
-
   get("change-sign").addEventListener("click", () => {
     changeSign *= -1;
     onHelperInput();
@@ -283,7 +340,7 @@
     fields.price.value = helper.price.value;
     onInput();
     get("baseline-helper").open = false;
-    get("baseline-helper").querySelector("summary").focus();
+    get("baseline-helper").querySelector("summary").focus({ preventScroll: true });
   });
 
   get("reset").addEventListener("click", () => {
@@ -294,7 +351,6 @@
     updateBaselineHelper();
     for (const [key, value] of Object.entries(defaults)) fields[key].value = value;
     onInput();
-    fields.baseline.focus();
   });
 
   load();
