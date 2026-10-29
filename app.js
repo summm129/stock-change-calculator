@@ -308,8 +308,9 @@
   });
 
   for (const [id, direction, stepTenths] of [
-    ["rate-up", 1, 1], ["rate-down", -1, 1],
-    ["rate-whole-up", 1, 10], ["rate-whole-down", -1, 10]
+    // Keep the existing ids: single triangles use 1, double triangles use 0.1.
+    ["rate-up", 1, 10], ["rate-down", -1, 10],
+    ["rate-whole-up", 1, 1], ["rate-whole-down", -1, 1]
   ]) {
     get(id).addEventListener("click", () => {
       const text = fields.rate.value.trim();

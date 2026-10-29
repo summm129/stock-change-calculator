@@ -37,13 +37,13 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16M8 14l4-5 4 3 4-7"/></svg>
           </span>
           <h2 id="baseline-heading"><label for="baseline">前日終値</label></h2>
+          <button class="input-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" disabled>クリア</button>
           <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
         </div>
         <div class="baseline-field">
           <div class="money-entry">
             <div class="input-wrap baseline-input-wrap">
               <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
-              <button class="input-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
             </div>
             <span class="input-unit" aria-hidden="true">円</span>
           </div>
@@ -55,22 +55,26 @@
         <summary>前日終値がわからないとき</summary>
         <div class="helper-grid">
           <div>
-            <label class="field-label" for="current-price">現在値<span class="sr-only">（円）</span></label>
+            <div class="field-heading">
+              <label class="field-label" for="current-price">現在値<span class="sr-only">（円）</span></label>
+              <button class="input-clear" type="button" data-clear="current-price" aria-label="現在値をクリア" disabled>クリア</button>
+            </div>
             <div class="money-entry">
               <div class="input-wrap">
                 <input id="current-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
-                <button class="input-clear" type="button" data-clear="current-price" aria-label="現在値をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
               </div>
               <span class="input-unit" aria-hidden="true">円</span>
             </div>
           </div>
           <div>
-            <label class="field-label" for="price-change">前日比<span class="sr-only">（円）</span></label>
+            <div class="field-heading">
+              <label class="field-label" for="price-change">前日比<span class="sr-only">（円）</span></label>
+              <button class="input-clear" type="button" data-clear="price-change" aria-label="前日比の金額をクリア" disabled>クリア</button>
+            </div>
             <div class="money-entry">
               <div class="input-wrap">
                 <button id="change-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
                 <input id="price-change" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
-                <button class="input-clear" type="button" data-clear="price-change" aria-label="前日比の金額をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
               </div>
               <span class="input-unit" aria-hidden="true">円</span>
             </div>
@@ -92,25 +96,25 @@
           <div class="card-heading">
             <span class="step">01</span>
             <h2 id="percent-heading" class="direction-label">前日比(%) → 株価</h2>
+            <button class="input-clear" type="button" data-clear="rate" aria-label="前日比の率をクリア" disabled>クリア</button>
           </div>
           <label class="sr-only" for="rate">前日比（％）</label>
           <div class="rate-entry">
             <button id="toggle-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
             <div class="input-wrap rate-input-wrap">
               <input id="rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
-              <button class="input-clear" type="button" data-clear="rate" aria-label="前日比の率をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
             </div>
             <span class="rate-unit" aria-hidden="true">%</span>
-            <div class="rate-stepper" role="group" aria-label="前日比を0.1ずつ調整">
-              <button id="rate-up" type="button" aria-label="0.1増やす"><span aria-hidden="true">▲</span></button>
-              <button id="rate-down" type="button" aria-label="0.1減らす"><span aria-hidden="true">▼</span></button>
-            </div>
             <div class="rate-stepper" role="group" aria-label="前日比を1ずつ調整">
-              <button id="rate-whole-up" type="button" aria-label="1増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button>
-              <button id="rate-whole-down" type="button" aria-label="1減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button>
+              <button id="rate-up" type="button" aria-label="1増やす"><span aria-hidden="true">▲</span></button>
+              <button id="rate-down" type="button" aria-label="1減らす"><span aria-hidden="true">▼</span></button>
+            </div>
+            <div class="rate-stepper" role="group" aria-label="前日比を0.1ずつ調整">
+              <button id="rate-whole-up" type="button" aria-label="0.1増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button>
+              <button id="rate-whole-down" type="button" aria-label="0.1減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button>
             </div>
           </div>
-          <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で0.1ずつ、二重三角で1ずつ数字を増減できます。</p>
+          <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.1ずつ数字を増減できます。</p>
           <div class="presets" role="group" aria-label="よく使う騰落率">
             <button type="button" data-rate="1" aria-pressed="false">1%</button>
             <button type="button" data-rate="2" aria-pressed="false">2%</button>
@@ -135,12 +139,12 @@
           <div class="card-heading">
             <span class="step">02</span>
             <h2 id="price-heading" class="direction-label">株価 → 前日比(%)</h2>
+            <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" disabled>クリア</button>
           </div>
           <label class="sr-only" for="price">株価（円）</label>
           <div class="money-entry price-entry">
             <div class="input-wrap price-input-wrap">
               <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
-              <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" title="クリア" disabled><span aria-hidden="true">×</span></button>
             </div>
             <span class="input-unit" aria-hidden="true">円</span>
             <div class="rate-stepper" role="group" aria-label="株価を1円ずつ調整">
@@ -161,10 +165,6 @@
         </section>
       </div>
 
-      <div class="usage-note">
-        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="7.2"/><path d="M10 9v5M10 6v1"/></svg>
-        <p>注文時の呼値単位は未調整です。</p>
-      </div>
       <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
     </main>
 
