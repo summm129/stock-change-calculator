@@ -209,11 +209,16 @@
   const toCents = (value) => Math.round(value * 100);
   const centsText = (cents) => `$${new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)}`;
 
-  // 通常口座の売買手数料: 税抜0.45%を1セント未満切り捨て、消費税10%も切り捨て。
+  // 通常口座の買付手数料: 税抜0.45%を1セント未満切り捨て、消費税10%も切り捨て（アプリの取得単価と一致）。
   function commissionCents(amountCents) {
     const base = Math.floor(amountCents * RAKUTEN_US.commissionRate + 1e-9);
     const tax = Math.floor(base * RAKUTEN_US.taxRate + 1e-9);
     return base + tax;
+  }
+
+  // 通常口座の売却手数料: 税込0.495%を1セント単位に四捨五入（実際の売却明細では切り捨て方式より1セント多かった）。
+  function sellCommissionCents(amountCents) {
+    return Math.round(amountCents * RAKUTEN_US.commissionRate * (1 + RAKUTEN_US.taxRate) + 1e-9);
   }
 
   // SEC Fee: 売却代金×料率を1セント未満切り上げ、最低1セント。
@@ -222,7 +227,7 @@
   }
 
   function sellProfitCents(sellCents, costCents, withCommission) {
-    return sellCents - (withCommission ? commissionCents(sellCents) : 0) - secFeeCents(sellCents) - costCents;
+    return sellCents - (withCommission ? sellCommissionCents(sellCents) : 0) - secFeeCents(sellCents) - costCents;
   }
 
   // 損益がプラスになる最小の売却価格（セント）。目安の近くから1セントずつ探す。
@@ -264,7 +269,7 @@
     const commissionOn = costOn - buyCents;
     const profitOn = firstProfitCents(costOn, true);
     const profitFree = firstProfitCents(buyCents, false);
-    const sellFeeOn = commissionCents(profitOn);
+    const sellFeeOn = sellCommissionCents(profitOn);
     // 損益分岐点: 手数料・SEC Feeを差し引いて損益が0以下になる最大の価格（利益が出始める1セント手前）。
     const evenOn = profitOn - 1;
     const evenFree = profitFree - 1;
@@ -275,7 +280,7 @@
     set("be-commission-free", "$0");
     set("be-cost-on", centsText(costOn));
     set("be-cost-free", centsText(buyCents));
-    set("be-sell-fee-on", `約${centsText(sellFeeOn)}<small>約定代金の0.495%</small>`);
+    set("be-sell-fee-on", `${centsText(sellFeeOn)}<small>約定代金の0.495%</small>`);
     set("be-sell-fee-free", "$0");
     set("be-sec-on", centsText(secFeeCents(profitOn)));
     set("be-sec-free", centsText(secFeeCents(profitFree)));
