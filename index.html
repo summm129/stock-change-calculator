@@ -154,12 +154,12 @@
               <button id="price-up" type="button" aria-label="1円増やす"><span aria-hidden="true">▲</span></button>
               <button id="price-down" type="button" aria-label="1円減らす"><span aria-hidden="true">▼</span></button>
             </div>
-            <div id="price-fine-stepper" class="rate-stepper" role="group" aria-label="株価を0.1円ずつ調整">
-              <button id="price-fine-up" type="button" aria-label="0.1円増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button>
-              <button id="price-fine-down" type="button" aria-label="0.1円減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button>
+            <div id="price-fine-stepper" class="rate-stepper" role="group" aria-label="株価を1セントずつ調整" hidden>
+              <button id="price-fine-up" type="button" aria-label="1セント増やす"><span class="double-triangle" aria-hidden="true"><span></span><span></span></span></button>
+              <button id="price-fine-down" type="button" aria-label="1セント減らす"><span class="double-triangle is-down" aria-hidden="true"><span></span><span></span></span></button>
             </div>
           </div>
-          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の一重三角で1円ずつ、二重三角で0.1円ずつ増減できます。</p>
+          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の上下ボタンで1円ずつ増減できます。</p>
           <p class="field-error" id="price-error" aria-live="polite"></p>
 
           <div id="price-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">

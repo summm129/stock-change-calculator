@@ -124,6 +124,10 @@ a:focus-visible {
 [data-market="us"] .input-unit {
   font-size: 16px;
 }
+/* 日本株は1円単位で足りるので、02の二重三角は米株のときだけ出す。 */
+[data-market="jp"] #price-fine-stepper {
+  display: none;
+}
 [data-market="us"] .main-result:has(.money-unit) {
   gap: 2px;
 }

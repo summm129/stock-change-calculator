@@ -4,7 +4,7 @@
 // until the user chooses to update or all of the old app's windows close.
 const BASE_URL = new URL("./", self.location.href);
 const CACHE_PREFIX = `stock-change-calculator:${BASE_URL.pathname}:`;
-const CACHE_NAME = `${CACHE_PREFIX}v13`;
+const CACHE_NAME = `${CACHE_PREFIX}v14`;
 const INDEX_URL = new URL("index.html", BASE_URL).href;
 const ASSETS = [
   "index.html",

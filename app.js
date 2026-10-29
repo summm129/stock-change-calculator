@@ -6,7 +6,7 @@
   const LEGACY_STORAGE_KEY = "stock-change-calculator:v1";
   // 市場ごとの表示設定。JPは円を後置・6桁、USはドル記号を前置・4桁。率はどちらも2桁。
   const MARKETS = {
-    jp: { unit: "円", symbol: "円", priceDigits: 6, fineDigits: 1, fineLabel: "0.1円" },
+    jp: { unit: "円", symbol: "円", priceDigits: 6, fineDigits: null, fineLabel: "" },
     us: { unit: "ドル", symbol: "$", priceDigits: 4, fineDigits: 2, fineLabel: "1セント" }
   };
   const defaults = { baseline: "", rate: "", price: "" };
@@ -93,10 +93,15 @@
     get("price-stepper").setAttribute("aria-label", `株価を1${config.unit}ずつ調整`);
     get("price-up").setAttribute("aria-label", `1${config.unit}増やす`);
     get("price-down").setAttribute("aria-label", `1${config.unit}減らす`);
-    get("price-fine-stepper").setAttribute("aria-label", `株価を${config.fineLabel}ずつ調整`);
-    get("price-fine-up").setAttribute("aria-label", `${config.fineLabel}増やす`);
-    get("price-fine-down").setAttribute("aria-label", `${config.fineLabel}減らす`);
-    get("price-help").textContent = `現在値や目標の株価を入力してください。右の一重三角で1${config.unit}ずつ、二重三角で${config.fineLabel}ずつ増減できます。`;
+    // 二重三角（最小単位の増減）は米株のみ。日本株では隠す。
+    const hasFine = config.fineDigits !== null;
+    get("price-fine-stepper").hidden = !hasFine;
+    get("price-fine-stepper").setAttribute("aria-label", hasFine ? `株価を${config.fineLabel}ずつ調整` : "");
+    get("price-fine-up").setAttribute("aria-label", hasFine ? `${config.fineLabel}増やす` : "");
+    get("price-fine-down").setAttribute("aria-label", hasFine ? `${config.fineLabel}減らす` : "");
+    get("price-help").textContent = hasFine
+      ? `現在値や目標の株価を入力してください。右の一重三角で1${config.unit}ずつ、二重三角で${config.fineLabel}ずつ増減できます。`
+      : `現在値や目標の株価を入力してください。右の上下ボタンで1${config.unit}ずつ増減できます。`;
   }
 
   function normalizeMagnitudeInput(field, sign, removeGrouping = true) {
@@ -428,7 +433,7 @@
     });
   }
 
-  // 一重三角は1円/1ドル、二重三角は市場の最小単位（0.1円 / 1セント）で株価を増減する。
+  // 一重三角は1円/1ドル、二重三角（米株のみ）は1セントで株価を増減する。
   function stepPrice(direction, digits) {
     const value = fields.price.value.trim() === "" ? 0 : parseNumber(fields.price.value);
     if (value === null || value < 0 || value > 1e9) return;
@@ -453,8 +458,8 @@
 
   get("price-up").addEventListener("click", () => stepPrice(1, 0));
   get("price-down").addEventListener("click", () => stepPrice(-1, 0));
-  get("price-fine-up").addEventListener("click", () => stepPrice(1, MARKETS[market].fineDigits));
-  get("price-fine-down").addEventListener("click", () => stepPrice(-1, MARKETS[market].fineDigits));
+  get("price-fine-up").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(1, MARKETS[market].fineDigits); });
+  get("price-fine-down").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(-1, MARKETS[market].fineDigits); });
 
   function onHelperInput() {
     updateBaselineHelper();
