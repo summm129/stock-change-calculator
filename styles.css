@@ -10,9 +10,11 @@
   --line: #eceae6;
   --track: #e7e5e1;
   --pill-line: #e6e4e0;
-  --accent: #3a3834;
+  --accent: #6f665c;
   --on-accent: #ffffff;
-  --accent-sub: #cfccc6;
+  --tile: #e6e0d8;
+  --on-tile: #1c1c1a;
+  --tile-sub: #6b6964;
   --seg-on: #ffffff;
   --seg-on-text: #1c1c1a;
   --seg-shadow: 0 1px 3px rgba(28, 28, 26, 0.12);
@@ -29,7 +31,7 @@
   --flat-bg: #f4f3f1;
   --flat-line: #e6e4e0;
   --danger: #b4382e;
-  --focus: rgba(58, 56, 52, 0.35);
+  --focus: rgba(111, 102, 92, 0.35);
   color-scheme: light;
   font-family:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP",
@@ -52,7 +54,9 @@
   --pill-line: #333333;
   --accent: #e8e2d6;
   --on-accent: #141414;
-  --accent-sub: #4a463e;
+  --tile: #e8e2d6;
+  --on-tile: #141414;
+  --tile-sub: #4a463e;
   --seg-on: #e8e2d6;
   --seg-on-text: #141414;
   --seg-shadow: none;
@@ -669,11 +673,11 @@ details[open] > .disclosure .chevron,
   margin-top: 4px;
   padding: 18px 20px;
   border-radius: 20px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--tile);
+  color: var(--on-tile);
 }
 .profit-tile-label {
-  color: var(--accent-sub);
+  color: var(--tile-sub);
   font-size: 12px;
   font-weight: 600;
 }
@@ -690,7 +694,7 @@ details[open] > .disclosure .chevron,
   letter-spacing: -0.02em;
 }
 .profit-tile-suffix {
-  color: var(--accent-sub);
+  color: var(--tile-sub);
   font-size: 15px;
   font-weight: 600;
 }
@@ -912,7 +916,7 @@ details[open] > .disclosure .chevron,
   border-radius: 4px;
 }
 .mini-light > .mini-accent {
-  background: #3a3834;
+  background: #6f665c;
 }
 .mini-dark > .mini-accent {
   background: #e8e2d6;
