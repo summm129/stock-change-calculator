@@ -3,6 +3,11 @@
 
   const { parseNumber, calculateFromPercent, calculateFromPrice, calculateBaselineFromChange, formatNumber } = StockCalculator;
   const STORAGE_KEY = "stock-change-calculator:v2";
+  // 見た目の設定は入力値と分けて保存する。index.html の先頭でも同じキーを読んでちらつきを防ぐ。
+  const SETTINGS_KEY = "stock-change-calculator:settings";
+  const SETTING_VALUES = { theme: ["light", "dark"], layout: ["scroll", "tabs"], account: ["tokutei", "nisa"] };
+  const ACCOUNT_LABELS = { tokutei: "特定口座", nisa: "NISA口座" };
+  const THEME_COLORS = { light: "#f4f3f1", dark: "#141414" };
   const LEGACY_STORAGE_KEY = "stock-change-calculator:v1";
   // 市場ごとの表示設定。JPは円を後置・6桁、USはドル記号を前置・4桁。率はどちらも2桁。
   const MARKETS = {
@@ -28,6 +33,9 @@
   let baselineEdited = false;
   let baselineBeforeEdit = null;
   const states = { jp: emptyState(), us: emptyState() };
+  const settings = { theme: "light", layout: "scroll", account: "tokutei" };
+  let account = "tokutei";
+  let activeTab = "percent";
 
   function emptyState() {
     return { baseline: "", rate: "", price: "", rateSign: 1, currentPrice: "", priceChange: "", changeSign: 1, buyPrice: "", costBasis: "" };
@@ -111,6 +119,9 @@
     get("price-fine-up").setAttribute("aria-label", hasFine ? `${config.fineLabel}増やす` : "");
     get("price-fine-down").setAttribute("aria-label", hasFine ? `${config.fineLabel}減らす` : "");
     get("breakeven-card").hidden = market !== "us";
+    get("tab-breakeven").hidden = market !== "us";
+    if (market !== "us" && activeTab === "breakeven") activeTab = "percent";
+    applyTabs();
     get("price-help").textContent = hasFine
       ? `現在値や目標の株価を入力してください。右の一重三角で1${config.unit}ずつ、二重三角で${config.fineLabel}ずつ増減できます。`
       : `現在値や目標の株価を入力してください。右の上下ボタンで1${config.unit}ずつ増減できます。`;
@@ -240,11 +251,21 @@
     return cents;
   }
 
+  const BREAKEVEN_CELLS = ["be-profit", "be-fee-total", "be-fee-buy", "be-fee-sell", "be-fee-sec", "be-cost", "be-even"];
+
   function clearBreakeven() {
-    for (const cell of document.querySelectorAll(".breakeven-table td")) cell.textContent = "—";
+    for (const id of BREAKEVEN_CELLS) get(id).textContent = "—";
+  }
+
+  function applyAccount() {
+    for (const button of document.querySelectorAll("[data-account]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.account === account));
+    }
+    get("be-tile-label").textContent = `${ACCOUNT_LABELS[account]}で利益が出る株価`;
   }
 
   function updateBreakeven() {
+    applyAccount();
     const hasBuy = breakeven.buy.value.trim() !== "";
     const hasCost = breakeven.cost.value.trim() !== "";
     const buy = parseNumber(breakeven.buy.value);
@@ -257,6 +278,8 @@
     const visibleError = breakevenInputs.includes(document.activeElement) ? "" : error;
     breakeven.buy.setAttribute("aria-invalid", String(Boolean(visibleError && hasBuy && (buy === null || buy <= 0 || buy > 1e9))));
     breakeven.cost.setAttribute("aria-invalid", String(Boolean(visibleError && hasCost && (cost === null || cost > 1e9 || (buy !== null && cost < buy)))));
+    // 取得単価の欄が閉じていてもエラーに気づけるよう、問題があれば開く
+    if (visibleError && hasCost && breakeven.cost.getAttribute("aria-invalid") === "true") setCostPanel(true);
     get("breakeven-error").textContent = visibleError;
     updateClearButtons();
     if (!hasBuy || error) {
@@ -264,30 +287,38 @@
       return;
     }
     const buyCents = toCents(buy);
-    const fromApp = hasCost;
-    const costOn = fromApp ? toCents(cost) : buyCents + commissionCents(buyCents);
-    const commissionOn = costOn - buyCents;
-    const profitOn = firstProfitCents(costOn, true);
-    const profitFree = firstProfitCents(buyCents, false);
-    const sellFeeOn = sellCommissionCents(profitOn);
-    // 損益分岐点: 手数料・SEC Feeを差し引いて損益が0以下になる最大の価格（利益が出始める1セント手前）。
-    const evenOn = profitOn - 1;
-    const evenFree = profitFree - 1;
-    const set = (id, html) => { get(id).innerHTML = html; };
-    set("be-buy-fee-on", centsText(buyCents));
-    set("be-buy-free", centsText(buyCents));
-    set("be-commission-on", centsText(commissionOn));
-    set("be-commission-free", "$0");
-    set("be-cost-on", centsText(costOn));
-    set("be-cost-free", centsText(buyCents));
-    set("be-sell-fee-on", centsText(sellFeeOn));
-    set("be-sell-fee-free", "$0");
-    set("be-sec-on", centsText(secFeeCents(profitOn)));
-    set("be-sec-free", centsText(secFeeCents(profitFree)));
-    set("be-even-on", centsText(evenOn));
-    set("be-even-free", centsText(evenFree));
-    set("be-profit-on", `${centsText(profitOn)}以上`);
-    set("be-profit-free", `${centsText(profitFree)}以上`);
+    const set = (id, cents) => { get(id).textContent = centsText(cents); };
+    if (account === "tokutei") {
+      // 取得単価があれば、約定価格との差を実際の買付手数料として使う
+      const cost = hasCost ? toCents(parseNumber(breakeven.cost.value)) : buyCents + commissionCents(buyCents);
+      const buyFee = cost - buyCents;
+      const profit = firstProfitCents(cost, true);
+      const sellFee = sellCommissionCents(profit);
+      const secFee = secFeeCents(profit);
+      set("be-profit", profit);
+      set("be-fee-total", buyFee + sellFee + secFee);
+      set("be-fee-buy", buyFee);
+      set("be-fee-sell", sellFee);
+      set("be-fee-sec", secFee);
+      set("be-cost", cost);
+      // 損益分岐点: 手数料・SEC Feeを差し引いて損益が0以下になる最大の価格（利益が出始める1セント手前）
+      set("be-even", profit - 1);
+    } else {
+      const profit = firstProfitCents(buyCents, false);
+      const secFee = secFeeCents(profit);
+      set("be-profit", profit);
+      set("be-fee-total", secFee);
+      set("be-fee-buy", 0);
+      set("be-fee-sell", 0);
+      set("be-fee-sec", secFee);
+      set("be-cost", buyCents);
+      set("be-even", profit - 1);
+    }
+  }
+
+  function setCostPanel(open) {
+    get("cost-panel").hidden = !open;
+    get("cost-toggle").setAttribute("aria-expanded", String(open));
   }
 
   function signed(value, digits = 6) {
@@ -388,7 +419,7 @@
 
   function storageStatus() {
     get("storage-status").textContent = storageAvailable
-      ? "入力はこのブラウザに保存されます"
+      ? ""
       : "このブラウザでは入力を保存できません（計算は利用できます）";
   }
 
@@ -601,6 +632,7 @@
       baselineEdited = false;
       baselineBeforeEdit = null;
       applyMarket();
+      setCostPanel(breakeven.cost.value.trim() !== "");
       normalizeRateInput();
       updateBaselineHelper();
       updateBreakeven();
@@ -609,7 +641,7 @@
     });
   }
 
-  get("reset").addEventListener("click", () => {
+  function resetInputs() {
     baselineEdited = false;
     baselineBeforeEdit = null;
     rateSign = 1;
@@ -622,10 +654,135 @@
     updateBreakeven();
     for (const [key, value] of Object.entries(defaults)) fields[key].value = value;
     onInput();
+  }
+
+  get("reset").addEventListener("click", resetInputs);
+  get("settings-reset").addEventListener("click", () => {
+    resetInputs();
+    get("settings-reset").blur();
+    get("storage-status").textContent = storageAvailable ? "" : get("storage-status").textContent;
   });
+
+  // ---- 03 の口座スイッチと取得単価の訂正欄 ----
+  for (const button of document.querySelectorAll("[data-account]")) {
+    button.addEventListener("click", () => {
+      account = button.dataset.account;
+      updateBreakeven();
+    });
+  }
+  get("cost-toggle").addEventListener("click", () => {
+    const open = get("cost-panel").hidden;
+    setCostPanel(open);
+    if (open) breakeven.cost.focus({ preventScroll: true });
+  });
+
+  // ---- タブ表示 ----
+  function applyTabs() {
+    for (const tab of document.querySelectorAll("[data-tab]")) {
+      const active = tab.dataset.tab === activeTab;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    }
+    for (const panel of document.querySelectorAll("[data-panel]")) {
+      panel.classList.toggle("is-active", panel.dataset.panel === activeTab);
+    }
+  }
+  const tabs = [...document.querySelectorAll("[data-tab]")];
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => {
+      activeTab = tab.dataset.tab;
+      applyTabs();
+    });
+    tab.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const visible = tabs.filter((t) => !t.hidden);
+      const next = visible[(visible.indexOf(tab) + (event.key === "ArrowRight" ? 1 : visible.length - 1)) % visible.length];
+      activeTab = next.dataset.tab;
+      applyTabs();
+      next.focus();
+    });
+  }
+
+  // ---- 設定（テーマ・画面の作り・最初に表示する口座） ----
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+      if (isObject(saved)) {
+        for (const [key, values] of Object.entries(SETTING_VALUES)) {
+          if (values.includes(saved[key])) settings[key] = saved[key];
+        }
+      }
+    } catch {
+      // 読めない設定は既定値で動かす
+    }
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch {
+      // 保存できなくても、この画面では設定が効く
+    }
+  }
+
+  function applySettings() {
+    const root = document.documentElement;
+    root.dataset.theme = settings.theme;
+    root.dataset.layout = settings.layout;
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", THEME_COLORS[settings.theme]);
+    for (const control of document.querySelectorAll("[data-setting]")) {
+      const on = settings[control.dataset.setting] === control.dataset.value;
+      control.setAttribute(control.getAttribute("role") === "radio" ? "aria-checked" : "aria-pressed", String(on));
+    }
+  }
+
+  for (const control of document.querySelectorAll("[data-setting]")) {
+    control.addEventListener("click", () => {
+      const key = control.dataset.setting;
+      settings[key] = control.dataset.value;
+      if (key === "account") {
+        account = settings.account;
+        updateBreakeven();
+      }
+      applySettings();
+      saveSettings();
+    });
+  }
+
+  // ---- 設定画面の開閉（端末の戻る操作でも閉じる） ----
+  let mainScroll = 0;
+  function showSettings(open) {
+    if (open) mainScroll = window.scrollY;
+    get("main-view").hidden = open;
+    get("settings-view").hidden = !open;
+    if (open) {
+      window.scrollTo(0, 0);
+      get("settings-title").focus({ preventScroll: true });
+    } else {
+      window.scrollTo(0, mainScroll);
+      get("open-settings").focus({ preventScroll: true });
+    }
+  }
+  get("open-settings").addEventListener("click", () => {
+    history.pushState({ settings: true }, "");
+    showSettings(true);
+  });
+  get("close-settings").addEventListener("click", () => {
+    if (history.state && history.state.settings) history.back();
+    else showSettings(false);
+  });
+  window.addEventListener("popstate", () => {
+    showSettings(Boolean(history.state && history.state.settings));
+  });
+
+  loadSettings();
+  account = settings.account;
+  applySettings();
+  if (history.state && history.state.settings) history.replaceState(null, "");
 
   load();
   applyMarket();
+  setCostPanel(breakeven.cost.value.trim() !== "");
   normalizeRateInput();
   updateBaselineHelper();
   updateBreakeven();
