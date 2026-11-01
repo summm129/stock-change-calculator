@@ -7,7 +7,10 @@
   <meta name="theme-color" content="#f4f3f1">
   <meta name="description" content="株価と前日比をすばやく計算。オフラインで使えるコンパクトな株価ツール。">
   <title>TickShift</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%233a3834'/%3E%3Cpath d='M10 26l7-7 6 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <!-- ブラウザによっては manifest ではなくこのアイコンをホーム画面に使うので、高解像度の PNG を指定する -->
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <script>
     // 保存済みのテーマを描画前に当てて、ダーク利用時の白いちらつきを防ぐ。
     try {
@@ -224,7 +227,7 @@
           <p id="breakeven-error" class="field-error" aria-live="polite"></p>
 
           <div class="profit-tile" aria-live="polite">
-            <div id="be-tile-label" class="profit-tile-label">特定口座で利益が出る株価</div>
+            <div id="be-tile-label" class="profit-tile-label">利益が出始める株価</div>
             <div class="profit-tile-value"><span id="be-profit">—</span><span class="profit-tile-suffix">以上</span></div>
           </div>
           <div class="breakdown-wrap">
@@ -239,7 +242,7 @@
               </tbody>
             </table>
           </div>
-          <p class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
+          <p class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
         </section>
 
         <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>

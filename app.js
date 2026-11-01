@@ -6,7 +6,6 @@
   // 見た目の設定は入力値と分けて保存する。index.html の先頭でも同じキーを読んでちらつきを防ぐ。
   const SETTINGS_KEY = "stock-change-calculator:settings";
   const SETTING_VALUES = { theme: ["light", "dark"], layout: ["scroll", "tabs"], account: ["tokutei", "nisa"] };
-  const ACCOUNT_LABELS = { tokutei: "特定口座", nisa: "NISA口座" };
   const THEME_COLORS = { light: "#f4f3f1", dark: "#141414" };
   const LEGACY_STORAGE_KEY = "stock-change-calculator:v1";
   // 市場ごとの表示設定。JPは円を後置・6桁、USはドル記号を前置・4桁。率はどちらも2桁。
@@ -14,9 +13,9 @@
     jp: { unit: "円", symbol: "円", priceDigits: 6, fineDigits: null, fineLabel: "" },
     us: { unit: "ドル", symbol: "$", priceDigits: 4, fineDigits: 2, fineLabel: "1セント" }
   };
-  // 楽天証券・米国株の手数料（2026-10時点）。通常口座は税抜0.45%＋消費税10%（税込0.495%）、NISAは無料。
-  // SEC Feeは売却代金×0.0000206ドル（2026-04-02公表の料率）、最低1セント。
-  const RAKUTEN_US = { commissionRate: 0.0045, taxRate: 0.1, secFeeRate: 0.0000206 };
+  // 楽天証券・米国株の手数料（2026-11時点）。通常口座は税抜0.45%＋消費税10%（税込0.495%）、上限は税込22ドル
+  // （約定代金4,444.45ドル以上で上限）。NISAは無料。SEC Feeは売却代金×0.0000206ドル（2026-04-02公表の料率）、最低1セント。
+  const RAKUTEN_US = { commissionRate: 0.0045, taxRate: 0.1, capCents: 2200, secFeeRate: 0.0000206 };
   const defaults = { baseline: "", rate: "", price: "" };
   const fields = Object.fromEntries(Object.keys(defaults).map((key) => [key, document.getElementById(key)]));
   const get = (id) => document.getElementById(id);
@@ -224,12 +223,12 @@
   function commissionCents(amountCents) {
     const base = Math.floor(amountCents * RAKUTEN_US.commissionRate + 1e-9);
     const tax = Math.floor(base * RAKUTEN_US.taxRate + 1e-9);
-    return base + tax;
+    return Math.min(base + tax, RAKUTEN_US.capCents);
   }
 
   // 通常口座の売却手数料: 税込0.495%を1セント単位に四捨五入。
   function sellCommissionCents(amountCents) {
-    return Math.round(amountCents * RAKUTEN_US.commissionRate * (1 + RAKUTEN_US.taxRate) + 1e-9);
+    return Math.min(Math.round(amountCents * RAKUTEN_US.commissionRate * (1 + RAKUTEN_US.taxRate) + 1e-9), RAKUTEN_US.capCents);
   }
 
   // SEC Fee: 売却代金×料率を1セント未満切り上げ、最低1セント。
@@ -241,14 +240,18 @@
     return sellCents - (withCommission ? sellCommissionCents(sellCents) : 0) - secFeeCents(sellCents) - costCents;
   }
 
-  // 損益がプラスになる最小の売却価格（セント）。目安の近くから1セントずつ探す。
+  // 損益がプラスになる最小の売却価格（セント）。売却価格が上がるほど損益は増えるので二分探索で求める。
+  // 手数料に上限があるため、率だけの近似式からは探さない。
   function firstProfitCents(costCents, withCommission) {
-    const estimate = withCommission
-      ? Math.floor((costCents + 1) / (1 - RAKUTEN_US.commissionRate * (1 + RAKUTEN_US.taxRate)))
-      : costCents + 1;
-    let cents = Math.max(1, estimate - 3);
-    while (sellProfitCents(cents, costCents, withCommission) <= 0) cents += 1;
-    return cents;
+    let low = 1;
+    let high = costCents * 2 + 10000;
+    while (sellProfitCents(high, costCents, withCommission) <= 0) high *= 2;
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      if (sellProfitCents(mid, costCents, withCommission) > 0) high = mid;
+      else low = mid + 1;
+    }
+    return low;
   }
 
   const BREAKEVEN_CELLS = ["be-profit", "be-fee-total", "be-fee-buy", "be-fee-sell", "be-fee-sec", "be-cost", "be-even"];
@@ -261,7 +264,6 @@
     for (const button of document.querySelectorAll("[data-account]")) {
       button.setAttribute("aria-pressed", String(button.dataset.account === account));
     }
-    get("be-tile-label").textContent = `${ACCOUNT_LABELS[account]}で利益が出る株価`;
   }
 
   function updateBreakeven() {
