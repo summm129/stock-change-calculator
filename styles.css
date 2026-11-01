@@ -10,9 +10,8 @@
   --line: #eceae6;
   --track: #e7e5e1;
   --pill-line: #e6e4e0;
-  --accent: #e6e0d8;
-  --on-accent: #1c1c1a;
-  --ring: #a39a8f;
+  --accent: #6f665c;
+  --on-accent: #ffffff;
   --tile: #e6e0d8;
   --on-tile: #1c1c1a;
   --tile-sub: #6b6964;
@@ -55,7 +54,6 @@
   --pill-line: #333333;
   --accent: #e8e2d6;
   --on-accent: #141414;
-  --ring: #e8e2d6;
   --tile: #e8e2d6;
   --on-tile: #141414;
   --tile-sub: #4a463e;
@@ -479,7 +477,7 @@ main,
   font-size: 12px;
 }
 .presets button[aria-pressed="true"] {
-  border-color: var(--ring);
+  border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
   font-weight: 700;
@@ -834,7 +832,7 @@ details[open] > .disclosure .chevron,
   text-align: left;
 }
 .option-tile[aria-checked="true"] {
-  border-color: var(--ring);
+  border-color: var(--accent);
 }
 .option-foot {
   display: flex;
@@ -918,7 +916,7 @@ details[open] > .disclosure .chevron,
   border-radius: 4px;
 }
 .mini-light > .mini-accent {
-  background: #e6e0d8;
+  background: #6f665c;
 }
 .mini-dark > .mini-accent {
   background: #e8e2d6;
