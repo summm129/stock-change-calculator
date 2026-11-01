@@ -243,6 +243,11 @@ main,
 .update-notice p {
   margin: 0;
   font-size: 13px;
+  line-height: 1.5;
+}
+.update-notice .primary-button {
+  min-height: 40px;
+  padding: 0 16px;
 }
 
 /* ---- カード共通 ---- */

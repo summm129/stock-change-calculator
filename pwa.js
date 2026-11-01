@@ -9,7 +9,10 @@
   manifest.href = "manifest.webmanifest";
   document.head.append(manifest);
 
-  const installButton = document.getElementById("install-app");
+  // メイン画面のお知らせと設定画面の項目の、どちらからでも追加できるようにする
+  const installTriggers = [...document.querySelectorAll(".install-trigger")];
+  const installAreas = [document.getElementById("install-notice"), document.getElementById("install-app")];
+  const showInstall = (visible) => { for (const area of installAreas) area.hidden = !visible; };
   const standalone = matchMedia("(display-mode: standalone)");
   let installPrompt = null;
 
@@ -17,14 +20,14 @@
     if (standalone.matches) return;
     event.preventDefault();
     installPrompt = event;
-    installButton.hidden = false;
+    showInstall(true);
   });
 
-  installButton.addEventListener("click", async () => {
+  for (const trigger of installTriggers) trigger.addEventListener("click", async () => {
     if (!installPrompt) return;
     const prompt = installPrompt;
     installPrompt = null;
-    installButton.hidden = true;
+    showInstall(false);
     try {
       await prompt.prompt();
       await prompt.userChoice;
@@ -35,7 +38,7 @@
 
   function hideInstallButton() {
     installPrompt = null;
-    installButton.hidden = true;
+    showInstall(false);
   }
 
   window.addEventListener("appinstalled", hideInstallButton);

@@ -44,7 +44,12 @@
 
       <aside id="app-update" class="update-notice" aria-live="polite" hidden>
         <p>新しい版があります</p>
-        <button id="update-app" type="button">更新する</button>
+        <button id="update-app" class="primary-button" type="button">更新する</button>
+      </aside>
+
+      <aside id="install-notice" class="update-notice" hidden>
+        <p>アプリとして追加できます</p>
+        <button class="primary-button install-trigger" type="button">追加する</button>
       </aside>
 
       <main aria-label="株価と前日比の計算">
@@ -299,7 +304,7 @@
       </section>
 
       <section class="card settings-list">
-        <button id="install-app" class="settings-link" type="button" hidden>
+        <button id="install-app" class="settings-link install-trigger" type="button" hidden>
           <span>アプリとして追加</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
         </button>
