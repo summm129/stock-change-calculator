@@ -59,7 +59,10 @@
           <h2 id="fav-bar-title" class="fav-title">お気に入り</h2>
           <button id="open-favorites" class="link-button" type="button">並べ替え・編集</button>
         </div>
-        <div id="fav-chips" class="fav-chips" role="radiogroup" aria-labelledby="fav-bar-title"></div>
+        <div class="fav-strip">
+          <div id="fav-chips" class="fav-chips" role="radiogroup" aria-labelledby="fav-bar-title"></div>
+          <button id="fav-add" class="fav-add" type="button" aria-label="お気に入りに追加"><span class="fav-add-icon" aria-hidden="true">+</span></button>
+        </div>
         <p class="sr-only">銘柄を選ぶと、その銘柄で入れた値に切り替わります。もう一度押すと選択を外します。長押しで編集できます。</p>
       </section>
 
@@ -76,45 +79,29 @@
           </div>
           <p class="field-error" id="baseline-error" aria-live="polite"></p>
 
-          <details id="baseline-helper" class="baseline-helper">
-            <summary class="disclosure">
-              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-              <span>現在値から計算</span>
-            </summary>
-            <div class="sub-panel">
-              <div class="helper-grid">
-                <div>
-                  <div class="field-heading">
-                    <label class="field-label" for="current-price">現在値<span class="sr-only unit-name">（円）</span></label>
-                    <button class="input-clear" type="button" data-clear="current-price" aria-label="現在値をクリア" disabled>クリア</button>
-                  </div>
-                  <div class="field">
-                    <span class="input-unit" aria-hidden="true">円</span>
-                    <input id="current-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
-                  </div>
-                </div>
-                <div>
-                  <div class="field-heading">
-                    <label class="field-label" for="price-change">前日比<span class="sr-only unit-name">（円）</span></label>
-                    <button class="input-clear" type="button" data-clear="price-change" aria-label="前日比の金額をクリア" disabled>クリア</button>
-                  </div>
-                  <div class="field">
-                    <button id="change-sign" class="sign-toggle sign-toggle-sm" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
-                    <span class="input-unit" aria-hidden="true">円</span>
-                    <input id="price-change" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-helper-error" maxlength="24">
-                  </div>
+          <div class="hold-block">
+            <div class="field-heading">
+              <span id="hold-title" class="field-label hold-title">保有<span class="hold-note">任意・入れると損益が出る</span></span>
+              <button id="hold-clear" class="input-clear" type="button" aria-label="保有の買値と株数をクリア" disabled>クリア</button>
+            </div>
+            <div class="hold-grid" role="group" aria-labelledby="hold-title">
+              <div>
+                <label class="field-label" for="hold-buy">買値<span class="sr-only unit-name">（円）</span></label>
+                <div class="field field-sm">
+                  <span class="input-unit" aria-hidden="true">円</span>
+                  <input id="hold-buy" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="24">
                 </div>
               </div>
-              <p id="baseline-helper-error" class="field-error" aria-live="polite"></p>
-              <div class="helper-result">
-                <div>
-                  <span class="helper-result-label">計算した基準値</span>
-                  <output id="inferred-baseline" for="current-price price-change" aria-live="polite">—</output>
+              <div>
+                <label class="field-label" for="hold-qty">株数</label>
+                <div class="field field-sm">
+                  <input id="hold-qty" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="16">
+                  <span class="field-suffix" aria-hidden="true">株</span>
                 </div>
-                <button id="apply-baseline" class="primary-button" type="button" disabled>セットする</button>
               </div>
             </div>
-          </details>
+            <p id="hold-error" class="field-error" aria-live="polite"></p>
+          </div>
         </section>
 
         <div id="calc-tabs" class="segmented calc-tabs" role="tablist" aria-label="計算の種類">
@@ -160,6 +147,11 @@
             <output id="percent-result" class="main-result" for="baseline rate"><span class="result-unit money-unit">円</span><span id="percent-result-value">—</span></output>
             <p id="rounded-price" class="rounded-price"></p>
             <div class="delta-row"><span>値幅</span><strong id="percent-delta">—</strong></div>
+            <div id="percent-pnl" class="pnl-box" hidden>
+              <div class="pnl-row"><span>買値から</span><strong id="percent-pnl-rate"></strong></div>
+              <div id="percent-pnl-gain-row" class="pnl-row pnl-gain"><span id="percent-pnl-label">損益</span><strong id="percent-pnl-gain"></strong></div>
+              <p id="percent-pnl-note" class="pnl-note"></p>
+            </div>
           </div>
           <p id="percent-formula" hidden></p>
         </section>
@@ -195,6 +187,11 @@
             <output id="price-result" class="main-result" for="baseline price"><span id="price-result-value">—</span><span class="result-unit">%</span></output>
             <p id="rate-description" class="sr-only"></p>
             <div class="delta-row"><span>値幅</span><strong id="price-delta">—</strong></div>
+            <div id="price-pnl" class="pnl-box" hidden>
+              <div class="pnl-row"><span>買値から</span><strong id="price-pnl-rate"></strong></div>
+              <div id="price-pnl-gain-row" class="pnl-row pnl-gain"><span id="price-pnl-label">損益</span><strong id="price-pnl-gain"></strong></div>
+              <p id="price-pnl-note" class="pnl-note"></p>
+            </div>
           </div>
           <p id="price-formula" hidden></p>
         </section>
@@ -208,14 +205,11 @@
               <button type="button" data-account="nisa" aria-pressed="false">NISA</button>
             </div>
           </div>
-          <div class="field-heading">
-            <label class="field-label" for="buy-price">買付約定価格<span class="sr-only">（ドル）</span></label>
-            <button class="input-clear" type="button" data-clear="buy-price" aria-label="買付約定価格をクリア" disabled>クリア</button>
+          <div class="be-buy-line">
+            <span class="be-buy-label">買付約定価格<span class="be-buy-sub">上の「保有」の買値を使用</span></span>
+            <strong id="be-buy-display">—</strong>
           </div>
-          <div class="field field-md">
-            <span class="input-unit" aria-hidden="true">$</span>
-            <input id="buy-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="breakeven-help breakeven-error" maxlength="24">
-          </div>
+          <p id="be-need-buy" class="sub-note">上の「保有」に買値を入れると計算します。</p>
           <button id="cost-toggle" class="disclosure" type="button" aria-expanded="false" aria-controls="cost-panel">
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
             <span>取得単価を訂正する</span>
@@ -231,7 +225,7 @@
             </div>
             <p class="sub-note">入れると、約定価格との差を買付手数料として計算します。</p>
           </div>
-          <p id="breakeven-help" class="sr-only">約定価格を入れると、選んだ口座で利益が出る株価を1株あたりで表示します。取得単価を入れた場合は、その金額から買付手数料を逆算します。</p>
+          <p id="breakeven-help" class="sr-only">保有の買値を買付約定価格として、選んだ口座で利益が出始める株価を1株あたりで表示します。取得単価を入れた場合は、その金額から買付手数料を逆算します。</p>
           <p id="breakeven-error" class="field-error" aria-live="polite"></p>
 
           <div class="profit-tile" aria-live="polite">

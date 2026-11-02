@@ -413,13 +413,6 @@ main,
   font-weight: 500;
   line-height: 1;
 }
-.sign-toggle-sm {
-  width: 34px;
-  height: 34px;
-  margin-left: -8px;
-  border-radius: 10px;
-  font-size: 18px;
-}
 .stepper-grid {
   display: grid;
   grid-template-columns: repeat(2, 40px);
@@ -599,37 +592,6 @@ details[open] > .disclosure .chevron,
   font-size: 11px;
   line-height: 1.6;
 }
-.baseline-card .field-error {
-  min-height: 14px;
-}
-.helper-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-}
-.helper-grid .field input {
-  font-size: 22px;
-}
-.helper-result {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.helper-result > div {
-  min-width: 0;
-}
-.helper-result-label {
-  color: var(--muted);
-  font-size: 11px;
-}
-.helper-result output {
-  display: block;
-  margin-top: 2px;
-  font-size: 22px;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
 .primary-button {
   flex-shrink: 0;
   min-height: 44px;
@@ -663,6 +625,113 @@ details[open] > .disclosure .chevron,
 }
 [data-layout="tabs"] .calc-card:not(.is-active) {
   display: none;
+}
+
+/* ---- 保有（買値・株数）と損益 ---- */
+.hold-block {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.hold-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+.hold-note {
+  margin-left: 6px;
+  color: var(--unit);
+  font-size: 11px;
+  font-weight: 400;
+}
+.hold-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.hold-grid .field-label {
+  display: block;
+  margin: 0 0 6px 2px;
+}
+.field-sm {
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+}
+.field-sm input {
+  font-size: 20px;
+}
+.field-sm .input-unit,
+.field-sm .field-suffix {
+  font-size: 14px;
+}
+.pnl-box {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  --pnl: var(--muted);
+}
+.pnl-box.is-up {
+  --pnl: var(--up);
+}
+.pnl-box.is-down {
+  --pnl: var(--down);
+}
+.pnl-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pnl-row strong {
+  color: var(--pnl);
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.pnl-gain {
+  margin-top: 6px;
+}
+.pnl-gain strong {
+  font-size: 20px;
+  font-weight: 700;
+}
+.pnl-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.pnl-note:empty {
+  display: none;
+}
+.be-buy-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--field);
+}
+.be-buy-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+.be-buy-sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--unit);
+  font-size: 11px;
+}
+#be-buy-display {
+  font-size: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#be-need-buy {
+  margin-top: 8px;
 }
 
 /* ---- 03 損益分岐点 ---- */
@@ -1054,13 +1123,32 @@ details[open] > .disclosure .chevron,
   color: var(--muted);
   font-size: 12px;
 }
+.fav-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* チップ列だけ横にスクロールし、＋ボタンは常に右端に見せる */
 .fav-chips {
   display: flex;
+  flex: 0 1 auto;
   gap: 8px;
-  margin: 0 -16px;
-  padding: 0 16px 4px;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+}
+/* 続きがある側の端をふわっと透かす（右は＋ボタンの手前、左はスクロールしたとき） */
+.fav-chips.is-fading {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+}
+.fav-chips.is-fading-left {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 32px);
+  mask-image: linear-gradient(to right, transparent, #000 32px);
+}
+.fav-chips.is-fading.is-fading-left {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 40px), transparent);
 }
 .fav-chips::-webkit-scrollbar {
   display: none;
@@ -1108,6 +1196,9 @@ details[open] > .disclosure .chevron,
   color: var(--muted);
   font-size: 13px;
   font-weight: 600;
+}
+.fav-add.is-wide {
+  flex: 0 0 auto;
 }
 .fav-add-icon {
   font-size: 22px;
@@ -1352,9 +1443,5 @@ body.has-sheet {
   }
   .presets {
     gap: 4px;
-  }
-  .fav-chips {
-    margin: 0 -12px;
-    padding: 0 12px 4px;
   }
 }
