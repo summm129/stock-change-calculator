@@ -30,8 +30,6 @@
   let storageAvailable = true;
   let market = "jp";
   let rateSign = 1;
-  let baselineEdited = false;
-  let baselineBeforeEdit = null;
   const states = { jp: emptyState(), us: emptyState() };
   const settings = { theme: "light", layout: "scroll", account: "tokutei" };
   let favorites = [];
@@ -392,6 +390,7 @@
     const canStepPrice = steppingPrice !== null && steppingPrice >= 0 && steppingPrice <= 1e9;
     for (const id of ["price-up", "price-fine-up"]) get(id).disabled = !canStepPrice || steppingPrice >= 1e9;
     for (const id of ["price-down", "price-fine-down"]) get(id).disabled = !canStepPrice || steppingPrice <= 0;
+    get("set-baseline-price").disabled = Boolean(errors.baseline);
     updateClearButtons();
 
     if (errors.baseline || errors.rate) {
@@ -470,7 +469,6 @@
   for (const field of inputs) {
     const notifyInput = holdInputs.includes(field) ? onHoldInput : breakevenInputs.includes(field) ? onBreakevenInput : onInput;
     field.addEventListener("focus", () => {
-      if (field === fields.baseline) baselineBeforeEdit = parseNumber(field.value);
       if (holdInputs.includes(field)) {
         get("hold-error").textContent = "";
         for (const other of holdInputs) other.setAttribute("aria-invalid", "false");
@@ -485,13 +483,11 @@
     });
     field.addEventListener("input", (event) => {
       if (!event.isComposing) {
-        if (field === fields.baseline) baselineEdited = true;
         ungroupForEditing(field);
         notifyInput();
       }
     });
     field.addEventListener("compositionend", () => {
-      if (field === fields.baseline) baselineEdited = true;
       ungroupForEditing(field);
       notifyInput();
     });
@@ -514,10 +510,6 @@
         const integerText = formatNumber(Math.abs(integerValue), 0);
         field.value = `${sign}${field === fields.rate ? integerText.replaceAll(",", "") : integerText}${fraction !== undefined ? `.${fraction}` : ""}`;
       }
-      if (field === fields.baseline) {
-        if (baselineEdited && value !== null && value > 0 && value <= 1e9 && value !== baselineBeforeEdit) fields.price.value = field.value;
-        baselineEdited = false;
-      }
       notifyInput();
     });
   }
@@ -528,10 +520,6 @@
       if (document.activeElement === field) event.preventDefault();
     });
     button.addEventListener("click", () => {
-      if (field === fields.baseline) {
-        baselineEdited = false;
-        baselineBeforeEdit = null;
-      }
       field.value = "";
       if (breakevenInputs.includes(field)) onBreakevenInput();
       else onInput();
@@ -595,6 +583,12 @@
     onInput();
   }
 
+  get("set-baseline-price").addEventListener("click", () => {
+    if (validation("baseline", parseNumber(fields.baseline.value))) return;
+    fields.price.value = fields.baseline.value;
+    onInput();
+  });
+
   get("price-up").addEventListener("click", () => stepPrice(1, 0));
   get("price-down").addEventListener("click", () => stepPrice(-1, 0));
   get("price-fine-up").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(1, MARKETS[market].fineDigits); });
@@ -635,8 +629,6 @@
   }
 
   function resetInputs() {
-    baselineEdited = false;
-    baselineBeforeEdit = null;
     rateSign = 1;
     hold.buy.value = "";
     hold.qty.value = "";
@@ -833,8 +825,6 @@
   }
 
   function refreshAfterRestore() {
-    baselineEdited = false;
-    baselineBeforeEdit = null;
     setCostPanel(breakeven.cost.value.trim() !== "");
     normalizeRateInput();
     updateHolding();

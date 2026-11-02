@@ -281,6 +281,26 @@ main,
 .card-heading .input-clear {
   margin-left: auto;
 }
+/* 02 の「前日終値をセット」。押したときだけ前日終値を株価に入れる */
+.set-baseline {
+  min-height: 32px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--sub);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.set-baseline:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.card-heading .set-baseline + .input-clear {
+  margin-left: 0;
+}
 .step {
   padding: 4px 8px;
   border-radius: 8px;
@@ -340,12 +360,12 @@ main,
   font-variant-numeric: tabular-nums;
 }
 .field-lg {
-  height: 68px;
-  padding: 0 20px;
-  border-radius: 18px;
+  height: 56px;
+  padding: 0 18px;
+  border-radius: 16px;
 }
 .field-lg input {
-  font-size: 34px;
+  font-size: 28px;
 }
 .field-md {
   height: 56px;
@@ -361,7 +381,7 @@ main,
   font-size: 16px;
 }
 .field-lg .input-unit {
-  font-size: 22px;
+  font-size: 19px;
 }
 /* 円は数字の後ろ、ドルは数字の前に置く */
 [data-market="jp"] .input-unit {
@@ -371,7 +391,7 @@ main,
   font-size: 18px;
 }
 [data-market="us"] .field-lg .input-unit {
-  font-size: 22px;
+  font-size: 19px;
 }
 .field-heading {
   display: flex;
@@ -629,19 +649,29 @@ details[open] > .disclosure .chevron,
 
 /* ---- 保有（買値・株数）と損益 ---- */
 .hold-block {
-  margin-top: 6px;
-  padding-top: 12px;
+  margin-top: 4px;
+  padding-top: 8px;
   border-top: 1px solid var(--line);
+}
+/* 前日終値のカードは一覧性のためにコンパクトにする。エラーがないときは下の空きを出さない */
+.baseline-card {
+  padding: 14px 16px 14px;
+}
+.baseline-card .card-heading {
+  min-height: 28px;
+  margin-bottom: 8px;
+}
+.baseline-card .field-heading {
+  min-height: 28px;
+  margin-bottom: 2px;
+}
+#baseline-error:empty,
+#hold-error:empty {
+  display: none;
 }
 .hold-title {
   font-size: 13px;
   font-weight: 500;
-}
-.hold-note {
-  margin-left: 6px;
-  color: var(--unit);
-  font-size: 11px;
-  font-weight: 400;
 }
 .hold-grid {
   display: grid;
@@ -650,15 +680,15 @@ details[open] > .disclosure .chevron,
 }
 .hold-grid .field-label {
   display: block;
-  margin: 0 0 6px 2px;
+  margin: 0 0 4px 2px;
 }
 .field-sm {
-  height: 48px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 14px;
 }
 .field-sm input {
-  font-size: 20px;
+  font-size: 18px;
 }
 .field-sm .input-unit,
 .field-sm .field-suffix {
@@ -1132,7 +1162,7 @@ details[open] > .disclosure .chevron,
 .fav-chips {
   display: flex;
   flex: 0 1 auto;
-  gap: 8px;
+  gap: 5px;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
