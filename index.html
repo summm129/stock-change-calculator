@@ -54,6 +54,15 @@
         <button class="primary-button install-trigger" type="button">追加する</button>
       </aside>
 
+      <section class="fav-bar" aria-labelledby="fav-bar-title">
+        <div class="fav-head">
+          <h2 id="fav-bar-title" class="fav-title">お気に入り</h2>
+          <button id="open-favorites" class="link-button" type="button">並べ替え・編集</button>
+        </div>
+        <div id="fav-chips" class="fav-chips" role="radiogroup" aria-labelledby="fav-bar-title"></div>
+        <p class="sr-only">銘柄を選ぶと、その銘柄で入れた値に切り替わります。もう一度押すと選択を外します。長押しで編集できます。</p>
+      </section>
+
       <main aria-label="株価と前日比の計算">
         <section class="card baseline-card" aria-labelledby="baseline-heading">
           <div class="card-heading">
@@ -321,6 +330,53 @@
       </section>
 
       <p class="settings-foot">設定と入力はこのブラウザに保存されます。</p>
+    </div>
+
+    <div id="favorites-view" hidden>
+      <header class="settings-header">
+        <button id="close-favorites" class="round-button" type="button" aria-label="戻る">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <h1 id="favorites-title" tabindex="-1">お気に入りの編集</h1>
+      </header>
+      <p class="settings-foot fav-hint">「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。</p>
+      <section class="card fav-list-card">
+        <ul id="fav-list" class="fav-list" aria-label="お気に入り銘柄の一覧"></ul>
+        <p id="fav-empty" class="fav-empty">まだお気に入りはありません。</p>
+      </section>
+      <button id="fav-list-add" class="dashed-button" type="button">＋ 銘柄を追加</button>
+    </div>
+  </div>
+
+  <div id="fav-sheet" class="sheet" hidden>
+    <div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="fav-sheet-title">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <h2 id="fav-sheet-title">お気に入りに追加</h2>
+        <button class="link-button" type="button" data-sheet-close>キャンセル</button>
+      </div>
+      <div>
+        <span id="fav-market-label" class="field-label">市場</span>
+        <div class="segmented sheet-segmented" role="group" aria-labelledby="fav-market-label">
+          <button type="button" data-fav-market="jp" aria-pressed="true">日本株</button>
+          <button type="button" data-fav-market="us" aria-pressed="false">米国株</button>
+        </div>
+      </div>
+      <div class="sheet-grid">
+        <div>
+          <label id="fav-code-label" class="field-label" for="fav-code">証券コード</label>
+          <input id="fav-code" class="sheet-input" type="text" autocomplete="off" spellcheck="false" maxlength="12" enterkeyhint="next">
+        </div>
+        <div>
+          <label class="field-label" for="fav-name">表示名</label>
+          <input id="fav-name" class="sheet-input" type="text" autocomplete="off" maxlength="20" enterkeyhint="done">
+        </div>
+      </div>
+      <p id="fav-error" class="field-error" aria-live="polite"></p>
+      <p class="sub-note">前日終値・前日比・株価などは、計算画面で入れた値がこの銘柄に自動で保存されます。</p>
+      <button id="fav-save" class="primary-button sheet-primary" type="button">保存する</button>
+      <button id="fav-delete" class="link-button sheet-delete" type="button" hidden>お気に入りから削除</button>
     </div>
   </div>
 </body>
