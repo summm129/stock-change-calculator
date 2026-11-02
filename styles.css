@@ -1213,15 +1213,6 @@ details[open] > .disclosure .chevron,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.fav-row-market {
-  flex-shrink: 0;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--field);
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-}
 .fav-row-open > svg {
   flex-shrink: 0;
   color: var(--unit);
@@ -1285,6 +1276,7 @@ details[open] > .disclosure .chevron,
 }
 .sheet-head h2 {
   margin: 0;
+  outline: none;
   font-size: 17px;
   font-weight: 700;
 }

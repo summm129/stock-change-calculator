@@ -798,6 +798,7 @@
     jp: { label: "証券コード", pattern: /^[0-9][0-9A-Z]{3}$/, example: "4桁（例: 7203、130A）" },
     us: { label: "ティッカー", pattern: /^[A-Z][A-Z0-9.\-]{0,9}$/, example: "英字（例: INTC、BRK.B）" }
   };
+  const MARKET_NAMES = { jp: "日本株", us: "米国株" };
   let sheetFavId = null;
   let sheetMarket = "jp";
 
@@ -895,10 +896,11 @@
     add.addEventListener("click", () => openSheet(null));
     chips.append(add);
 
-    // 並べ替え・編集の一覧（全市場）
+    // 並べ替え・編集の一覧（今の市場の銘柄だけ）
+    get("favorites-title").textContent = `お気に入りの編集（${MARKET_NAMES[market]}）`;
     const list = get("fav-list");
     list.replaceChildren();
-    for (const fav of favorites) {
+    for (const fav of inMarket) {
       const row = document.createElement("li");
       row.className = "fav-row";
       row.dataset.id = fav.id;
@@ -921,19 +923,16 @@
       const name = document.createElement("span");
       name.className = "fav-row-name";
       name.textContent = fav.name || fav.code;
-      const tag = document.createElement("span");
-      tag.className = "fav-row-market";
-      tag.textContent = fav.market.toUpperCase();
-      line.append(code, name, tag);
+      line.append(code, name);
       text.append(line);
       open.append(text);
       open.insertAdjacentHTML("beforeend", svg("M9 6l6 6-6 6"));
-      open.setAttribute("aria-label", `${fav.name || fav.code}（${fav.market.toUpperCase()}）を編集`);
+      open.setAttribute("aria-label", `${fav.name || fav.code}を編集`);
       open.addEventListener("click", () => openSheet(fav.id));
       row.append(handle, open);
       list.append(row);
     }
-    get("fav-empty").hidden = favorites.length > 0;
+    get("fav-empty").hidden = inMarket.length > 0;
   }
 
   // 短く押すと選択、長押しで編集。長押しのあとに続く click は選択にしない
@@ -967,12 +966,20 @@
   }
 
   // ---- 並べ替え: 「≡」をつかんで上下に動かす。キーボードは上下キー ----
+  function applyMarketOrder(order) {
+    // 今の市場の銘柄が並んでいた位置に、新しい順番で入れ直す
+    const queue = order.map((id) => favorites.find((f) => f.id === id));
+    favorites = favorites.map((f) => (f.market === market ? queue.shift() : f));
+  }
+
   function moveFavorite(id, delta) {
-    const index = favorites.findIndex((f) => f.id === id);
+    const order = favorites.filter((f) => f.market === market).map((f) => f.id);
+    const index = order.indexOf(id);
     const target = index + delta;
-    if (index < 0 || target < 0 || target >= favorites.length) return false;
-    const [item] = favorites.splice(index, 1);
-    favorites.splice(target, 0, item);
+    if (index < 0 || target < 0 || target >= order.length) return false;
+    order.splice(index, 1);
+    order.splice(target, 0, id);
+    applyMarketOrder(order);
     return true;
   }
 
@@ -1014,8 +1021,7 @@
         handle.removeEventListener("pointercancel", onEnd);
         row.classList.remove("is-dragging");
         row.style.transform = "";
-        const order = [...list.children].map((item) => item.dataset.id);
-        favorites.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        applyMarketOrder([...list.children].map((item) => item.dataset.id));
         save();
         renderFavorites();
       };
@@ -1041,7 +1047,8 @@
     sheet.hidden = !open;
     document.body.classList.toggle("has-sheet", open);
     if (open) {
-      get(sheetFavId ? "fav-name" : "fav-code").focus({ preventScroll: true });
+      // 入力欄にフォーカスするとキーボードが出てシートが押し上げられるので、見出しに置く
+      get("fav-sheet-title").focus({ preventScroll: true });
     } else if (sheetReturnFocus && document.contains(sheetReturnFocus)) {
       sheetReturnFocus.focus({ preventScroll: true });
     }
@@ -1152,13 +1159,14 @@
       synthetic = true;
       button.click();
       synthetic = false;
-      timer = setTimeout(() => tick(Math.max(40, delay * 0.85)), delay);
+      // だんだん速くするが、約90ミリ秒（1秒に11回ほど）で一定にする
+      timer = setTimeout(() => tick(Math.max(90, delay * 0.85)), delay);
     };
     button.addEventListener("pointerdown", (event) => {
       if (event.button !== 0 || button.disabled) return;
       repeated = false;
       stop();
-      timer = setTimeout(() => tick(150), 400);
+      timer = setTimeout(() => tick(160), 400);
     });
     for (const type of ["pointerup", "pointerleave", "pointercancel"]) button.addEventListener(type, stop);
     button.addEventListener("contextmenu", (event) => event.preventDefault());
