@@ -137,11 +137,30 @@
     rateSign = normalizeMagnitudeInput(fields.rate, rateSign);
   }
 
+  // 入力欄の×は値があるときだけ出す。米株は $ を数字の隣に置くため、入力欄の幅を中身に合わせる。
+  const sizer = document.createElement("span");
+  sizer.setAttribute("aria-hidden", "true");
+  sizer.style.cssText = "position: absolute; visibility: hidden; white-space: pre; left: -9999px; top: 0";
+  document.body.append(sizer);
+
+  function fitInputWidth(input) {
+    if (market !== "us" || !input.parentElement.querySelector(".input-unit")) {
+      input.style.removeProperty("width");
+      return;
+    }
+    const style = getComputedStyle(input);
+    for (const key of ["fontFamily", "fontSize", "fontWeight", "fontStyle", "fontVariantNumeric", "letterSpacing"]) sizer.style[key] = style[key];
+    sizer.textContent = input.value || "0";
+    // 余白はキャレットの分だけ
+    input.style.width = `${Math.ceil(sizer.getBoundingClientRect().width) + 3}px`;
+  }
+
   function updateClearButtons() {
     for (const button of document.querySelectorAll("[data-clear]")) {
-      button.disabled = get(button.dataset.clear).value.trim() === "";
+      const input = get(button.dataset.clear);
+      button.hidden = input.value.trim() === "";
+      fitInputWidth(input);
     }
-    get("hold-clear").disabled = hold.buy.value.trim() === "" && hold.qty.value.trim() === "";
   }
 
   function ungroupForEditing(field) {
@@ -522,9 +541,20 @@
     button.addEventListener("click", () => {
       field.value = "";
       if (breakevenInputs.includes(field)) onBreakevenInput();
+      else if (holdInputs.includes(field)) onHoldInput();
       else onInput();
     });
   }
+
+  // 米株では入力欄が数字の幅だけになるので、欄のどこを押しても入力できるようにする
+  for (const box of document.querySelectorAll(".field")) {
+    const input = box.querySelector("input");
+    if (!input) continue;
+    box.addEventListener("click", (event) => {
+      if (event.target === box || event.target.classList.contains("input-unit") || event.target.classList.contains("field-suffix")) input.focus();
+    });
+  }
+  if (document.fonts) document.fonts.ready.then(updateClearButtons);
 
   for (const button of document.querySelectorAll("[data-rate]")) {
     button.addEventListener("click", () => {
@@ -539,9 +569,9 @@
     onInput();
   });
 
-  for (const [id, direction, stepTenths] of [
-    // Keep the existing ids: single triangles use 1, double triangles use 0.1.
-    ["rate-up", 1, 10], ["rate-down", -1, 10],
+  for (const [id, direction, stepHundredths] of [
+    // Keep the existing ids: single triangles use 1, double triangles use 0.01.
+    ["rate-up", 1, 100], ["rate-down", -1, 100],
     ["rate-whole-up", 1, 1], ["rate-whole-down", -1, 1]
   ]) {
     get(id).addEventListener("click", () => {
@@ -550,12 +580,12 @@
       const limit = rateSign < 0 ? 100 : 10000;
       if (magnitude === null || magnitude < 0 || magnitude > limit) return;
       const [integer, fraction = ""] = text.split(".");
-      const decimalPlaces = Math.max(1, fraction.length);
-      // Only the tenths change; retain the remaining digits without floating-point noise.
-      const tenths = Number(integer || "0") * 10 + Number(fraction[0] || "0") + direction * stepTenths;
-      if (tenths < 0) fields.rate.value = `0.${"0".repeat(decimalPlaces)}`;
-      else if (tenths >= limit * 10) fields.rate.value = `${limit}.${"0".repeat(decimalPlaces)}`;
-      else fields.rate.value = `${Math.floor(tenths / 10)}.${tenths % 10}${fraction.slice(1)}`;
+      const decimalPlaces = Math.max(2, fraction.length);
+      // Only the hundredths change; retain the remaining digits without floating-point noise.
+      const hundredths = Number(integer || "0") * 100 + Number(fraction.slice(0, 2).padEnd(2, "0")) + direction * stepHundredths;
+      if (hundredths < 0) fields.rate.value = `0.${"0".repeat(decimalPlaces)}`;
+      else if (hundredths >= limit * 100) fields.rate.value = `${limit}.${"0".repeat(decimalPlaces)}`;
+      else fields.rate.value = `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, "0")}${fraction.slice(2)}`;
       onInput();
     });
   }
@@ -605,15 +635,6 @@
     updateBreakeven();
     save();
   }
-
-  get("hold-clear").addEventListener("pointerdown", (event) => {
-    if (holdInputs.includes(document.activeElement)) event.preventDefault();
-  });
-  get("hold-clear").addEventListener("click", () => {
-    hold.buy.value = "";
-    hold.qty.value = "";
-    onHoldInput();
-  });
 
   for (const button of document.querySelectorAll("[data-market-select]")) {
     button.addEventListener("click", () => {

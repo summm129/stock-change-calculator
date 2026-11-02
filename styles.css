@@ -7,6 +7,8 @@
   --sub: #4a4844;
   --muted: #6b6964;
   --unit: #8a8782;
+  --clear-bg: #e6e3de;
+  --clear-fg: #ffffff;
   --line: #eceae6;
   --track: #e7e5e1;
   --pill-line: #e6e4e0;
@@ -49,6 +51,8 @@
   --sub: #d9d6cf;
   --muted: #a3a19b;
   --unit: #a3a19b;
+  --clear-bg: #4a4946;
+  --clear-fg: #2a2a2a;
   --line: #2e2e2e;
   --track: #222222;
   --pill-line: #333333;
@@ -278,9 +282,6 @@ main,
   font-weight: 500;
   color: var(--muted);
 }
-.card-heading .input-clear {
-  margin-left: auto;
-}
 /* 02 の「前日終値をセット」。押したときだけ前日終値を株価に入れる */
 .set-baseline {
   min-height: 32px;
@@ -298,9 +299,6 @@ main,
   opacity: 0.4;
   cursor: default;
 }
-.card-heading .set-baseline + .input-clear {
-  margin-left: 0;
-}
 .step {
   padding: 4px 8px;
   border-radius: 8px;
@@ -309,19 +307,40 @@ main,
   font-size: 11px;
   font-weight: 700;
 }
-.input-clear {
-  min-width: 44px;
-  min-height: 32px;
-  padding: 4px 0 4px 8px;
+/* 入力欄の左端の×。値があるときだけ出る。押せる範囲は32px、見た目は小さく薄い丸 */
+.field-clear {
+  display: flex;
+  flex-shrink: 0;
+  order: -1;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -10px;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: right;
 }
-.input-clear:disabled {
-  visibility: hidden;
-  cursor: default;
+.field-clear[hidden] {
+  display: none;
+}
+.field-clear span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--clear-bg);
+  color: var(--clear-fg);
+}
+.field-clear svg {
+  width: 8px;
+  height: 8px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.4;
+  stroke-linecap: round;
 }
 
 /* ---- 入力欄 ---- */
@@ -388,7 +407,15 @@ main,
   order: 2;
 }
 [data-market="us"] .input-unit {
+  margin-left: auto;
   font-size: 18px;
+}
+/* ドルは数字のすぐ左。入力欄の幅は app.js が中身に合わせる */
+[data-market="us"] .field:has(.input-unit) {
+  gap: 4px;
+}
+[data-market="us"] .field:has(.input-unit) input {
+  flex: 0 1 auto;
 }
 [data-market="us"] .field-lg .input-unit {
   font-size: 19px;

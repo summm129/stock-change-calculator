@@ -70,10 +70,10 @@
         <section class="card baseline-card" aria-labelledby="baseline-heading">
           <div class="card-heading">
             <h2 id="baseline-heading" class="field-title"><label for="baseline">前日終値</label></h2>
-            <button class="input-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" disabled>クリア</button>
             <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
           </div>
           <div class="field field-lg">
+            <button class="field-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
             <span class="input-unit" aria-hidden="true">円</span>
             <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
           </div>
@@ -82,12 +82,12 @@
           <div class="hold-block">
             <div class="field-heading">
               <span id="hold-title" class="field-label hold-title">保有</span>
-              <button id="hold-clear" class="input-clear" type="button" aria-label="保有の買値と株数をクリア" disabled>クリア</button>
             </div>
             <div class="hold-grid" role="group" aria-labelledby="hold-title">
               <div>
                 <label class="field-label" for="hold-buy">買値<span class="sr-only unit-name">（円）</span></label>
                 <div class="field field-sm">
+                  <button class="field-clear" type="button" data-clear="hold-buy" aria-label="買値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
                   <span class="input-unit" aria-hidden="true">円</span>
                   <input id="hold-buy" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="24">
                 </div>
@@ -95,6 +95,7 @@
               <div>
                 <label class="field-label" for="hold-qty">株数</label>
                 <div class="field field-sm">
+                  <button class="field-clear" type="button" data-clear="hold-qty" aria-label="株数をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
                   <input id="hold-qty" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="16">
                   <span class="field-suffix" aria-hidden="true">株</span>
                 </div>
@@ -114,23 +115,23 @@
           <div class="card-heading">
             <span class="step">01</span>
             <h2 id="percent-heading">% → 株価</h2>
-            <button class="input-clear" type="button" data-clear="rate" aria-label="前日比の率をクリア" disabled>クリア</button>
           </div>
           <label class="sr-only" for="rate">前日比（％）</label>
           <div class="entry-row">
             <button id="toggle-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
             <div class="field">
+              <button class="field-clear" type="button" data-clear="rate" aria-label="前日比の率をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
               <input id="rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
               <span class="field-suffix" aria-hidden="true">%</span>
             </div>
             <div class="stepper-grid">
               <button id="rate-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-              <button id="rate-whole-up" type="button" aria-label="0.1増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+              <button id="rate-whole-up" type="button" aria-label="0.01増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
               <button id="rate-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-              <button id="rate-whole-down" type="button" aria-label="0.1減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+              <button id="rate-whole-down" type="button" aria-label="0.01減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
             </div>
           </div>
-          <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.1ずつ数字を増減できます。</p>
+          <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.01ずつ数字を増減できます。</p>
           <div class="presets" role="group" aria-label="よく使う騰落率">
             <button type="button" data-rate="1" aria-pressed="false">1%</button>
             <button type="button" data-rate="2" aria-pressed="false">2%</button>
@@ -161,11 +162,11 @@
             <span class="step">02</span>
             <h2 id="price-heading">株価 → %</h2>
             <button id="set-baseline-price" class="set-baseline" type="button" aria-label="02の株価に前日終値を入れる" disabled>前日終値をセット</button>
-            <button class="input-clear" type="button" data-clear="price" aria-label="株価をクリア" disabled>クリア</button>
           </div>
           <label class="sr-only" for="price">株価<span class="unit-name">（円）</span></label>
           <div class="entry-row">
             <div class="field">
+              <button class="field-clear" type="button" data-clear="price" aria-label="株価をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
               <span class="input-unit" aria-hidden="true">円</span>
               <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
             </div>
@@ -218,9 +219,9 @@
           <div id="cost-panel" class="sub-panel" hidden>
             <div class="field-heading">
               <label class="field-label" for="cost-basis">取得単価（アプリ表示）<span class="sr-only">（ドル）</span></label>
-              <button class="input-clear" type="button" data-clear="cost-basis" aria-label="取得単価をクリア" disabled>クリア</button>
             </div>
             <div class="field">
+              <button class="field-clear" type="button" data-clear="cost-basis" aria-label="取得単価をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
               <span class="input-unit" aria-hidden="true">$</span>
               <input id="cost-basis" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="breakeven-help breakeven-error" maxlength="24">
             </div>
