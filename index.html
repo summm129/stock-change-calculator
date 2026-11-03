@@ -310,6 +310,20 @@
         </div>
       </section>
 
+      <section class="card" aria-labelledby="keypad-heading">
+        <h2 id="keypad-heading" class="settings-title">テンキー</h2>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">数字の入力</div>
+            <div class="settings-row-desc">「.」が出ないときに切り替え</div>
+          </div>
+          <div class="segmented segmented-sm" role="group" aria-label="数字の入力">
+            <button type="button" data-setting="keypad" data-value="standard" aria-pressed="true">デフォルト</button>
+            <button type="button" data-setting="keypad" data-value="simeji" aria-pressed="false">Simeji</button>
+          </div>
+        </div>
+      </section>
+
       <section class="card settings-list">
         <button id="install-app" class="settings-link install-trigger" type="button" hidden>
           <span>アプリとして追加</span>

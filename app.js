@@ -7,7 +7,7 @@
   const SETTINGS_KEY = "stock-change-calculator:settings";
   // お気に入り銘柄。各銘柄が自分の入力値（前日終値など）を持つ。active は市場ごとに選んでいる銘柄
   const FAVORITES_KEY = "stock-change-calculator:favorites";
-  const SETTING_VALUES = { theme: ["light", "dark"], layout: ["scroll", "tabs"], account: ["tokutei", "nisa"] };
+  const SETTING_VALUES = { theme: ["light", "dark"], layout: ["scroll", "tabs"], account: ["tokutei", "nisa"], keypad: ["standard", "simeji"] };
   const THEME_COLORS = { light: "#f4f3f1", dark: "#141414" };
   const LEGACY_STORAGE_KEY = "stock-change-calculator:v1";
   // 市場ごとの表示設定。JPは円を後置・6桁、USはドル記号を前置・4桁。率はどちらも2桁。
@@ -27,19 +27,11 @@
   const breakeven = { cost: get("cost-basis") };
   const breakevenInputs = Object.values(breakeven);
   const inputs = [...Object.values(fields), ...holdInputs, ...breakevenInputs];
-  // Android の一部のキーボードは inputmode="decimal" で「.」のないテンキーを出す。
-  // 電話番号の欄にすると「.」つきのテンキーになるので Android だけ切り替える（iPhone の電話用テンキーには「.」がない）。
-  if (/Android/i.test(navigator.userAgent)) {
-    for (const input of inputs) {
-      input.removeAttribute("inputmode");
-      input.type = "tel";
-    }
-  }
   let storageAvailable = true;
   let market = "jp";
   let rateSign = 1;
   const states = { jp: emptyState(), us: emptyState() };
-  const settings = { theme: "light", layout: "scroll", account: "tokutei" };
+  const settings = { theme: "light", layout: "scroll", account: "tokutei", keypad: "standard" };
   let favorites = [];
   const activeFav = { jp: null, us: null };
   let account = "tokutei";
@@ -715,7 +707,7 @@
     });
   }
 
-  // ---- 設定（テーマ・画面の作り・最初に表示する口座） ----
+  // ---- 設定（テーマ・画面の作り・最初に表示する口座・テンキー） ----
   function loadSettings() {
     try {
       const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
@@ -742,6 +734,17 @@
     root.dataset.theme = settings.theme;
     root.dataset.layout = settings.layout;
     document.querySelector('meta[name="theme-color"]').setAttribute("content", THEME_COLORS[settings.theme]);
+    // Simeji 用の対応: Simeji は inputmode="decimal" だと「.」のないテンキーを出し、電話番号の欄（type="tel"）だと「.」つきを出す。
+    // Galaxy のキーボードなどは逆なので、既定は decimal のままにして設定でだけ切り替える。
+    for (const input of inputs) {
+      if (settings.keypad === "simeji") {
+        input.removeAttribute("inputmode");
+        input.type = "tel";
+      } else {
+        input.type = "text";
+        input.setAttribute("inputmode", "decimal");
+      }
+    }
     for (const control of document.querySelectorAll("[data-setting]")) {
       const on = settings[control.dataset.setting] === control.dataset.value;
       control.setAttribute(control.getAttribute("role") === "radio" ? "aria-checked" : "aria-pressed", String(on));
