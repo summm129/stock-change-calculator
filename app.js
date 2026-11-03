@@ -228,7 +228,7 @@
       get(`${kind}-pnl-label`).textContent = `損益（${formatNumber(qty, 4)}株）`;
       get(`${kind}-pnl-gain`).textContent = signedMoney(gain);
     }
-    get(`${kind}-pnl-note`).textContent = gain !== null && market === "us" ? "手数料・税金を引く前" : "";
+    get(`${kind}-pnl-note`).textContent = gain !== null && market === "us" ? "手数料を引く前" : "";
   }
 
   // --- 損益分岐点（米国株・楽天証券） ---------------------------------------
