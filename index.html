@@ -82,6 +82,10 @@
           <div class="hold-block">
             <div class="field-heading">
               <span id="hold-title" class="field-label hold-title">保有</span>
+              <div class="segmented segmented-sm account-switch" role="group" aria-label="保有している口座">
+                <button type="button" data-account="tokutei" aria-pressed="true">特定</button>
+                <button type="button" data-account="nisa" aria-pressed="false">NISA</button>
+              </div>
             </div>
             <div class="hold-grid" role="group" aria-labelledby="hold-title">
               <div>
@@ -202,16 +206,12 @@
           <div class="card-heading">
             <span class="step">03</span>
             <h2 id="breakeven-heading">損益分岐点</h2>
-            <div class="segmented segmented-sm account-switch" role="group" aria-label="口座">
-              <button type="button" data-account="tokutei" aria-pressed="true">特定</button>
-              <button type="button" data-account="nisa" aria-pressed="false">NISA</button>
-            </div>
+            <span id="be-account" class="account-tag">特定口座</span>
           </div>
           <div class="be-buy-line">
-            <span class="be-buy-label">買付約定価格<span class="be-buy-sub">上の「保有」の買値を使用</span></span>
+            <span class="be-buy-label">買付約定価格<span id="be-buy-sub" class="be-buy-sub">「保有」欄に買値を入力すると計算します。</span></span>
             <strong id="be-buy-display">—</strong>
           </div>
-          <p id="be-need-buy" class="sub-note">上の「保有」に買値を入れると計算します。</p>
           <button id="cost-toggle" class="disclosure" type="button" aria-expanded="false" aria-controls="cost-panel">
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
             <span>取得単価を訂正する</span>
@@ -297,13 +297,13 @@
       </section>
 
       <section class="card" aria-labelledby="account-heading">
-        <h2 id="account-heading" class="settings-title">損益分岐点</h2>
+        <h2 id="account-heading" class="settings-title">米国株の口座</h2>
         <div class="settings-row">
           <div>
-            <div class="settings-row-title">最初に表示する口座</div>
-            <div class="settings-row-desc">画面を開いたときの選択</div>
+            <div class="settings-row-title">最初の口座</div>
+            <div class="settings-row-desc">新しく入力する銘柄の初期値</div>
           </div>
-          <div class="segmented segmented-sm" role="group" aria-label="最初に表示する口座">
+          <div class="segmented segmented-sm" role="group" aria-label="最初の口座">
             <button type="button" data-setting="account" data-value="tokutei" aria-pressed="true">特定</button>
             <button type="button" data-setting="account" data-value="nisa" aria-pressed="false">NISA</button>
           </div>

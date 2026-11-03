@@ -38,7 +38,8 @@
   let activeTab = "percent";
 
   function emptyState() {
-    return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "" };
+    // account は米国株の保有の口座。空なら設定の「最初の口座」を使う
+    return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "", account: "" };
   }
 
   function snapshot() {
@@ -49,7 +50,8 @@
       rateSign,
       holdBuy: hold.buy.value,
       holdQty: hold.qty.value,
-      costBasis: breakeven.cost.value
+      costBasis: breakeven.cost.value,
+      account
     };
   }
 
@@ -61,6 +63,7 @@
     hold.buy.value = state.holdBuy;
     hold.qty.value = state.holdQty;
     breakeven.cost.value = state.costBasis;
+    account = state.account || settings.account;
   }
 
   function isObject(value) {
@@ -80,6 +83,7 @@
     else if (typeof saved.buyPrice === "string" && saved.buyPrice.length <= 32) state.holdBuy = saved.buyPrice;
     if (typeof saved.holdQty === "string" && saved.holdQty.length <= 24) state.holdQty = saved.holdQty;
     if (typeof saved.costBasis === "string" && saved.costBasis.length <= 32) state.costBasis = saved.costBasis;
+    if (SETTING_VALUES.account.includes(saved.account)) state.account = saved.account;
     return state;
   }
 
@@ -217,8 +221,20 @@
       return;
     }
     box.hidden = false;
-    const rate = (price / buy - 1) * 100;
-    const gain = qty === null ? null : (price - buy) * qty;
+    let rate = (price / buy - 1) * 100;
+    let gain = qty === null ? null : (price - buy) * qty;
+    let fees = null;
+    if (market === "us") {
+      // 株数がなければ1株として、注文全体の金額で手数料を出す（手数料の上限が効くため）
+      const shares = qty ?? 1;
+      const buyCents = toCents(buy * shares);
+      const sellCents = toCents(price * shares);
+      const buyFee = account === "tokutei" ? buyFeeCents(buy, shares, buyCents) : 0;
+      fees = buyFee + (account === "tokutei" ? sellCommissionCents(sellCents) : 0) + secFeeCents(sellCents);
+      const net = sellCents - buyCents - fees;
+      rate = (net / (buyCents + buyFee)) * 100;
+      if (gain !== null) gain = net / 100;
+    }
     const direction = gain !== null ? gain : rate;
     box.classList.toggle("is-up", direction > 0 && Math.abs(direction) > 1e-9);
     box.classList.toggle("is-down", direction < 0 && Math.abs(direction) > 1e-9);
@@ -226,9 +242,18 @@
     get(`${kind}-pnl-gain-row`).hidden = gain === null;
     if (gain !== null) {
       get(`${kind}-pnl-label`).textContent = `損益（${formatNumber(qty, 4)}株）`;
-      get(`${kind}-pnl-gain`).textContent = signedMoney(gain);
+      // 米国株は手数料を引いた額なのでセントまで出す
+      get(`${kind}-pnl-gain`).textContent = fees === null ? signedMoney(gain) : `${gain < 0 ? "−" : gain > 0 ? "+" : ""}${centsText(Math.abs(toCents(gain)))}`;
     }
-    get(`${kind}-pnl-note`).textContent = gain !== null && market === "us" ? "手数料を引く前" : "";
+    const note = get(`${kind}-pnl-note`);
+    if (fees === null) note.replaceChildren();
+    else {
+      const label = document.createElement("span");
+      label.textContent = `うち手数料（${account === "tokutei" ? "特定" : "NISA"}${qty === null ? "・1株" : ""}）`;
+      const amount = document.createElement("span");
+      amount.textContent = `−${centsText(fees)}`;
+      note.replaceChildren(label, amount);
+    }
   }
 
   // --- 損益分岐点（米国株・楽天証券） ---------------------------------------
@@ -251,6 +276,13 @@
   // SEC Fee: 売却代金×料率を1セント未満切り上げ、最低1セント。
   function secFeeCents(amountCents) {
     return Math.max(1, Math.ceil(amountCents * RAKUTEN_US.secFeeRate - 1e-9));
+  }
+
+  // 特定口座の買付手数料（注文全体）。取得単価が正しく入っていれば、約定価格との差を使う
+  function buyFeeCents(buy, shares, buyCents) {
+    const cost = breakeven.cost.value.trim() === "" ? null : parseNumber(breakeven.cost.value);
+    if (cost !== null && cost >= buy && cost <= 1e9) return toCents((cost - buy) * shares);
+    return commissionCents(buyCents);
   }
 
   function sellProfitCents(sellCents, costCents, withCommission) {
@@ -281,6 +313,7 @@
     for (const button of document.querySelectorAll("[data-account]")) {
       button.setAttribute("aria-pressed", String(button.dataset.account === account));
     }
+    get("be-account").textContent = account === "tokutei" ? "特定口座" : "NISA口座";
   }
 
   function updateBreakeven() {
@@ -290,7 +323,7 @@
     const hasCost = breakeven.cost.value.trim() !== "";
     const cost = parseNumber(breakeven.cost.value);
     get("be-buy-display").textContent = hasBuy ? centsText(toCents(buy)) : "—";
-    get("be-need-buy").hidden = hasBuy;
+    get("be-buy-sub").textContent = hasBuy ? "「保有」欄に入力された買値を使用" : "「保有」欄に買値を入力すると計算します。";
     let error = "";
     if (hasCost && cost === null) error = "取得単価は数字で入力してください。";
     else if (hasCost && cost > 1e9) error = "取得単価は10億ドル以下で入力してください。";
@@ -633,6 +666,8 @@
 
   function onBreakevenInput() {
     updateBreakeven();
+    // 取得単価は 01/02 の手数料引後の損益にも使う
+    update();
     save();
   }
 
@@ -651,6 +686,7 @@
 
   function resetInputs() {
     rateSign = 1;
+    account = settings.account;
     hold.buy.value = "";
     hold.qty.value = "";
     updateHolding();
@@ -667,11 +703,13 @@
     get("storage-status").textContent = storageAvailable ? "" : get("storage-status").textContent;
   });
 
-  // ---- 03 の口座スイッチと取得単価の訂正欄 ----
+  // ---- 保有の口座スイッチ（01〜03 共通、銘柄ごとに保存）と取得単価の訂正欄 ----
   for (const button of document.querySelectorAll("[data-account]")) {
     button.addEventListener("click", () => {
       account = button.dataset.account;
       updateBreakeven();
+      update();
+      save();
     });
   }
   get("cost-toggle").addEventListener("click", () => {
@@ -755,10 +793,6 @@
     control.addEventListener("click", () => {
       const key = control.dataset.setting;
       settings[key] = control.dataset.value;
-      if (key === "account") {
-        account = settings.account;
-        updateBreakeven();
-      }
       applySettings();
       saveSettings();
     });
@@ -1201,7 +1235,6 @@
     attachHoldRepeat(get(id));
   }
   loadSettings();
-  account = settings.account;
   applySettings();
   if (history.state && (history.state.view || history.state.sheet)) history.replaceState(null, "");
 

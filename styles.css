@@ -756,9 +756,13 @@ details[open] > .disclosure .chevron,
   font-weight: 700;
 }
 .pnl-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 .pnl-note:empty {
   display: none;
@@ -787,14 +791,30 @@ details[open] > .disclosure .chevron,
   font-weight: 600;
   white-space: nowrap;
 }
-#be-need-buy {
-  margin-top: 8px;
+
+/* ---- 保有の口座（米国株のみ）と 03 の口座表示 ---- */
+[data-market="jp"] .hold-block .account-switch {
+  display: none;
+}
+.hold-block .account-switch {
+  padding: 2px;
+}
+.hold-block .account-switch button {
+  height: 26px;
+  padding: 0 11px;
+  font-size: 11px;
+}
+.account-tag {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 /* ---- 03 損益分岐点 ---- */
-.account-switch {
-  margin-left: auto;
-}
 .profit-tile {
   margin-top: 4px;
   padding: 18px 20px;
