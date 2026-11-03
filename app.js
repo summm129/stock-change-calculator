@@ -27,6 +27,14 @@
   const breakeven = { cost: get("cost-basis") };
   const breakevenInputs = Object.values(breakeven);
   const inputs = [...Object.values(fields), ...holdInputs, ...breakevenInputs];
+  // Android の一部のキーボードは inputmode="decimal" で「.」のないテンキーを出す。
+  // 電話番号の欄にすると「.」つきのテンキーになるので Android だけ切り替える（iPhone の電話用テンキーには「.」がない）。
+  if (/Android/i.test(navigator.userAgent)) {
+    for (const input of inputs) {
+      input.removeAttribute("inputmode");
+      input.type = "tel";
+    }
+  }
   let storageAvailable = true;
   let market = "jp";
   let rateSign = 1;
