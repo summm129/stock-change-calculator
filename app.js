@@ -1308,7 +1308,7 @@
   const CLOSE_TIMES = { jp: { zone: "Asia/Tokyo", time: "15:40" }, us: { zone: "America/New_York", time: "16:10" } };
   // 株探を開いてからこの時間内に戻ったときだけクリップボードを読む（関係ないときに許可を聞かない）
   const CLIP_WAIT_MS = 10 * 60 * 1000;
-  const quotes = { gas: "", lastClip: "", kabutanAt: 0 };
+  const quotes = { gas: "", lastClip: "", kabutanAt: 0, kabutanCode: "" };
   const quoteStatus = {}; // お気に入りの id → "loading" | "error" | "manual"
 
   function loadQuotes() {
@@ -1318,6 +1318,7 @@
       if (typeof saved.gas === "string" && GAS_PATTERN.test(saved.gas)) quotes.gas = saved.gas;
       if (typeof saved.lastClip === "string" && saved.lastClip.length <= 60) quotes.lastClip = saved.lastClip;
       if (Number.isFinite(saved.kabutanAt)) quotes.kabutanAt = saved.kabutanAt;
+      if (typeof saved.kabutanCode === "string" && FAV_CODE_RULES.jp.pattern.test(saved.kabutanCode)) quotes.kabutanCode = saved.kabutanCode;
     } catch {
       // 読めなければ未設定のまま
     }
@@ -1436,16 +1437,19 @@
     if (fav && fav.market === "us") fetchUsClose(fav);
   }
 
-  async function importClipboard() {
+  async function importClipboard(attempt = 0) {
     if (Date.now() - quotes.kabutanAt > CLIP_WAIT_MS || !navigator.clipboard || !navigator.clipboard.readText) return;
     let text = "";
     try {
       text = (await navigator.clipboard.readText()).trim();
     } catch {
+      // 戻るボタンで戻った直後は、まだ画面にフォーカスがなくて読めないことがあるので、少しずつ待って読み直す
+      if (attempt < 6) setTimeout(() => importClipboard(attempt + 1), 400);
       return;
     }
     const match = CLIP_PATTERN.exec(text);
-    if (!match || text === quotes.lastClip) return;
+    // 「株探で見る」を押した銘柄のコピーだけ入れる（前に別の銘柄でコピーした値を入れない）
+    if (!match || match[1] !== quotes.kabutanCode || text === quotes.lastClip) return;
     // 同じコードのお気に入りが複数あるときは、選んでいる銘柄を優先する
     const sameCode = favorites.filter((f) => f.market === "jp" && f.code === match[1]);
     const fav = sameCode.find((f) => f.id === activeFav.jp) || sameCode[0];
@@ -1492,7 +1496,10 @@
   });
   get("close-refresh").addEventListener("click", () => fetchUsClose(activeFavorite(), true));
   get("kabutan-link").addEventListener("click", () => {
+    // 自分で株探を開いたなら、同じ銘柄・同じ日の値でももう一度入れる
     quotes.kabutanAt = Date.now();
+    quotes.kabutanCode = activeFavorite() ? activeFavorite().code : "";
+    quotes.lastClip = "";
     saveQuotes();
   });
   get("quotes-us-clear").addEventListener("click", () => {

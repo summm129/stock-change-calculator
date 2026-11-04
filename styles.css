@@ -1586,6 +1586,10 @@ details[open] > .disclosure .chevron,
   font-size: 17px;
   font-weight: 600;
 }
+/* 日本語入力の変換中は中身を大文字にできないので、見た目だけ先に大文字にする（確定したら中身も大文字になる） */
+#fav-code {
+  text-transform: uppercase;
+}
 .sheet-input:focus {
   border-color: var(--focus);
 }
