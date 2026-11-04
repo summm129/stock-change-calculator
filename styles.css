@@ -1548,6 +1548,32 @@ details[open] > .disclosure .chevron,
   display: block;
   margin-bottom: 6px;
 }
+/* 証券コードの見出しの右の「ABC / 123」。日本株だけ、数字と英字のキーボードを切り替える */
+.sheet-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.sheet-code-head .field-label {
+  margin-bottom: 0;
+}
+.sheet-code-head + .sheet-input {
+  margin-top: 6px;
+}
+.code-mode {
+  height: 22px;
+  /* 見出しの行の高さは表示名の見出しと同じにして、入力欄の上端をそろえる */
+  margin-block: -4px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--sub);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
 .sheet-input {
   width: 100%;
   height: 48px;

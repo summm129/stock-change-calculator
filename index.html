@@ -398,8 +398,11 @@
       </div>
       <div class="sheet-grid">
         <div>
-          <label id="fav-code-label" class="field-label" for="fav-code">証券コード</label>
-          <input id="fav-code" class="sheet-input" type="text" autocomplete="off" spellcheck="false" maxlength="12" enterkeyhint="next">
+          <div class="sheet-code-head">
+            <label id="fav-code-label" class="field-label" for="fav-code">証券コード</label>
+            <button id="fav-code-mode" class="code-mode" type="button" hidden>ABC</button>
+          </div>
+          <input id="fav-code" class="sheet-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" enterkeyhint="next">
         </div>
         <div>
           <label class="field-label" for="fav-name">表示名</label>

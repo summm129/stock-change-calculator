@@ -859,6 +859,7 @@
   const MARKET_NAMES = { jp: "日本株", us: "米国株" };
   let sheetFavId = null;
   let sheetMarket = "jp";
+  let codeLetters = false;
 
   function loadFavorites() {
     try {
@@ -1101,8 +1102,14 @@
       button.setAttribute("aria-pressed", String(button.dataset.favMarket === sheetMarket));
     }
     get("fav-code-label").textContent = FAV_CODE_RULES[sheetMarket].label;
-    get("fav-code").inputMode = sheetMarket === "jp" ? "text" : "text";
-    get("fav-code").placeholder = sheetMarket === "jp" ? "7203" : "INTC";
+    // 日本株のコードはほとんど数字なので数字のキーボードから。「ABC」で英字（130A などの A）に切り替える
+    const jp = sheetMarket === "jp";
+    get("fav-code").inputMode = jp && !codeLetters ? "numeric" : "text";
+    get("fav-code").placeholder = jp ? "7203" : "INTC";
+    const mode = get("fav-code-mode");
+    mode.hidden = !jp;
+    mode.textContent = codeLetters ? "123" : "ABC";
+    mode.setAttribute("aria-label", codeLetters ? "数字のキーボードにする" : "英字のキーボードにする");
   }
 
   function showSheet(open) {
@@ -1129,6 +1136,7 @@
     get("fav-error").textContent = "";
     get("fav-code").setAttribute("aria-invalid", "false");
     get("fav-delete").hidden = !fav;
+    codeLetters = false;
     applySheetMarket();
     history.pushState({ view: currentView === "main" ? undefined : currentView, sheet: true }, "");
     showSheet(true);
@@ -1152,14 +1160,42 @@
   get("fav-name").addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) get("fav-save").click();
   });
+  // コードは英字を大文字にそろえる（全角も半角に）。打っている途中のカーソル位置は保つ
+  get("fav-code").addEventListener("input", (event) => {
+    if (event.isComposing) return;
+    const input = get("fav-code");
+    const fixed = input.value.normalize("NFKC").toUpperCase();
+    if (fixed === input.value) return;
+    const caret = input.selectionStart;
+    input.value = fixed;
+    input.setSelectionRange(caret, caret);
+  });
+  get("fav-code").addEventListener("compositionend", () => get("fav-code").dispatchEvent(new Event("input")));
+  get("fav-code-mode").addEventListener("pointerdown", (event) => event.preventDefault());
+  get("fav-code-mode").addEventListener("click", () => {
+    codeLetters = !codeLetters;
+    applySheetMarket();
+    // キーボードの種類は、入力欄に入り直したときに切り替わる
+    const input = get("fav-code");
+    input.blur();
+    input.focus();
+  });
   get("fav-code").addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) get("fav-name").focus();
   });
 
   get("fav-save").addEventListener("click", () => {
     const code = get("fav-code").value.normalize("NFKC").trim().toUpperCase();
-    const name = get("fav-name").value.normalize("NFKC").trim();
+    let name = get("fav-name").value.normalize("NFKC").trim();
     const rule = FAV_CODE_RULES[sheetMarket];
+    // 同じコードがもうあって表示名が空なら、「SOXL2」「SOXL3」のように空いている番号を付ける
+    const sameCode = favorites.filter((f) => f.market === sheetMarket && f.code === code && f.id !== sheetFavId);
+    if (!name && sameCode.length) {
+      const taken = new Set(sameCode.map((f) => f.name || f.code));
+      let number = 2;
+      while (taken.has(`${code}${number}`)) number += 1;
+      name = `${code}${number}`;
+    }
     let error = "";
     if (!code) error = `${rule.label}を入れてください。`;
     else if (!rule.pattern.test(code)) error = `${rule.label}は${rule.example}で入れてください。`;
