@@ -1102,9 +1102,10 @@
       button.setAttribute("aria-pressed", String(button.dataset.favMarket === sheetMarket));
     }
     get("fav-code-label").textContent = FAV_CODE_RULES[sheetMarket].label;
-    // 日本株のコードはほとんど数字なので数字のキーボードから。「ABC」で英字（130A などの A）に切り替える
+    // 日本株のコードはほとんど数字なので数字のキーボードから。「ABC」で英字（130A などの A）に切り替える。
+    // 英字は email にする。text だと日本語入力で開き、毎回「あA」で英字に切り替えることになる（Galaxy の標準キーボードで確認。Simeji は変わらない）
     const jp = sheetMarket === "jp";
-    get("fav-code").inputMode = jp && !codeLetters ? "numeric" : "text";
+    get("fav-code").inputMode = jp && !codeLetters ? "numeric" : "email";
     get("fav-code").placeholder = jp ? "7203" : "INTC";
     const mode = get("fav-code-mode");
     mode.hidden = !jp;
@@ -1350,10 +1351,10 @@
 
   function kabutanUrl(code) {
     const web = `https://s.kabutan.jp/stocks/${code}/`;
-    // Android ではいつものブラウザに関係なく Chrome で開く（ブックマーク「TS終値」が動くのは Chrome だけ）。
-    // googlechrome://navigate は Chrome が開くだけでページを開かなかった（2026-11-04 Galaxy で確認）
+    // Android では Firefox で開く。Firefox の Violentmonkey のスクリプトが、開いた株探のページから終値を読んでコピーする。
+    // Samsung Internet は指定しても「アプリで開く」（Samsung と Firefox の2択）を出す。消す方法は見つからなかった（2026-11-04 Galaxy で確認）
     return /Android/i.test(navigator.userAgent)
-      ? `intent://s.kabutan.jp/stocks/${code}/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`
+      ? `intent://s.kabutan.jp/stocks/${code}/#Intent;scheme=https;package=org.mozilla.firefox;S.browser_fallback_url=${encodeURIComponent(web)};end`
       : web;
   }
 
