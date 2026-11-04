@@ -71,8 +71,11 @@
           <div class="card-heading">
             <h2 id="baseline-heading" class="field-title"><label for="baseline">前日終値</label></h2>
             <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
-            <span id="close-tag" class="close-tag" hidden></span>
-            <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で見る</a>
+            <div class="close-actions">
+              <span id="close-tag" class="close-tag" hidden></span>
+              <button id="close-refresh" class="close-refresh" type="button" aria-label="終値を取り直す" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
+              <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で見る</a>
+            </div>
           </div>
           <div class="field field-lg">
             <button class="field-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>

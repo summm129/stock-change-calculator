@@ -1182,6 +1182,8 @@
         name,
         state: sheetMarket === market ? snapshot() : emptyState()
       };
+      // 自動で入れた前日終値は前に選んでいた銘柄のものなので引き継がない（新しい銘柄の終値を取り直す）
+      if (fav.state.closeDate) Object.assign(fav.state, { baseline: "", closeDate: "", closeAt: 0 });
       favorites.push(fav);
       activeFav[sheetMarket] = fav.id;
     }
@@ -1302,9 +1304,10 @@
 
   function kabutanUrl(code) {
     const web = `https://s.kabutan.jp/stocks/${code}/`;
-    // Android ではいつものブラウザに関係なく Chrome で開く（ブックマーク「TS終値」が動くのは Chrome だけ）
+    // Android ではいつものブラウザに関係なく Chrome で開く（ブックマーク「TS終値」が動くのは Chrome だけ）。
+    // https のままだと Samsung Internet がアプリの選択画面を出すので、Chrome だけが開ける googlechrome:// にする
     return /Android/i.test(navigator.userAgent)
-      ? `intent://s.kabutan.jp/stocks/${code}/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`
+      ? `intent://navigate?url=${encodeURIComponent(web)}#Intent;scheme=googlechrome;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`
       : web;
   }
 
@@ -1337,6 +1340,8 @@
       note.textContent = "手動入力された値です。";
     }
     tag.hidden = tag.childNodes.length === 0;
+    // 米国株は取り直すボタン。手で打った値やエラーのあとでも、押せば GAS に問い合わせる
+    get("close-refresh").hidden = !(fav && market === "us" && quotes.gas && status !== "loading");
     const link = get("kabutan-link");
     link.hidden = !(fav && market === "jp");
     if (!link.hidden) {
@@ -1438,6 +1443,7 @@
       renderClose();
     }
   });
+  get("close-refresh").addEventListener("click", () => fetchUsClose(activeFavorite(), true));
   get("kabutan-link").addEventListener("click", () => {
     quotes.kabutanAt = Date.now();
     saveQuotes();
@@ -1448,10 +1454,20 @@
     saveQuotes();
     renderQuotesSettings();
   });
+  // 同じブラウザの別のタブ（TS終値から開いた TickShift など）が入力を書き換えたら、戻ったときに読み直す。
+  // 読み直さずに保存すると、古い入力で上書きしてしまう
+  let staleStorage = false;
+  window.addEventListener("storage", (event) => {
+    if ([STORAGE_KEY, FAVORITES_KEY, QUOTES_KEY].includes(event.key)) staleStorage = true;
+  });
   // アプリに戻ってきたとき: 株探から戻ったならクリップボードを読み、米国株は新しい終値が出ていれば取り直す
   let returning = false;
   const onReturn = () => {
     if (document.visibilityState !== "visible" || returning) return;
+    if (staleStorage) {
+      location.reload();
+      return;
+    }
     returning = true;
     setTimeout(() => {
       returning = false;

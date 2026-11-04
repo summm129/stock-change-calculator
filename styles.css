@@ -818,7 +818,30 @@ details[open] > .disclosure .chevron,
   font-weight: 600;
 }
 
-/* ---- 終値の自動取得: 前日終値の右のタグ、株探へのリンク、下の説明 ---- */
+/* ---- 終値の自動取得: 前日終値の右のタグ、取り直すボタン、株探へのリンク、下の説明 ---- */
+.close-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+}
+.close-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--field);
+  color: var(--sub);
+}
+.close-refresh svg {
+  width: 14px;
+  height: 14px;
+}
 .close-tag,
 .kabutan-link {
   display: inline-flex;
@@ -833,14 +856,7 @@ details[open] > .disclosure .chevron,
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.close-tag {
-  margin-left: auto;
-}
-.close-tag + .kabutan-link:not([hidden]) {
-  margin-left: 0;
-}
 .kabutan-link {
-  margin-left: auto;
   color: var(--sub);
   text-decoration: none;
 }
