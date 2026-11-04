@@ -1049,42 +1049,49 @@
       renderFavorites();
       get("fav-list").querySelector(`[data-id="${CSS.escape(row.dataset.id)}"] .fav-handle`).focus();
     });
+    // 長押しでメニューが出ると指の追跡が切れるので止める
+    handle.addEventListener("contextmenu", (event) => event.preventDefault());
     handle.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
       event.preventDefault();
-      handle.setPointerCapture(event.pointerId);
       const list = get("fav-list");
-      let lastY = event.clientY;
-      let offset = 0;
+      const pointer = event.pointerId;
+      // 行のどこをつかんだか。指の位置からこの分だけ上に行を描く
+      const grab = event.clientY - row.getBoundingClientRect().top;
+      let shift = 0;
       row.classList.add("is-dragging");
-      const onMove = (moveEvent) => {
-        offset += moveEvent.clientY - lastY;
-        lastY = moveEvent.clientY;
-        // 指が隣の行の真ん中を越えたら入れ替え、ずれた分だけ持ち上げ位置を補正する
-        const prev = row.previousElementSibling;
-        const next = row.nextElementSibling;
-        if (next && offset > next.offsetHeight / 2) {
-          list.insertBefore(next, row);
-          offset -= next.offsetHeight;
-        } else if (prev && offset < -prev.offsetHeight / 2) {
-          list.insertBefore(row, prev);
-          offset += prev.offsetHeight;
-        }
-        row.style.transform = `translateY(${offset}px)`;
+      const middle = (element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.top + rect.height / 2;
       };
-      const onEnd = () => {
-        handle.removeEventListener("pointermove", onMove);
-        handle.removeEventListener("pointerup", onEnd);
-        handle.removeEventListener("pointercancel", onEnd);
+      // 行を並べ替えるとハンドルが DOM の中で動き、ハンドルで受けていた指の動きが途切れることがある。
+      // そのため指の動きは window で受ける
+      const onMove = (moveEvent) => {
+        if (moveEvent.pointerId !== pointer) return;
+        moveEvent.preventDefault();
+        // 指が隣の行の真ん中を越えたら入れ替える（速く動かしたときは何行でも）
+        let next;
+        while ((next = row.nextElementSibling) && moveEvent.clientY > middle(next)) list.insertBefore(next, row);
+        let prev;
+        while ((prev = row.previousElementSibling) && moveEvent.clientY < middle(prev)) list.insertBefore(row, prev);
+        const naturalTop = row.getBoundingClientRect().top - shift;
+        shift = moveEvent.clientY - grab - naturalTop;
+        row.style.transform = `translateY(${shift}px)`;
+      };
+      const onEnd = (endEvent) => {
+        if (endEvent.pointerId !== pointer) return;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onEnd);
+        window.removeEventListener("pointercancel", onEnd);
         row.classList.remove("is-dragging");
         row.style.transform = "";
         applyMarketOrder([...list.children].map((item) => item.dataset.id));
         save();
         renderFavorites();
       };
-      handle.addEventListener("pointermove", onMove);
-      handle.addEventListener("pointerup", onEnd);
-      handle.addEventListener("pointercancel", onEnd);
+      window.addEventListener("pointermove", onMove, { passive: false });
+      window.addEventListener("pointerup", onEnd);
+      window.addEventListener("pointercancel", onEnd);
     });
   }
 
@@ -1156,7 +1163,8 @@
     let error = "";
     if (!code) error = `${rule.label}を入れてください。`;
     else if (!rule.pattern.test(code)) error = `${rule.label}は${rule.example}で入れてください。`;
-    else if (favorites.some((f) => f.market === sheetMarket && f.code === code && f.id !== sheetFavId)) error = "この銘柄はもうお気に入りにあります。";
+    // 同じコードでも表示名が違えば別のお気に入りにできる（表示名が空ならコードを表示名として比べる）
+    else if (favorites.some((f) => f.market === sheetMarket && f.code === code && (f.name || f.code) === (name || code) && f.id !== sheetFavId)) error = "同じ表示名の銘柄がもうお気に入りにあります。表示名を変えると追加できます。";
     get("fav-error").textContent = error;
     get("fav-code").setAttribute("aria-invalid", String(Boolean(error)));
     if (error) {
@@ -1184,7 +1192,8 @@
       };
       // 自動で入れた前日終値は前に選んでいた銘柄のものなので引き継がない（新しい銘柄の終値を取り直す）
       if (fav.state.closeDate) Object.assign(fav.state, { baseline: "", closeDate: "", closeAt: 0 });
-      favorites.push(fav);
+      // 新しい銘柄は一番左（先頭）に置く
+      favorites.unshift(fav);
       activeFav[sheetMarket] = fav.id;
     }
     restore(currentState());
@@ -1305,9 +1314,9 @@
   function kabutanUrl(code) {
     const web = `https://s.kabutan.jp/stocks/${code}/`;
     // Android ではいつものブラウザに関係なく Chrome で開く（ブックマーク「TS終値」が動くのは Chrome だけ）。
-    // https のままだと Samsung Internet がアプリの選択画面を出すので、Chrome だけが開ける googlechrome:// にする
+    // googlechrome://navigate は Chrome が開くだけでページを開かなかった（2026-11-04 Galaxy で確認）
     return /Android/i.test(navigator.userAgent)
-      ? `intent://navigate?url=${encodeURIComponent(web)}#Intent;scheme=googlechrome;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`
+      ? `intent://s.kabutan.jp/stocks/${code}/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`
       : web;
   }
 
@@ -1335,7 +1344,7 @@
     } else if (closeDate && hasValue) {
       tag.classList.add("is-ok");
       tag.textContent = `${closeDate.slice(5).replace("-", "/")} 終値`;
-      note.textContent = "自動取得されました。手動入力で値を変更できます。";
+      note.textContent = "自動取得されました。手動で値を変更できます。";
     } else if (status === "manual" && hasValue) {
       note.textContent = "手動入力された値です。";
     }
@@ -1401,7 +1410,9 @@
     }
     const match = CLIP_PATTERN.exec(text);
     if (!match || text === quotes.lastClip) return;
-    const fav = favorites.find((f) => f.market === "jp" && f.code === match[1]);
+    // 同じコードのお気に入りが複数あるときは、選んでいる銘柄を優先する
+    const sameCode = favorites.filter((f) => f.market === "jp" && f.code === match[1]);
+    const fav = sameCode.find((f) => f.id === activeFav.jp) || sameCode[0];
     if (!fav) return;
     quotes.lastClip = text;
     quotes.kabutanAt = 0;
