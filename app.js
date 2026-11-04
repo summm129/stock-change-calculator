@@ -35,11 +35,14 @@
   let favorites = [];
   const activeFav = { jp: null, us: null };
   let account = "tokutei";
+  // 前日終値を自動で入れたときの終値の日付と、取得した時刻。手で打ち直したら空に戻す
+  let closeDate = "";
+  let closeAt = 0;
   let activeTab = "percent";
 
   function emptyState() {
     // account は米国株の保有の口座。空なら設定の「最初の口座」を使う
-    return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "", account: "" };
+    return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "", account: "", closeDate: "", closeAt: 0 };
   }
 
   function snapshot() {
@@ -51,7 +54,9 @@
       holdBuy: hold.buy.value,
       holdQty: hold.qty.value,
       costBasis: breakeven.cost.value,
-      account
+      account,
+      closeDate,
+      closeAt
     };
   }
 
@@ -64,6 +69,8 @@
     hold.qty.value = state.holdQty;
     breakeven.cost.value = state.costBasis;
     account = state.account || settings.account;
+    closeDate = state.closeDate;
+    closeAt = state.closeAt;
   }
 
   function isObject(value) {
@@ -84,6 +91,8 @@
     if (typeof saved.holdQty === "string" && saved.holdQty.length <= 24) state.holdQty = saved.holdQty;
     if (typeof saved.costBasis === "string" && saved.costBasis.length <= 32) state.costBasis = saved.costBasis;
     if (SETTING_VALUES.account.includes(saved.account)) state.account = saved.account;
+    if (typeof saved.closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(saved.closeDate)) state.closeDate = saved.closeDate;
+    if (Number.isFinite(saved.closeAt) && saved.closeAt > 0) state.closeAt = saved.closeAt;
     return state;
   }
 
@@ -516,6 +525,7 @@
     normalizeRateInput();
     update();
     save();
+    renderClose();
   }
 
   for (const field of inputs) {
@@ -898,9 +908,16 @@
     update();
     renderFavorites();
     save();
+    renderClose();
+    fetchActiveClose();
   }
 
   function selectFavorite(id) {
+    // 取得に失敗した銘柄をもう一度押したら、選択を外さずに取り直す
+    if (activeFav[market] === id && quoteStatus[id] === "error") {
+      fetchUsClose(activeFavorite(), true);
+      return;
+    }
     storeCurrent();
     activeFav[market] = activeFav[market] === id ? null : id;
     restore(currentState());
@@ -1234,10 +1251,223 @@
   for (const id of ["rate-up", "rate-down", "rate-whole-up", "rate-whole-down", "price-up", "price-down", "price-fine-up", "price-fine-down"]) {
     attachHoldRepeat(get(id));
   }
+  // ---- 終値の自動取得 ----
+  // 米国株: 設定用リンク（#gas=…）で覚えた GAS に問い合わせる（GOOGLEFINANCE）。
+  // 日本株: 「株探で見る」から戻ったとき、ブックマーク「TS終値」がコピーした「TickShift:JP:コード:終値:日付」を読む。
+  const QUOTES_KEY = "stock-change-calculator:quotes";
+  const GAS_PATTERN = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
+  const CLIP_PATTERN = /^TickShift:JP:([0-9][0-9A-Z]{3}):(\d+(?:\.\d+)?):(\d{4}-\d{2}-\d{2})$/;
+  // 大引けに、終値が出そろうまでの余裕を足した時刻（現地時間）。これを過ぎたら新しい終値を取りに行く
+  const CLOSE_TIMES = { jp: { zone: "Asia/Tokyo", time: "15:40" }, us: { zone: "America/New_York", time: "16:10" } };
+  // 株探を開いてからこの時間内に戻ったときだけクリップボードを読む（関係ないときに許可を聞かない）
+  const CLIP_WAIT_MS = 10 * 60 * 1000;
+  const quotes = { gas: "", lastClip: "", kabutanAt: 0 };
+  const quoteStatus = {}; // お気に入りの id → "loading" | "error" | "manual"
+
+  function loadQuotes() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(QUOTES_KEY));
+      if (!isObject(saved)) return;
+      if (typeof saved.gas === "string" && GAS_PATTERN.test(saved.gas)) quotes.gas = saved.gas;
+      if (typeof saved.lastClip === "string" && saved.lastClip.length <= 60) quotes.lastClip = saved.lastClip;
+      if (Number.isFinite(saved.kabutanAt)) quotes.kabutanAt = saved.kabutanAt;
+    } catch {
+      // 読めなければ未設定のまま
+    }
+  }
+
+  function saveQuotes() {
+    try {
+      localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+    } catch {
+      // 保存できないブラウザでは、この画面を開いている間だけ使える
+    }
+  }
+
+  // その時刻から見て、いちばん新しい「確定した終値」の日付（祝日は考えない。祝日は取り直すだけ）
+  function latestCloseKey(mkt, ms) {
+    const { zone, time } = CLOSE_TIMES[mkt];
+    const format = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23", weekday: "short" });
+    const parts = (t) => Object.fromEntries(format.formatToParts(t).map((p) => [p.type, p.value]));
+    let t = ms;
+    let p = parts(t);
+    if (`${p.hour}:${p.minute}` < time) p = parts(t -= 86400000);
+    while (p.weekday === "Sat" || p.weekday === "Sun") p = parts(t -= 86400000);
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+
+  function closeOf(fav) {
+    return activeFavorite() === fav ? { baseline: fields.baseline.value, closeDate, closeAt } : fav.state;
+  }
+
+  function kabutanUrl(code) {
+    const web = `https://s.kabutan.jp/stocks/${code}/`;
+    // Android ではいつものブラウザに関係なく Chrome で開く（ブックマーク「TS終値」が動くのは Chrome だけ）
+    return /Android/i.test(navigator.userAgent)
+      ? `intent://s.kabutan.jp/stocks/${code}/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`
+      : web;
+  }
+
+  function renderClose() {
+    const fav = activeFavorite();
+    const status = fav ? quoteStatus[fav.id] : "";
+    const hasValue = fields.baseline.value.trim() !== "";
+    const tag = get("close-tag");
+    const note = get("close-note");
+    tag.className = "close-tag";
+    tag.replaceChildren();
+    note.className = "close-note";
+    note.textContent = "";
+    if (status === "loading") {
+      const spin = document.createElement("span");
+      spin.className = "close-spin";
+      spin.setAttribute("aria-hidden", "true");
+      tag.append(spin, "取得中");
+      note.textContent = "終値を取得中...";
+    } else if (status === "error") {
+      tag.classList.add("is-error");
+      tag.textContent = "取得できませんでした";
+      note.classList.add("is-error");
+      note.textContent = "終値の取得に失敗しました。もう一度タップすると再取得します。";
+    } else if (closeDate && hasValue) {
+      tag.classList.add("is-ok");
+      tag.textContent = `${closeDate.slice(5).replace("-", "/")} 終値`;
+      note.textContent = "自動取得されました。手動入力で値を変更できます。";
+    } else if (status === "manual" && hasValue) {
+      note.textContent = "手動入力された値です。";
+    }
+    tag.hidden = tag.childNodes.length === 0;
+    const link = get("kabutan-link");
+    link.hidden = !(fav && market === "jp");
+    if (!link.hidden) {
+      link.href = kabutanUrl(fav.code);
+      link.target = link.href.startsWith("intent:") ? "_self" : "_blank";
+    }
+  }
+
+  function applyClose(fav, close, date) {
+    const value = formatNumber(close, MARKETS[fav.market].priceDigits);
+    delete quoteStatus[fav.id];
+    if (activeFavorite() === fav) {
+      fields.baseline.value = value;
+      closeDate = date;
+      closeAt = Date.now();
+      update();
+      save();
+    } else {
+      Object.assign(fav.state, { baseline: value, closeDate: date, closeAt: Date.now() });
+      save();
+    }
+    renderClose();
+  }
+
+  async function fetchUsClose(fav, force = false) {
+    if (!fav || fav.market !== "us" || !quotes.gas || quoteStatus[fav.id] === "loading") return;
+    const known = closeOf(fav);
+    // 今開いている間に手で打った値は上書きしない。同じ終値の期間のうちは取り直さない
+    if (!force && quoteStatus[fav.id] === "manual") return;
+    if (!force && known.baseline.trim() !== "" && known.closeDate && latestCloseKey("us", known.closeAt) === latestCloseKey("us", Date.now())) return;
+    quoteStatus[fav.id] = "loading";
+    renderClose();
+    try {
+      const response = await fetch(`${quotes.gas}?codes=${encodeURIComponent(`US:${fav.code}`)}`);
+      const body = await response.json();
+      const quote = isObject(body) && isObject(body.quotes) ? body.quotes[`US:${fav.code}`] : null;
+      if (!isObject(quote) || !(quote.close > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(quote.date)) throw new Error("no quote");
+      if (favorites.includes(fav)) applyClose(fav, quote.close, quote.date);
+    } catch {
+      quoteStatus[fav.id] = "error";
+      renderClose();
+    }
+  }
+
+  function fetchActiveClose() {
+    const fav = activeFavorite();
+    if (fav && fav.market === "us") fetchUsClose(fav);
+  }
+
+  async function importClipboard() {
+    if (Date.now() - quotes.kabutanAt > CLIP_WAIT_MS || !navigator.clipboard || !navigator.clipboard.readText) return;
+    let text = "";
+    try {
+      text = (await navigator.clipboard.readText()).trim();
+    } catch {
+      return;
+    }
+    const match = CLIP_PATTERN.exec(text);
+    if (!match || text === quotes.lastClip) return;
+    const fav = favorites.find((f) => f.market === "jp" && f.code === match[1]);
+    if (!fav) return;
+    quotes.lastClip = text;
+    quotes.kabutanAt = 0;
+    saveQuotes();
+    if (market !== "jp") document.querySelector('[data-market-select="jp"]').click();
+    if (activeFav.jp !== fav.id) selectFavorite(fav.id);
+    applyClose(fav, Number(match[2]), match[3]);
+  }
+
+  function renderQuotesSettings() {
+    get("quotes-us-desc").textContent = quotes.gas ? "設定済み（お気に入りを選ぶと自動で入ります）" : "未設定（設定用リンクを開くと使えます）";
+    get("quotes-us-clear").hidden = !quotes.gas;
+  }
+
+  // 設定用リンク: https://…/stock-change-calculator/#gas=<GAS の exec URL>
+  function readSetupLink() {
+    const match = /^#gas=(.+)$/.exec(location.hash);
+    if (!match) return false;
+    let url = "";
+    try {
+      url = decodeURIComponent(match[1]);
+    } catch {
+      url = "";
+    }
+    history.replaceState(history.state, "", location.pathname + location.search);
+    if (!GAS_PATTERN.test(url)) return false;
+    quotes.gas = url;
+    saveQuotes();
+    return true;
+  }
+
+  fields.baseline.addEventListener("input", () => {
+    const fav = activeFavorite();
+    if (closeDate || (fav && quoteStatus[fav.id] === "error")) {
+      closeDate = "";
+      closeAt = 0;
+      if (fav) quoteStatus[fav.id] = "manual";
+      save();
+      renderClose();
+    }
+  });
+  get("kabutan-link").addEventListener("click", () => {
+    quotes.kabutanAt = Date.now();
+    saveQuotes();
+  });
+  get("quotes-us-clear").addEventListener("click", () => {
+    if (!window.confirm("米国株の終値の自動取得を解除しますか？もう一度使うには設定用リンクを開きます。")) return;
+    quotes.gas = "";
+    saveQuotes();
+    renderQuotesSettings();
+  });
+  // アプリに戻ってきたとき: 株探から戻ったならクリップボードを読み、米国株は新しい終値が出ていれば取り直す
+  let returning = false;
+  const onReturn = () => {
+    if (document.visibilityState !== "visible" || returning) return;
+    returning = true;
+    setTimeout(() => {
+      returning = false;
+      importClipboard();
+      fetchActiveClose();
+    }, 300);
+  };
+  document.addEventListener("visibilitychange", onReturn);
+  window.addEventListener("focus", onReturn);
+
   loadSettings();
   applySettings();
   if (history.state && (history.state.view || history.state.sheet)) history.replaceState(null, "");
 
+  loadQuotes();
+  const setUp = readSetupLink();
   load();
   applyMarket();
   renderFavorites();
@@ -1247,4 +1477,8 @@
   updateBreakeven();
   update();
   save();
+  renderQuotesSettings();
+  renderClose();
+  fetchActiveClose();
+  if (setUp) openView("settings");
 })();

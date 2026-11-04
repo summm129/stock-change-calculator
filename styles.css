@@ -33,6 +33,8 @@
   --flat-bg: #f4f3f1;
   --flat-line: #e6e4e0;
   --danger: #b4382e;
+  --ok-bg: #edf1ea;
+  --ok: #4d6b45;
   --focus: rgba(111, 102, 92, 0.35);
   color-scheme: light;
   font-family:
@@ -77,6 +79,8 @@
   --flat-bg: #2a2a2a;
   --flat-line: #333333;
   --danger: #ff9585;
+  --ok-bg: #233023;
+  --ok: #a9c9a0;
   --focus: rgba(232, 226, 214, 0.45);
   color-scheme: dark;
 }
@@ -812,6 +816,67 @@ details[open] > .disclosure .chevron,
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
+}
+
+/* ---- 終値の自動取得: 前日終値の右のタグ、株探へのリンク、下の説明 ---- */
+.close-tag,
+.kabutan-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.close-tag {
+  margin-left: auto;
+}
+.close-tag + .kabutan-link:not([hidden]) {
+  margin-left: 0;
+}
+.kabutan-link {
+  margin-left: auto;
+  color: var(--sub);
+  text-decoration: none;
+}
+.close-tag.is-ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.close-tag.is-error {
+  color: var(--danger);
+}
+.close-spin {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: close-spin 0.7s linear infinite;
+}
+@keyframes close-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .close-spin { animation: none; }
+}
+.close-note {
+  margin: 0;
+  padding-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.close-note:empty {
+  display: none;
+}
+.close-note.is-error {
+  color: var(--danger);
 }
 
 /* ---- 03 損益分岐点 ---- */

@@ -71,6 +71,8 @@
           <div class="card-heading">
             <h2 id="baseline-heading" class="field-title"><label for="baseline">前日終値</label></h2>
             <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
+            <span id="close-tag" class="close-tag" hidden></span>
+            <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で見る</a>
           </div>
           <div class="field field-lg">
             <button class="field-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
@@ -78,6 +80,7 @@
             <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
           </div>
           <p class="field-error" id="baseline-error" aria-live="polite"></p>
+          <p class="close-note" id="close-note" aria-live="polite"></p>
 
           <div class="hold-block">
             <div class="field-heading">
@@ -320,6 +323,23 @@
           <div class="segmented segmented-sm" role="group" aria-label="数字の入力">
             <button type="button" data-setting="keypad" data-value="standard" aria-pressed="true">デフォルト</button>
             <button type="button" data-setting="keypad" data-value="simeji" aria-pressed="false">Simeji</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="quotes-heading">
+        <h2 id="quotes-heading" class="settings-title">終値の自動取得</h2>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">米国株</div>
+            <div id="quotes-us-desc" class="settings-row-desc">未設定（設定用リンクを開くと使えます）</div>
+          </div>
+          <button id="quotes-us-clear" class="link-button" type="button" hidden>解除</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-title">日本株</div>
+            <div class="settings-row-desc">「株探で見る」→ ブックマーク「TS終値」でコピーして戻る</div>
           </div>
         </div>
       </section>
