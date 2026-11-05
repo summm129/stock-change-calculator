@@ -35,6 +35,7 @@
   --danger: #b4382e;
   --ok-bg: #edf1ea;
   --ok: #4d6b45;
+  --menu-shadow: 0 10px 30px rgba(28, 28, 26, 0.18), 0 1px 3px rgba(28, 28, 26, 0.1);
   --focus: rgba(111, 102, 92, 0.35);
   color-scheme: light;
   font-family:
@@ -81,6 +82,7 @@
   --danger: #ff9585;
   --ok-bg: #233023;
   --ok: #a9c9a0;
+  --menu-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   --focus: rgba(232, 226, 214, 0.45);
   color-scheme: dark;
 }
@@ -800,13 +802,85 @@ details[open] > .disclosure .chevron,
 [data-market="jp"] .hold-block .account-switch {
   display: none;
 }
-.hold-block .account-switch {
-  padding: 2px;
+/* 「楽天・特定 ▾」を押すと、すぐ下に証券会社ごとの小さなメニュー（保有の見出しと設定画面で共通） */
+.account-picker {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
 }
-.hold-block .account-switch button {
-  height: 26px;
-  padding: 0 11px;
-  font-size: 11px;
+.account-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--sub);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.account-pick svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s;
+}
+.account-pick[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-pick svg { transition: none; }
+}
+.account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 10px;
+  width: 236px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--menu-shadow);
+}
+.account-menu-group {
+  display: grid;
+  gap: 6px;
+}
+.account-menu-group + .account-menu-group {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.account-menu-name {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.account-menu-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.account-menu-chips button {
+  height: 36px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--field);
+  color: var(--sub);
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-menu-chips button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--card);
+  color: var(--text);
+}
+/* 設定画面の行が2つ以上あるカードは、行の間をあける */
+.settings-row + .settings-row {
+  margin-top: 14px;
 }
 .account-tag {
   margin-left: auto;

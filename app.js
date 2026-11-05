@@ -7,7 +7,9 @@
   const SETTINGS_KEY = "stock-change-calculator:settings";
   // お気に入り銘柄。各銘柄が自分の入力値（前日終値など）を持つ。active は市場ごとに選んでいる銘柄
   const FAVORITES_KEY = "stock-change-calculator:favorites";
-  const SETTING_VALUES = { theme: ["light", "dark"], layout: ["scroll", "tabs"], account: ["tokutei", "nisa"], keypad: ["standard", "simeji"] };
+  // account は米国株の証券会社と口座。tokutei / nisa は楽天証券（以前の保存値のまま）、moomoo は moomoo証券の特定口座
+  const SETTING_VALUES = { theme: ["light", "dark"], layout: ["scroll", "tabs"], account: ["tokutei", "nisa", "moomoo"], keypad: ["standard", "simeji"] };
+  const ACCOUNT_LABELS = { tokutei: "楽天・特定", nisa: "楽天・NISA", moomoo: "moomoo・特定" };
   const THEME_COLORS = { light: "#f4f3f1", dark: "#141414" };
   const LEGACY_STORAGE_KEY = "stock-change-calculator:v1";
   // 市場ごとの表示設定。JPは円を後置・6桁、USはドル記号を前置・4桁。率はどちらも2桁。
@@ -18,6 +20,9 @@
   // 楽天証券・米国株の手数料（2026-11時点）。通常口座は税抜0.45%＋消費税10%（税込0.495%）、上限は税込22ドル
   // （約定代金4,444.45ドル以上で上限）。NISAは無料。SEC Feeは売却代金×0.0000206ドル（2026-04-02公表の料率）、最低1セント。
   const RAKUTEN_US = { commissionRate: 0.0045, taxRate: 0.1, capCents: 2200, secFeeRate: 0.0000206 };
+  // moomoo証券・米国株（ベーシックコース、2026-11時点）。税抜0.12%（上限20ドル、0.01ドル未満は0.01ドル）＋消費税10%。
+  // NISA は使わない。SEC Fee は引かれない（2026-11-06 の約定明細で確認）
+  const MOOMOO_US = { commissionRate: 0.0012, taxRate: 0.1, capCents: 2000 };
   const defaults = { baseline: "", rate: "", price: "" };
   const fields = Object.fromEntries(Object.keys(defaults).map((key) => [key, document.getElementById(key)]));
   const get = (id) => document.getElementById(id);
@@ -41,7 +46,7 @@
   let activeTab = "percent";
 
   function emptyState() {
-    // account は米国株の保有の口座。空なら設定の「最初の口座」を使う
+    // account は米国株の証券会社・口座。空なら設定の「最初の証券会社・口座」を使う
     return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "", account: "", closeDate: "", closeAt: 0 };
   }
 
@@ -238,8 +243,8 @@
       const shares = qty ?? 1;
       const buyCents = toCents(buy * shares);
       const sellCents = toCents(price * shares);
-      const buyFee = account === "tokutei" ? buyFeeCents(buy, shares, buyCents) : 0;
-      fees = buyFee + (account === "tokutei" ? sellCommissionCents(sellCents) : 0) + secFeeCents(sellCents);
+      const buyFee = account === "nisa" ? 0 : buyFeeCents(buy, shares, buyCents);
+      fees = buyFee + sellFeeCents(sellCents);
       const net = sellCents - buyCents - fees;
       rate = (net / (buyCents + buyFee)) * 100;
       if (gain !== null) gain = net / 100;
@@ -258,14 +263,14 @@
     if (fees === null) note.replaceChildren();
     else {
       const label = document.createElement("span");
-      label.textContent = `うち手数料（${account === "tokutei" ? "特定" : "NISA"}${qty === null ? "・1株" : ""}）`;
+      label.textContent = `うち手数料（${ACCOUNT_LABELS[account]}${qty === null ? "・1株" : ""}）`;
       const amount = document.createElement("span");
       amount.textContent = `−${centsText(fees)}`;
       note.replaceChildren(label, amount);
     }
   }
 
-  // --- 損益分岐点（米国株・楽天証券） ---------------------------------------
+  // --- 損益分岐点（米国株・楽天証券 / moomoo証券） --------------------------
   // 金額はセント単位の整数で扱い、浮動小数の誤差を避ける。
   const toCents = (value) => Math.round(value * 100);
   const centsText = (cents) => `$${new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)}`;
@@ -287,26 +292,45 @@
     return Math.max(1, Math.ceil(amountCents * RAKUTEN_US.secFeeRate - 1e-9));
   }
 
+  // moomoo の手数料（買付・売却とも）: 税抜0.12%を1セント未満切り捨て（最低1セント、上限20ドル）、消費税10%も切り捨て。
+  // 明細（45.47→0.05、43.67→0.05、91.90→0.11＋税0.01）と一致
+  function moomooCommissionCents(amountCents) {
+    const base = Math.min(Math.max(1, Math.floor(amountCents * MOOMOO_US.commissionRate + 1e-9)), MOOMOO_US.capCents);
+    return base + Math.floor(base * MOOMOO_US.taxRate + 1e-9);
+  }
+
+  // 選んでいる証券会社・口座の買付手数料（注文全体、取得単価の訂正なし）
+  function buyCommissionCents(amountCents) {
+    if (account === "nisa") return 0;
+    return account === "moomoo" ? moomooCommissionCents(amountCents) : commissionCents(amountCents);
+  }
+
+  // 選んでいる証券会社・口座で売るときに引かれる額（売却手数料＋SEC Fee）
+  function sellFeeCents(amountCents) {
+    if (account === "moomoo") return moomooCommissionCents(amountCents);
+    return (account === "tokutei" ? sellCommissionCents(amountCents) : 0) + secFeeCents(amountCents);
+  }
+
   // 特定口座の買付手数料（注文全体）。取得単価が正しく入っていれば、約定価格との差を使う
   function buyFeeCents(buy, shares, buyCents) {
     const cost = breakeven.cost.value.trim() === "" ? null : parseNumber(breakeven.cost.value);
     if (cost !== null && cost >= buy && cost <= 1e9) return toCents((cost - buy) * shares);
-    return commissionCents(buyCents);
+    return buyCommissionCents(buyCents);
   }
 
-  function sellProfitCents(sellCents, costCents, withCommission) {
-    return sellCents - (withCommission ? sellCommissionCents(sellCents) : 0) - secFeeCents(sellCents) - costCents;
+  function sellProfitCents(sellCents, costCents) {
+    return sellCents - sellFeeCents(sellCents) - costCents;
   }
 
   // 損益がプラスになる最小の売却価格（セント）。売却価格が上がるほど損益は増えるので二分探索で求める。
   // 手数料に上限があるため、率だけの近似式からは探さない。
-  function firstProfitCents(costCents, withCommission) {
+  function firstProfitCents(costCents) {
     let low = 1;
     let high = costCents * 2 + 10000;
-    while (sellProfitCents(high, costCents, withCommission) <= 0) high *= 2;
+    while (sellProfitCents(high, costCents) <= 0) high *= 2;
     while (low < high) {
       const mid = Math.floor((low + high) / 2);
-      if (sellProfitCents(mid, costCents, withCommission) > 0) high = mid;
+      if (sellProfitCents(mid, costCents) > 0) high = mid;
       else low = mid + 1;
     }
     return low;
@@ -318,11 +342,21 @@
     for (const id of BREAKEVEN_CELLS) get(id).textContent = "—";
   }
 
+  const BREAKEVEN_NOTES = {
+    rakuten: "楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。",
+    moomoo: "moomoo証券・米国株（ベーシックコース）。1株あたり・外貨決済の概算。手数料は税抜0.12%と消費税10%をそれぞれ1セント未満切り捨て（最低0.01ドル）、上限は税込22ドル。SEC Feeはかからない。"
+  };
+
   function applyAccount() {
     for (const button of document.querySelectorAll("[data-account]")) {
       button.setAttribute("aria-pressed", String(button.dataset.account === account));
     }
-    get("be-account").textContent = account === "tokutei" ? "特定口座" : "NISA口座";
+    const pick = get("account-pick");
+    pick.querySelector(".account-pick-label").textContent = ACCOUNT_LABELS[account];
+    pick.setAttribute("aria-label", `証券会社と口座（${ACCOUNT_LABELS[account]}）`);
+    get("be-account").textContent = ACCOUNT_LABELS[account];
+    get("be-fee-sec-row").hidden = account === "moomoo";
+    get("breakeven-note").textContent = BREAKEVEN_NOTES[account === "moomoo" ? "moomoo" : "rakuten"];
   }
 
   function updateBreakeven() {
@@ -349,13 +383,14 @@
     }
     const buyCents = toCents(buy);
     const set = (id, cents) => { get(id).textContent = centsText(cents); };
-    if (account === "tokutei") {
+    if (account !== "nisa") {
       // 取得単価があれば、約定価格との差を実際の買付手数料として使う
-      const cost = hasCost ? toCents(parseNumber(breakeven.cost.value)) : buyCents + commissionCents(buyCents);
+      const cost = hasCost ? toCents(parseNumber(breakeven.cost.value)) : buyCents + buyCommissionCents(buyCents);
       const buyFee = cost - buyCents;
-      const profit = firstProfitCents(cost, true);
-      const sellFee = sellCommissionCents(profit);
-      const secFee = secFeeCents(profit);
+      const profit = firstProfitCents(cost);
+      // moomoo は SEC Fee なし（その行は隠す）
+      const secFee = account === "moomoo" ? 0 : secFeeCents(profit);
+      const sellFee = sellFeeCents(profit) - secFee;
       set("be-profit", profit);
       set("be-fee-total", buyFee + sellFee + secFee);
       set("be-fee-buy", buyFee);
@@ -365,7 +400,7 @@
       // 損益分岐点: 手数料・SEC Feeを差し引いて損益が0以下になる最大の価格（利益が出始める1セント手前）
       set("be-even", profit - 1);
     } else {
-      const profit = firstProfitCents(buyCents, false);
+      const profit = firstProfitCents(buyCents);
       const secFee = secFeeCents(profit);
       set("be-profit", profit);
       set("be-fee-total", secFee);
@@ -713,10 +748,34 @@
     get("storage-status").textContent = storageAvailable ? "" : get("storage-status").textContent;
   });
 
-  // ---- 保有の口座スイッチ（01〜03 共通、銘柄ごとに保存）と取得単価の訂正欄 ----
+  // ---- 証券会社・口座のメニュー（「楽天・特定 ▾」を押すとすぐ下に出る。保有の見出しと設定画面） ----
+  function setAccountMenu(pick, open) {
+    pick.setAttribute("aria-expanded", String(open));
+    get(pick.getAttribute("aria-controls")).hidden = !open;
+  }
+  for (const pick of document.querySelectorAll(".account-pick")) {
+    pick.addEventListener("click", () => setAccountMenu(pick, pick.getAttribute("aria-expanded") !== "true"));
+  }
+  // メニューの外を押したとき・Esc で閉じる
+  document.addEventListener("pointerdown", (event) => {
+    for (const pick of document.querySelectorAll('.account-pick[aria-expanded="true"]')) {
+      if (!pick.parentElement.contains(event.target)) setAccountMenu(pick, false);
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    for (const pick of document.querySelectorAll('.account-pick[aria-expanded="true"]')) {
+      setAccountMenu(pick, false);
+      pick.focus();
+    }
+  });
+
+  // ---- 保有の証券会社・口座（01〜03 共通、銘柄ごとに保存）と取得単価の訂正欄 ----
   for (const button of document.querySelectorAll("[data-account]")) {
     button.addEventListener("click", () => {
       account = button.dataset.account;
+      setAccountMenu(get("account-pick"), false);
+      get("account-pick").focus();
       updateBreakeven();
       update();
       save();
@@ -797,6 +856,9 @@
       const on = settings[control.dataset.setting] === control.dataset.value;
       control.setAttribute(control.getAttribute("role") === "radio" ? "aria-checked" : "aria-pressed", String(on));
     }
+    const pick = get("settings-account-pick");
+    pick.querySelector(".account-pick-label").textContent = ACCOUNT_LABELS[settings.account];
+    pick.setAttribute("aria-label", `最初の証券会社・口座（${ACCOUNT_LABELS[settings.account]}）`);
   }
 
   for (const control of document.querySelectorAll("[data-setting]")) {
@@ -805,6 +867,10 @@
       settings[key] = control.dataset.value;
       applySettings();
       saveSettings();
+      if (key === "account") {
+        setAccountMenu(get("settings-account-pick"), false);
+        get("settings-account-pick").focus();
+      }
     });
   }
 
@@ -1219,16 +1285,14 @@
       existing.name = name;
       existing.market = sheetMarket;
     } else {
-      // 追加するときは、今その市場で入れている値を引き継いで、そのまま選んだ状態にする
+      // 追加するときは全部の欄を空にして、そのまま選んだ状態にする（米国株は前日終値だけ自動で入る）
       const fav = {
         id: `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
         market: sheetMarket,
         code,
         name,
-        state: sheetMarket === market ? snapshot() : emptyState()
+        state: emptyState()
       };
-      // 自動で入れた前日終値は前に選んでいた銘柄のものなので引き継がない（新しい銘柄の終値を取り直す）
-      if (fav.state.closeDate) Object.assign(fav.state, { baseline: "", closeDate: "", closeAt: 0 });
       // 新しい銘柄は一番左（先頭）に置く
       favorites.unshift(fav);
       activeFav[sheetMarket] = fav.id;

@@ -88,9 +88,23 @@
           <div class="hold-block">
             <div class="field-heading">
               <span id="hold-title" class="field-label hold-title">保有</span>
-              <div class="segmented segmented-sm account-switch" role="group" aria-label="保有している口座">
-                <button type="button" data-account="tokutei" aria-pressed="true">特定</button>
-                <button type="button" data-account="nisa" aria-pressed="false">NISA</button>
+              <div class="account-switch account-picker">
+                <button id="account-pick" class="account-pick" type="button" aria-expanded="false" aria-controls="account-menu" aria-label="証券会社と口座（楽天・特定）"><span class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div id="account-menu" class="account-menu" role="group" aria-label="証券会社と口座" hidden>
+                  <div class="account-menu-group">
+                    <div class="account-menu-name">楽天証券</div>
+                    <div class="account-menu-chips">
+                      <button type="button" data-account="tokutei" aria-pressed="true" aria-label="楽天証券・特定">特定</button>
+                      <button type="button" data-account="nisa" aria-pressed="false" aria-label="楽天証券・NISA">NISA</button>
+                    </div>
+                  </div>
+                  <div class="account-menu-group">
+                    <div class="account-menu-name">moomoo証券</div>
+                    <div class="account-menu-chips">
+                      <button type="button" data-account="moomoo" aria-pressed="false" aria-label="moomoo証券・特定">特定</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="hold-grid" role="group" aria-labelledby="hold-title">
@@ -246,13 +260,13 @@
                 <tr><th scope="row">手数料</th><td id="be-fee-total">—</td></tr>
                 <tr class="is-detail"><th scope="row">買付手数料</th><td id="be-fee-buy">—</td></tr>
                 <tr class="is-detail"><th scope="row">売却手数料</th><td id="be-fee-sell">—</td></tr>
-                <tr class="is-detail"><th scope="row"><span class="detail-main">その他手数料</span><span class="detail-note">SEC Fee等</span></th><td id="be-fee-sec">—</td></tr>
+                <tr id="be-fee-sec-row" class="is-detail"><th scope="row"><span class="detail-main">その他手数料</span><span class="detail-note">SEC Fee等</span></th><td id="be-fee-sec">—</td></tr>
                 <tr><th scope="row">実質取得費用</th><td id="be-cost">—</td></tr>
                 <tr><th scope="row">損益分岐点</th><td id="be-even">—</td></tr>
               </tbody>
             </table>
           </div>
-          <p class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
+          <p id="breakeven-note" class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
         </section>
 
         <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
@@ -303,15 +317,29 @@
       </section>
 
       <section class="card" aria-labelledby="account-heading">
-        <h2 id="account-heading" class="settings-title">米国株の口座</h2>
+        <h2 id="account-heading" class="settings-title">米国株の証券会社・口座</h2>
         <div class="settings-row">
           <div>
-            <div class="settings-row-title">最初の口座</div>
-            <div class="settings-row-desc">新しく入力する銘柄の初期値</div>
+            <div class="settings-row-title">最初の証券会社・口座</div>
+            <div class="settings-row-desc">新しく登録する銘柄の初期値</div>
           </div>
-          <div class="segmented segmented-sm" role="group" aria-label="最初の口座">
-            <button type="button" data-setting="account" data-value="tokutei" aria-pressed="true">特定</button>
-            <button type="button" data-setting="account" data-value="nisa" aria-pressed="false">NISA</button>
+          <div class="account-picker">
+            <button id="settings-account-pick" class="account-pick" type="button" aria-expanded="false" aria-controls="settings-account-menu" aria-label="最初の証券会社・口座（楽天・特定）"><span class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <div id="settings-account-menu" class="account-menu" role="group" aria-label="最初の証券会社・口座" hidden>
+              <div class="account-menu-group">
+                <div class="account-menu-name">楽天証券</div>
+                <div class="account-menu-chips">
+                  <button type="button" data-setting="account" data-value="tokutei" aria-pressed="true" aria-label="楽天証券・特定">特定</button>
+                  <button type="button" data-setting="account" data-value="nisa" aria-pressed="false" aria-label="楽天証券・NISA">NISA</button>
+                </div>
+              </div>
+              <div class="account-menu-group">
+                <div class="account-menu-name">moomoo証券</div>
+                <div class="account-menu-chips">
+                  <button type="button" data-setting="account" data-value="moomoo" aria-pressed="false" aria-label="moomoo証券・特定">特定</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
