@@ -80,7 +80,7 @@
               <div class="close-actions">
                 <span id="close-tag" class="close-tag" hidden></span>
                 <button id="close-refresh" class="close-refresh" type="button" aria-label="終値を取り直す" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
-                <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で見る</a>
+                <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で取得</a>
               </div>
             </div>
             <div class="field field-lg">
@@ -456,7 +456,7 @@
         <div class="settings-row">
           <div>
             <div class="settings-row-title">日本株</div>
-            <div class="settings-row-desc">「株探で見る」→ Firefox で開くと自動でコピー → 戻る</div>
+            <div class="settings-row-desc">「株探で取得」→ Firefox で開くと自動でコピー → 戻る</div>
           </div>
         </div>
       </section>
@@ -472,7 +472,7 @@
         </button>
         <div class="settings-link is-static">
           <span>バージョン</span>
-          <span class="settings-value">3.0.0</span>
+          <span class="settings-value">3.1.0</span>
         </div>
       </section>
 
@@ -520,7 +520,7 @@
         </div>
         <div>
           <label class="field-label" for="fav-name">表示名</label>
-          <input id="fav-name" class="sheet-input" type="text" autocomplete="off" maxlength="20" enterkeyhint="done">
+          <input id="fav-name" class="sheet-input" type="text" autocomplete="off" maxlength="60" enterkeyhint="done" placeholder="空欄なら自動で入ります">
         </div>
       </div>
       <p id="fav-error" class="field-error" aria-live="polite"></p>

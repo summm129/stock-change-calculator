@@ -1495,9 +1495,10 @@ details[open] > .disclosure .chevron,
   font-size: 10px;
   opacity: 0.75;
 }
+/* 名前は日本語7文字分の幅で「…」にする（英字は細いので12文字くらい入る） */
 .fav-chip-name {
   display: block;
-  max-width: 9em;
+  max-width: 7em;
   overflow: hidden;
   font-size: 13px;
   font-weight: 600;

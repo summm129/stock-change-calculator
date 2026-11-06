@@ -1136,7 +1136,8 @@
           id: f.id.slice(0, 40),
           market: f.market,
           code: typeof f.code === "string" ? f.code.slice(0, 12) : "",
-          name: typeof f.name === "string" ? f.name.slice(0, 20) : "",
+          name: typeof f.name === "string" ? f.name.slice(0, 60) : "",
+          autoName: f.autoName === true,
           state: isObject(f.state) ? readState(f.state) : emptyState()
         }));
       if (isObject(saved.active)) {
@@ -1476,6 +1477,8 @@
   get("fav-save").addEventListener("click", () => {
     const code = get("fav-code").value.normalize("NFKC").trim().toUpperCase();
     let name = get("fav-name").value.normalize("NFKC").trim();
+    // 表示名を空にしたら、終値と一緒に取れた銘柄名を入れる（米国株は GAS、日本株は株探で取得）
+    let autoName = name === "";
     const rule = FAV_CODE_RULES[sheetMarket];
     // 同じコードがもうあって表示名が空なら、「SOXL2」「SOXL3」のように空いている番号を付ける
     const sameCode = favorites.filter((f) => f.market === sheetMarket && f.code === code && f.id !== sheetFavId);
@@ -1484,6 +1487,8 @@
       let number = 2;
       while (taken.has(`${code}${number}`)) number += 1;
       name = `${code}${number}`;
+      // 同じ銘柄の2つ目以降は番号の名前のままにする（取れた名前だと1つ目と見分けがつかない）
+      autoName = false;
     }
     let error = "";
     if (!code) error = `${rule.label}を入れてください。`;
@@ -1503,8 +1508,11 @@
         // 市場を変えたら、元の市場では選択を外す
         activeFav[existing.market] = null;
       }
+      // コードを変えたら、前の銘柄の名前は使わない
+      if (existing.autoName && existing.code !== code) name = "";
       existing.code = code;
       existing.name = name;
+      existing.autoName = autoName;
       existing.market = sheetMarket;
     } else {
       // 追加するときは全部の欄を空にして、そのまま選んだ状態にする（米国株は前日終値だけ自動で入る）
@@ -1513,6 +1521,7 @@
         market: sheetMarket,
         code,
         name,
+        autoName,
         state: emptyState()
       };
       // 新しい銘柄は一番左（先頭）に置く
@@ -1588,10 +1597,10 @@
   }
   // ---- 終値の自動取得 ----
   // 米国株: 設定用リンク（#gas=…）で覚えた GAS に問い合わせる（GOOGLEFINANCE）。
-  // 日本株: 「株探で見る」から戻ったとき、ブックマーク「TS終値」がコピーした「TickShift:JP:コード:終値:日付」を読む。
+  // 日本株: 「株探で取得」から戻ったとき、ブックマーク「TS終値」がコピーした「TickShift:JP:コード:終値:日付」を読む。
   const QUOTES_KEY = "stock-change-calculator:quotes";
   const GAS_PATTERN = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
-  const CLIP_PATTERN = /^TickShift:JP:([0-9][0-9A-Z]{3}):(\d+(?:\.\d+)?):(\d{4}-\d{2}-\d{2})$/;
+  const CLIP_PATTERN = /^TickShift:JP:([0-9][0-9A-Z]{3}):(\d+(?:\.\d+)?):(\d{4}-\d{2}-\d{2})(?::([^:\s]{1,300}))?$/;
   // 大引けに、終値が出そろうまでの余裕を足した時刻（現地時間）。これを過ぎたら新しい終値を取りに行く
   const CLOSE_TIMES = { jp: { zone: "Asia/Tokyo", time: "15:40" }, us: { zone: "America/New_York", time: "16:10" } };
   // 株探を開いてからこの時間内に戻ったときだけクリップボードを読む（関係ないときに許可を聞かない）
@@ -1604,7 +1613,7 @@
       const saved = JSON.parse(localStorage.getItem(QUOTES_KEY));
       if (!isObject(saved)) return;
       if (typeof saved.gas === "string" && GAS_PATTERN.test(saved.gas)) quotes.gas = saved.gas;
-      if (typeof saved.lastClip === "string" && saved.lastClip.length <= 60) quotes.lastClip = saved.lastClip;
+      if (typeof saved.lastClip === "string" && saved.lastClip.length <= 400) quotes.lastClip = saved.lastClip;
       if (Number.isFinite(saved.kabutanAt)) quotes.kabutanAt = saved.kabutanAt;
       if (typeof saved.kabutanCode === "string" && FAV_CODE_RULES.jp.pattern.test(saved.kabutanCode)) quotes.kabutanCode = saved.kabutanCode;
     } catch {
@@ -1684,6 +1693,19 @@
     }
   }
 
+  // 表示名が空で登録された銘柄に、取れた銘柄名を入れる。米国株の名前は会社の種類などを省いて短くする
+  function applyName(fav, name) {
+    if (!fav.autoName || typeof name !== "string") return;
+    let text = name.normalize("NFKC").replace(/\s+/g, " ").trim();
+    if (fav.market === "us") text = text.replace(/,? (Inc|Corp|Corporation|Co|Ltd|Plc|PLC|Holdings|Group|N\.?V|S\.?A|Class [A-C])\.?$/g, "").replace(/,? (Inc|Corp|Corporation|Co|Ltd|Plc|PLC)\.?$/g, "").trim();
+    text = text.slice(0, 60).trim();
+    if (!text) return;
+    fav.name = text;
+    fav.autoName = false;
+    save();
+    renderFavorites();
+  }
+
   function applyClose(fav, close, date) {
     const value = formatNumber(close, MARKETS[fav.market].priceDigits);
     delete quoteStatus[fav.id];
@@ -1705,7 +1727,7 @@
     const known = closeOf(fav);
     // 今開いている間に手で打った値は上書きしない。同じ終値の期間のうちは取り直さない
     if (!force && quoteStatus[fav.id] === "manual") return;
-    if (!force && known.baseline.trim() !== "" && known.closeDate && latestCloseKey("us", known.closeAt) === latestCloseKey("us", Date.now())) return;
+    if (!force && !fav.autoName && known.baseline.trim() !== "" && known.closeDate && latestCloseKey("us", known.closeAt) === latestCloseKey("us", Date.now())) return;
     quoteStatus[fav.id] = "loading";
     renderClose();
     try {
@@ -1713,7 +1735,10 @@
       const body = await response.json();
       const quote = isObject(body) && isObject(body.quotes) ? body.quotes[`US:${fav.code}`] : null;
       if (!isObject(quote) || !(quote.close > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(quote.date)) throw new Error("no quote");
-      if (favorites.includes(fav)) applyClose(fav, quote.close, quote.date);
+      if (favorites.includes(fav)) {
+        applyName(fav, quote.name);
+        applyClose(fav, quote.close, quote.date);
+      }
     } catch {
       quoteStatus[fav.id] = "error";
       renderClose();
@@ -1736,7 +1761,7 @@
       return;
     }
     const match = CLIP_PATTERN.exec(text);
-    // 「株探で見る」を押した銘柄のコピーだけ入れる（前に別の銘柄でコピーした値を入れない）
+    // 「株探で取得」を押した銘柄のコピーだけ入れる（前に別の銘柄でコピーした値を入れない）
     if (!match || match[1] !== quotes.kabutanCode || text === quotes.lastClip) return;
     // 同じコードのお気に入りが複数あるときは、選んでいる銘柄を優先する
     const sameCode = favorites.filter((f) => f.market === "jp" && f.code === match[1]);
@@ -1747,6 +1772,13 @@
     saveQuotes();
     if (market !== "jp") document.querySelector('[data-market-select="jp"]').click();
     if (activeFav.jp !== fav.id) selectFavorite(fav.id);
+    if (match[4]) {
+      try {
+        applyName(fav, decodeURIComponent(match[4]));
+      } catch {
+        // 名前が壊れていたら終値だけ入れる
+      }
+    }
     applyClose(fav, Number(match[2]), match[3]);
   }
 
