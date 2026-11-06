@@ -67,207 +67,293 @@
       </section>
 
       <main aria-label="株価と前日比の計算">
-        <section class="card baseline-card" aria-labelledby="baseline-heading">
-          <div class="card-heading">
-            <h2 id="baseline-heading" class="field-title"><label for="baseline">前日終値</label></h2>
-            <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
-            <div class="close-actions">
-              <span id="close-tag" class="close-tag" hidden></span>
-              <button id="close-refresh" class="close-refresh" type="button" aria-label="終値を取り直す" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
-              <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で見る</a>
-            </div>
-          </div>
-          <div class="field field-lg">
-            <button class="field-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-            <span class="input-unit" aria-hidden="true">円</span>
-            <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
-          </div>
-          <p class="field-error" id="baseline-error" aria-live="polite"></p>
-          <p class="close-note" id="close-note" aria-live="polite"></p>
-
-          <div class="hold-block">
-            <div class="field-heading">
-              <span id="hold-title" class="field-label hold-title">保有</span>
-              <div class="account-switch account-picker">
-                <button id="account-pick" class="account-pick" type="button" aria-expanded="false" aria-controls="account-menu" aria-label="証券会社と口座（楽天・特定）"><span class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div id="account-menu" class="account-menu" role="group" aria-label="証券会社と口座" hidden>
-                  <div class="account-menu-group">
-                    <div class="account-menu-name">楽天証券</div>
-                    <div class="account-menu-chips">
-                      <button type="button" data-account="tokutei" aria-pressed="true" aria-label="楽天証券・特定">特定</button>
-                      <button type="button" data-account="nisa" aria-pressed="false" aria-label="楽天証券・NISA">NISA</button>
-                    </div>
-                  </div>
-                  <div class="account-menu-group">
-                    <div class="account-menu-name">moomoo証券</div>
-                    <div class="account-menu-chips">
-                      <button type="button" data-account="moomoo" aria-pressed="false" aria-label="moomoo証券・特定">特定</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="hold-grid" role="group" aria-labelledby="hold-title">
-              <div>
-                <label class="field-label" for="hold-buy">買値<span class="sr-only unit-name">（円）</span></label>
-                <div class="field field-sm">
-                  <button class="field-clear" type="button" data-clear="hold-buy" aria-label="買値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-                  <span class="input-unit" aria-hidden="true">円</span>
-                  <input id="hold-buy" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="24">
-                </div>
-              </div>
-              <div>
-                <label class="field-label" for="hold-qty">株数</label>
-                <div class="field field-sm">
-                  <button class="field-clear" type="button" data-clear="hold-qty" aria-label="株数をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-                  <input id="hold-qty" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="16">
-                  <span class="field-suffix" aria-hidden="true">株</span>
-                </div>
-              </div>
-            </div>
-            <p id="hold-error" class="field-error" aria-live="polite"></p>
-          </div>
-        </section>
-
-        <div id="calc-tabs" class="segmented calc-tabs" role="tablist" aria-label="計算の種類">
-          <button type="button" role="tab" id="tab-percent" data-tab="percent" aria-controls="percent-card" aria-selected="true">% → 株価</button>
-          <button type="button" role="tab" id="tab-price" data-tab="price" aria-controls="price-card" aria-selected="false">株価 → %</button>
-          <button type="button" role="tab" id="tab-breakeven" data-tab="breakeven" aria-controls="breakeven-card" aria-selected="false">損益分岐</button>
+        <div id="mode-tabs" class="segmented mode-tabs" role="group" aria-label="計算の種類">
+          <button type="button" data-mode="buy" aria-pressed="true">買う</button>
+          <button type="button" data-mode="sell" aria-pressed="false">売る</button>
         </div>
 
-        <section id="percent-card" class="card calc-card" data-panel="percent" aria-labelledby="percent-heading">
-          <div class="card-heading">
-            <span class="step">01</span>
-            <h2 id="percent-heading">% → 株価</h2>
-          </div>
-          <label class="sr-only" for="rate">前日比（％）</label>
-          <div class="entry-row">
-            <button id="toggle-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
-            <div class="field">
-              <button class="field-clear" type="button" data-clear="rate" aria-label="前日比の率をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-              <input id="rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
-              <span class="field-suffix" aria-hidden="true">%</span>
+        <div id="buy-view" class="mode-view">
+          <section class="card baseline-card" aria-labelledby="baseline-heading">
+            <div class="card-heading">
+              <h2 id="baseline-heading" class="field-title"><label for="baseline">前日終値</label></h2>
+              <p id="baseline-help" class="sr-only">この金額を両方の計算に使います。</p>
+              <div class="close-actions">
+                <span id="close-tag" class="close-tag" hidden></span>
+                <button id="close-refresh" class="close-refresh" type="button" aria-label="終値を取り直す" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
+                <a id="kabutan-link" class="kabutan-link" target="_blank" rel="noopener" hidden>株探で見る</a>
+              </div>
             </div>
-            <div class="stepper-grid">
-              <button id="rate-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-              <button id="rate-whole-up" type="button" aria-label="0.01増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
-              <button id="rate-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-              <button id="rate-whole-down" type="button" aria-label="0.01減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
-            </div>
-          </div>
-          <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.01ずつ数字を増減できます。</p>
-          <div class="presets" role="group" aria-label="よく使う騰落率">
-            <button type="button" data-rate="1" aria-pressed="false">1%</button>
-            <button type="button" data-rate="2" aria-pressed="false">2%</button>
-            <button type="button" data-rate="3" aria-pressed="false">3%</button>
-            <button type="button" data-rate="4" aria-pressed="false">4%</button>
-            <button type="button" data-rate="5" aria-pressed="false">5%</button>
-            <button type="button" data-rate="7" aria-pressed="false">7%</button>
-            <button type="button" data-rate="10" aria-pressed="false">10%</button>
-          </div>
-          <p class="field-error" id="rate-error" aria-live="polite"></p>
-
-          <div id="percent-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
-            <div class="result-label">株価<span id="rate-badge" class="sr-only">入力待ち</span></div>
-            <output id="percent-result" class="main-result" for="baseline rate"><span class="result-unit money-unit">円</span><span id="percent-result-value">—</span></output>
-            <p id="rounded-price" class="rounded-price"></p>
-            <div class="delta-row"><span>値幅</span><strong id="percent-delta">—</strong></div>
-            <div id="percent-pnl" class="pnl-box" hidden>
-              <div class="pnl-row"><span>買値から</span><strong id="percent-pnl-rate"></strong></div>
-              <div id="percent-pnl-gain-row" class="pnl-row pnl-gain"><span id="percent-pnl-label">損益</span><strong id="percent-pnl-gain"></strong></div>
-              <p id="percent-pnl-note" class="pnl-note"></p>
-            </div>
-          </div>
-          <p id="percent-formula" hidden></p>
-        </section>
-
-        <section id="price-card" class="card calc-card" data-panel="price" aria-labelledby="price-heading">
-          <div class="card-heading">
-            <span class="step">02</span>
-            <h2 id="price-heading">株価 → %</h2>
-            <button id="set-baseline-price" class="set-baseline" type="button" aria-label="02の株価に前日終値を入れる" disabled>前日終値をセット</button>
-          </div>
-          <label class="sr-only" for="price">株価<span class="unit-name">（円）</span></label>
-          <div class="entry-row">
-            <div class="field">
-              <button class="field-clear" type="button" data-clear="price" aria-label="株価をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+            <div class="field field-lg">
+              <button class="field-clear" type="button" data-clear="baseline" aria-label="前日終値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
               <span class="input-unit" aria-hidden="true">円</span>
-              <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
+              <input id="baseline" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="baseline-help baseline-error" maxlength="24">
             </div>
-            <div class="stepper-grid price-steppers">
-              <div id="price-stepper" class="stepper-col" role="group" aria-label="株価を1円ずつ調整">
-                <button id="price-up" type="button" aria-label="1円増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                <button id="price-down" type="button" aria-label="1円減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <p class="field-error" id="baseline-error" aria-live="polite"></p>
+            <p class="close-note" id="close-note" aria-live="polite"></p>
+          </section>
+
+          <div id="buy-tabs" class="segmented calc-tabs" role="tablist" aria-label="買うときの計算">
+            <button type="button" role="tab" id="tab-percent" data-tab="percent" aria-controls="percent-card" aria-selected="true">% → 株価</button>
+            <button type="button" role="tab" id="tab-price" data-tab="price" aria-controls="price-card" aria-selected="false">株価 → %</button>
+          </div>
+
+          <section id="percent-card" class="card calc-card" data-panel="percent" aria-labelledby="percent-heading">
+            <div class="card-heading">
+              <span class="step">01</span>
+              <h2 id="percent-heading">% → 株価</h2>
+            </div>
+            <label class="sr-only" for="rate">前日比（％）</label>
+            <div class="entry-row">
+              <button id="toggle-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
+              <div class="field">
+                <button class="field-clear" type="button" data-clear="rate" aria-label="前日比の率をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                <input id="rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
+                <span class="field-suffix" aria-hidden="true">%</span>
               </div>
-              <div id="price-fine-stepper" class="stepper-col" role="group" aria-label="株価を1セントずつ調整" hidden>
-                <button id="price-fine-up" type="button" aria-label="1セント増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
-                <button id="price-fine-down" type="button" aria-label="1セント減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+              <div class="stepper-grid">
+                <button id="rate-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                <button id="rate-whole-up" type="button" aria-label="0.01増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                <button id="rate-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                <button id="rate-whole-down" type="button" aria-label="0.01減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
               </div>
             </div>
-          </div>
-          <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の上下ボタンで1円ずつ増減できます。</p>
-          <p class="field-error" id="price-error" aria-live="polite"></p>
-
-          <div id="price-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
-            <div class="result-label">前日比<span id="price-badge" class="sr-only">入力待ち</span></div>
-            <output id="price-result" class="main-result" for="baseline price"><span id="price-result-value">—</span><span class="result-unit">%</span></output>
-            <p id="rate-description" class="sr-only"></p>
-            <div class="delta-row"><span>値幅</span><strong id="price-delta">—</strong></div>
-            <div id="price-pnl" class="pnl-box" hidden>
-              <div class="pnl-row"><span>買値から</span><strong id="price-pnl-rate"></strong></div>
-              <div id="price-pnl-gain-row" class="pnl-row pnl-gain"><span id="price-pnl-label">損益</span><strong id="price-pnl-gain"></strong></div>
-              <p id="price-pnl-note" class="pnl-note"></p>
+            <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.01ずつ数字を増減できます。</p>
+            <div class="presets" role="group" aria-label="よく使う騰落率">
+              <button type="button" data-rate="1" aria-pressed="false">1%</button>
+              <button type="button" data-rate="2" aria-pressed="false">2%</button>
+              <button type="button" data-rate="3" aria-pressed="false">3%</button>
+              <button type="button" data-rate="4" aria-pressed="false">4%</button>
+              <button type="button" data-rate="5" aria-pressed="false">5%</button>
+              <button type="button" data-rate="7" aria-pressed="false">7%</button>
+              <button type="button" data-rate="10" aria-pressed="false">10%</button>
             </div>
-          </div>
-          <p id="price-formula" hidden></p>
-        </section>
+            <p class="field-error" id="rate-error" aria-live="polite"></p>
 
-        <section id="breakeven-card" class="card calc-card breakeven-card" data-panel="breakeven" aria-labelledby="breakeven-heading" hidden>
-          <div class="card-heading">
-            <span class="step">03</span>
-            <h2 id="breakeven-heading">損益分岐点</h2>
-            <span id="be-account" class="account-tag">特定口座</span>
-          </div>
-          <div class="be-buy-line">
-            <span class="be-buy-label">買付約定価格<span id="be-buy-sub" class="be-buy-sub">「保有」欄に買値を入力すると計算します。</span></span>
-            <strong id="be-buy-display">—</strong>
-          </div>
-          <button id="cost-toggle" class="disclosure" type="button" aria-expanded="false" aria-controls="cost-panel">
-            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-            <span>取得単価を訂正する</span>
-          </button>
-          <div id="cost-panel" class="sub-panel" hidden>
-            <div class="field-heading">
-              <label class="field-label" for="cost-basis">取得単価（アプリ表示）<span class="sr-only">（ドル）</span></label>
+            <div id="percent-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
+              <div class="result-label">株価<span id="rate-badge" class="sr-only">入力待ち</span></div>
+              <output id="percent-result" class="main-result" for="baseline rate"><span class="result-unit money-unit">円</span><span id="percent-result-value">—</span></output>
+              <p id="rounded-price" class="rounded-price"></p>
+              <div class="delta-row"><span>値幅</span><strong id="percent-delta">—</strong></div>
             </div>
-            <div class="field">
-              <button class="field-clear" type="button" data-clear="cost-basis" aria-label="取得単価をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-              <span class="input-unit" aria-hidden="true">$</span>
-              <input id="cost-basis" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="breakeven-help breakeven-error" maxlength="24">
-            </div>
-            <p class="sub-note">入れると、約定価格との差を買付手数料として計算します。</p>
-          </div>
-          <p id="breakeven-help" class="sr-only">保有の買値を買付約定価格として、選んだ口座で利益が出始める株価を1株あたりで表示します。取得単価を入れた場合は、その金額から買付手数料を逆算します。</p>
-          <p id="breakeven-error" class="field-error" aria-live="polite"></p>
+            <p id="percent-formula" hidden></p>
+          </section>
 
-          <div class="profit-tile" aria-live="polite">
-            <div id="be-tile-label" class="profit-tile-label">利益が出始める株価</div>
-            <div class="profit-tile-value"><span id="be-profit">—</span><span class="profit-tile-suffix">以上</span></div>
+          <section id="price-card" class="card calc-card" data-panel="price" aria-labelledby="price-heading">
+            <div class="card-heading">
+              <span class="step">02</span>
+              <h2 id="price-heading">株価 → %</h2>
+              <button id="set-baseline-price" class="set-baseline" type="button" aria-label="02の株価に前日終値を入れる" disabled>前日終値をセット</button>
+            </div>
+            <label class="sr-only" for="price">株価<span class="unit-name">（円）</span></label>
+            <div class="entry-row">
+              <div class="field">
+                <button class="field-clear" type="button" data-clear="price" aria-label="株価をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                <span class="input-unit" aria-hidden="true">円</span>
+                <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
+              </div>
+              <div class="stepper-grid price-steppers">
+                <div id="price-stepper" class="stepper-col" role="group" aria-label="株価を1円ずつ調整">
+                  <button id="price-up" type="button" aria-label="1円増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                  <button id="price-down" type="button" aria-label="1円減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                </div>
+                <div id="price-fine-stepper" class="stepper-col" role="group" aria-label="株価を1セントずつ調整" hidden>
+                  <button id="price-fine-up" type="button" aria-label="1セント増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                  <button id="price-fine-down" type="button" aria-label="1セント減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                </div>
+              </div>
+            </div>
+            <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の上下ボタンで1円ずつ増減できます。</p>
+            <p class="field-error" id="price-error" aria-live="polite"></p>
+
+            <div id="price-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
+              <div class="result-label">前日比<span id="price-badge" class="sr-only">入力待ち</span></div>
+              <output id="price-result" class="main-result" for="baseline price"><span id="price-result-value">—</span><span class="result-unit">%</span></output>
+              <p id="rate-description" class="sr-only"></p>
+              <div class="delta-row"><span>値幅</span><strong id="price-delta">—</strong></div>
+            </div>
+            <p id="price-formula" hidden></p>
+          </section>
+        </div>
+
+        <div id="sell-view" class="mode-view" hidden>
+            <section class="card hold-card hold-block" aria-labelledby="hold-title">
+              <div class="field-heading">
+                <span id="hold-title" class="field-label hold-title">保有</span>
+                <div class="account-switch account-picker">
+                  <button id="account-pick" class="account-pick" type="button" aria-expanded="false" aria-controls="account-menu" aria-label="証券会社と口座（楽天・特定）"><span class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div id="account-menu" class="account-menu" role="group" aria-label="証券会社と口座" hidden>
+                    <div class="account-menu-group">
+                      <div class="account-menu-name">楽天証券</div>
+                      <div class="account-menu-chips">
+                        <button type="button" data-account="tokutei" aria-pressed="true" aria-label="楽天証券・特定">特定</button>
+                        <button type="button" data-account="nisa" aria-pressed="false" aria-label="楽天証券・NISA">NISA</button>
+                      </div>
+                    </div>
+                    <div class="account-menu-group">
+                      <div class="account-menu-name">moomoo証券</div>
+                      <div class="account-menu-chips">
+                        <button type="button" data-account="moomoo" aria-pressed="false" aria-label="moomoo証券・特定">特定</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="hold-grid" role="group" aria-labelledby="hold-title">
+                <div>
+                  <label class="field-label" for="hold-buy">買値<span class="sr-only unit-name">（円）</span></label>
+                  <div class="field field-sm">
+                    <button class="field-clear" type="button" data-clear="hold-buy" aria-label="買値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                    <span class="input-unit" aria-hidden="true">円</span>
+                    <input id="hold-buy" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="24">
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label" for="hold-qty">株数</label>
+                  <div class="field field-sm">
+                    <button class="field-clear" type="button" data-clear="hold-qty" aria-label="株数をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                    <input id="hold-qty" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="hold-error" maxlength="16">
+                    <span class="field-suffix" aria-hidden="true">株</span>
+                  <div class="qty-steps" role="group" aria-label="株数を調整"><button id="qty-up" type="button" aria-label="100株増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button><button id="qty-down" type="button" aria-label="100株減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+                  </div>
+                </div>
+              </div>
+              <p id="hold-error" class="field-error" aria-live="polite"></p>
+            </section>
+
+          <p id="sell-empty" class="card sell-empty">買値を入れると、売ったときの損益と、目標の売値が出ます。</p>
+
+          <div id="sell-body" class="mode-view">
+            <div id="sell-tabs" class="segmented calc-tabs" role="tablist" aria-label="売るときの計算">
+              <button type="button" role="tab" id="tab-sell" data-tab="sell" aria-controls="sell-card" aria-selected="true">売値 → 損益</button>
+              <button type="button" role="tab" id="tab-target" data-tab="target" aria-controls="target-card" aria-selected="false">→ 売値</button>
+              <button type="button" role="tab" id="tab-breakeven" data-tab="breakeven" aria-controls="breakeven-card" aria-selected="false">損益分岐</button>
+            </div>
+
+            <section id="sell-card" class="card calc-card" data-panel="sell" aria-labelledby="sell-heading">
+              <div class="card-heading">
+                <span class="step">01</span>
+                <h2 id="sell-heading">売値 → 損益</h2>
+              </div>
+              <label class="sr-only" for="sell-price">売値<span class="unit-name">（円）</span></label>
+              <div class="entry-row">
+                <div class="field">
+                  <button class="field-clear" type="button" data-clear="sell-price" aria-label="売値をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                  <span class="input-unit" aria-hidden="true">円</span>
+                  <input id="sell-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="sell-price-error" maxlength="24">
+                </div>
+                <div class="stepper-grid price-steppers">
+                  <div class="stepper-col" role="group" aria-label="売値を調整">
+                    <button id="sell-up" class="unit-step" type="button" data-step-dir="1" aria-label="1円増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                    <button id="sell-down" class="unit-step" type="button" data-step-dir="-1" aria-label="1円減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                  </div>
+                  <div class="stepper-col fine-stepper" role="group" aria-label="売値を1セントずつ調整" hidden>
+                    <button id="sell-fine-up" type="button" aria-label="1セント増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                    <button id="sell-fine-down" type="button" aria-label="1セント減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                  </div>
+                </div>
+              </div>
+              <p class="field-error" id="sell-price-error" aria-live="polite"></p>
+
+              <div id="sell-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
+                <div id="sell-label" class="result-label">損益</div>
+                <output id="sell-result" class="main-result" for="hold-buy hold-qty sell-price"><span id="sell-result-value">—</span></output>
+                <div class="delta-row"><span>買値から</span><strong id="sell-rate">—</strong></div>
+                <p id="sell-note" class="pnl-note"></p>
+              </div>
+            </section>
+
+            <section id="target-card" class="card calc-card" data-panel="target" aria-labelledby="target-heading">
+              <div class="card-heading">
+                <span class="step">02</span>
+                <h2 id="target-heading">前日終値 → 売値</h2>
+                <div class="segmented segmented-sm target-base" role="group" aria-label="何から計算するか">
+                  <button type="button" data-target-base="close" aria-pressed="true">前日終値</button>
+                  <button type="button" data-target-base="buy" aria-pressed="false">買値</button>
+                </div>
+              </div>
+              <label class="sr-only" for="target-rate">目標の騰落率（％）</label>
+              <div class="entry-row">
+                <button id="target-sign" class="sign-toggle" type="button" aria-label="現在プラス。マイナスに切り替え">+</button>
+                <div class="field">
+                  <button class="field-clear" type="button" data-clear="target-rate" aria-label="目標の率をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                  <input id="target-rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="target-rate-error" maxlength="24">
+                  <span class="field-suffix" aria-hidden="true">%</span>
+                </div>
+                <div class="stepper-grid">
+                  <button id="target-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                  <button id="target-fine-up" type="button" aria-label="0.01増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                  <button id="target-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <button id="target-fine-down" type="button" aria-label="0.01減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                </div>
+              </div>
+              <div class="presets" role="group" aria-label="よく使う率">
+                <button type="button" data-target-rate="1" aria-pressed="false">1%</button>
+                <button type="button" data-target-rate="2" aria-pressed="false">2%</button>
+                <button type="button" data-target-rate="3" aria-pressed="false">3%</button>
+                <button type="button" data-target-rate="4" aria-pressed="false">4%</button>
+                <button type="button" data-target-rate="5" aria-pressed="false">5%</button>
+                <button type="button" data-target-rate="7" aria-pressed="false">7%</button>
+                <button type="button" data-target-rate="10" aria-pressed="false">10%</button>
+              </div>
+              <p class="field-error" id="target-rate-error" aria-live="polite"></p>
+
+              <div id="target-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
+                <div class="result-label">売値</div>
+                <output id="target-result" class="main-result" for="target-rate"><span class="result-unit money-unit">円</span><span id="target-result-value">—</span></output>
+                <p id="target-from" class="rounded-price"></p>
+                <div class="delta-row"><span id="target-gain-label">実現損益</span><strong id="target-gain">—</strong></div>
+                <p id="target-note" class="pnl-note"></p>
+              </div>
+            </section>
+
+            <section id="breakeven-card" class="card calc-card breakeven-card" data-panel="breakeven" aria-labelledby="breakeven-heading" hidden>
+              <div class="card-heading">
+                <span class="step">03</span>
+                <h2 id="breakeven-heading">損益分岐点</h2>
+                <span id="be-account" class="account-tag">特定口座</span>
+              </div>
+              <div class="be-buy-line">
+                <span class="be-buy-label">買付約定価格<span id="be-buy-sub" class="be-buy-sub">「保有」欄に買値を入力すると計算します。</span></span>
+                <strong id="be-buy-display">—</strong>
+              </div>
+              <button id="cost-toggle" class="disclosure" type="button" aria-expanded="false" aria-controls="cost-panel">
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                <span>取得単価を訂正する</span>
+              </button>
+              <div id="cost-panel" class="sub-panel" hidden>
+                <div class="field-heading">
+                  <label class="field-label" for="cost-basis">取得単価（アプリ表示）<span class="sr-only">（ドル）</span></label>
+                </div>
+                <div class="field">
+                  <button class="field-clear" type="button" data-clear="cost-basis" aria-label="取得単価をクリア" hidden><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                  <span class="input-unit" aria-hidden="true">$</span>
+                  <input id="cost-basis" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="breakeven-help breakeven-error" maxlength="24">
+                </div>
+                <p class="sub-note">入れると、約定価格との差を買付手数料として計算します。</p>
+              </div>
+              <p id="breakeven-help" class="sr-only">保有の買値を買付約定価格として、選んだ口座で利益が出始める株価を1株あたりで表示します。取得単価を入れた場合は、その金額から買付手数料を逆算します。</p>
+              <p id="breakeven-error" class="field-error" aria-live="polite"></p>
+
+              <div class="profit-tile" aria-live="polite">
+                <div id="be-tile-label" class="profit-tile-label">利益が出始める株価</div>
+                <div class="profit-tile-value"><span id="be-profit">—</span><span class="profit-tile-suffix">以上</span></div>
+              </div>
+              <div class="breakdown-wrap">
+                <table class="breakdown-table">
+                  <tbody>
+                    <tr><th scope="row">手数料</th><td id="be-fee-total">—</td></tr>
+                    <tr class="is-detail"><th scope="row">買付手数料</th><td id="be-fee-buy">—</td></tr>
+                    <tr class="is-detail"><th scope="row">売却手数料</th><td id="be-fee-sell">—</td></tr>
+                    <tr id="be-fee-sec-row" class="is-detail"><th scope="row"><span class="detail-main">その他手数料</span><span class="detail-note">SEC Fee等</span></th><td id="be-fee-sec">—</td></tr>
+                    <tr><th scope="row">実質取得費用</th><td id="be-cost">—</td></tr>
+                    <tr><th scope="row">損益分岐点</th><td id="be-even">—</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p id="breakeven-note" class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
+            </section>
           </div>
-          <div class="breakdown-wrap">
-            <table class="breakdown-table">
-              <tbody>
-                <tr><th scope="row">手数料</th><td id="be-fee-total">—</td></tr>
-                <tr class="is-detail"><th scope="row">買付手数料</th><td id="be-fee-buy">—</td></tr>
-                <tr class="is-detail"><th scope="row">売却手数料</th><td id="be-fee-sell">—</td></tr>
-                <tr id="be-fee-sec-row" class="is-detail"><th scope="row"><span class="detail-main">その他手数料</span><span class="detail-note">SEC Fee等</span></th><td id="be-fee-sec">—</td></tr>
-                <tr><th scope="row">実質取得費用</th><td id="be-cost">—</td></tr>
-                <tr><th scope="row">損益分岐点</th><td id="be-even">—</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p id="breakeven-note" class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
-        </section>
+        </div>
 
         <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
       </main>

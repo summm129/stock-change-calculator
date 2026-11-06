@@ -31,7 +31,10 @@
   const holdInputs = Object.values(hold);
   const breakeven = { cost: get("cost-basis") };
   const breakevenInputs = Object.values(breakeven);
-  const inputs = [...Object.values(fields), ...holdInputs, ...breakevenInputs];
+  // 売る: 01 の売値と、02 の目標の率（前日終値か買値から何%で売るか）
+  const sell = { price: get("sell-price"), rate: get("target-rate") };
+  const sellInputs = Object.values(sell);
+  const inputs = [...Object.values(fields), ...holdInputs, ...breakevenInputs, ...sellInputs];
   let storageAvailable = true;
   let market = "jp";
   let rateSign = 1;
@@ -43,11 +46,16 @@
   // 前日終値を自動で入れたときの終値の日付と、取得した時刻。手で打ち直したら空に戻す
   let closeDate = "";
   let closeAt = 0;
-  let activeTab = "percent";
+  // 「画面の作り: タブ」のとき、買う・売るそれぞれで開いているカード
+  const activeTab = { buy: "percent", sell: "sell" };
+  // 買う / 売る。銘柄ごとに保存する。保存がなければ、保有の買値があれば売る、なければ買う
+  let mode = "buy";
+  let targetSign = 1;
+  let targetBase = "close";
 
   function emptyState() {
     // account は米国株の証券会社・口座。空なら設定の「最初の証券会社・口座」を使う
-    return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "", account: "", closeDate: "", closeAt: 0 };
+    return { baseline: "", rate: "", price: "", rateSign: 1, holdBuy: "", holdQty: "", costBasis: "", account: "", closeDate: "", closeAt: 0, mode: "", sellPrice: "", targetRate: "", targetSign: 1, targetBase: "close" };
   }
 
   function snapshot() {
@@ -61,7 +69,12 @@
       costBasis: breakeven.cost.value,
       account,
       closeDate,
-      closeAt
+      closeAt,
+      mode,
+      sellPrice: sell.price.value,
+      targetRate: sell.rate.value,
+      targetSign,
+      targetBase
     };
   }
 
@@ -76,6 +89,11 @@
     account = state.account || settings.account;
     closeDate = state.closeDate;
     closeAt = state.closeAt;
+    mode = state.mode || (state.holdBuy.trim() !== "" ? "sell" : "buy");
+    sell.price.value = state.sellPrice;
+    sell.rate.value = state.targetRate;
+    targetSign = state.targetSign;
+    targetBase = state.targetBase;
   }
 
   function isObject(value) {
@@ -98,6 +116,11 @@
     if (SETTING_VALUES.account.includes(saved.account)) state.account = saved.account;
     if (typeof saved.closeDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(saved.closeDate)) state.closeDate = saved.closeDate;
     if (Number.isFinite(saved.closeAt) && saved.closeAt > 0) state.closeAt = saved.closeAt;
+    if (saved.mode === "buy" || saved.mode === "sell") state.mode = saved.mode;
+    if (typeof saved.sellPrice === "string" && saved.sellPrice.length <= 32) state.sellPrice = saved.sellPrice;
+    if (typeof saved.targetRate === "string" && saved.targetRate.length <= 32) state.targetRate = saved.targetRate;
+    if (saved.targetSign === -1 || saved.targetSign === 1) state.targetSign = saved.targetSign;
+    if (saved.targetBase === "close" || saved.targetBase === "buy") state.targetBase = saved.targetBase;
     return state;
   }
 
@@ -129,12 +152,16 @@
     // 二重三角（最小単位の増減）は米株のみ。日本株では隠す。
     const hasFine = config.fineDigits !== null;
     get("price-fine-stepper").hidden = !hasFine;
+    for (const element of document.querySelectorAll(".fine-stepper")) element.hidden = !hasFine;
+    get("sell-up").setAttribute("aria-label", `1${config.unit}増やす`);
+    get("sell-down").setAttribute("aria-label", `1${config.unit}減らす`);
+    get("qty-up").setAttribute("aria-label", `${qtyUnit()}株増やす`);
+    get("qty-down").setAttribute("aria-label", `${qtyUnit()}株減らす`);
     get("price-fine-stepper").setAttribute("aria-label", hasFine ? `株価を${config.fineLabel}ずつ調整` : "");
     get("price-fine-up").setAttribute("aria-label", hasFine ? `${config.fineLabel}増やす` : "");
     get("price-fine-down").setAttribute("aria-label", hasFine ? `${config.fineLabel}減らす` : "");
     get("breakeven-card").hidden = market !== "us";
     get("tab-breakeven").hidden = market !== "us";
-    if (market !== "us" && activeTab === "breakeven") activeTab = "percent";
     applyTabs();
     get("price-help").textContent = hasFine
       ? `現在値や目標の株価を入力してください。右の一重三角で1${config.unit}ずつ、二重三角で${config.fineLabel}ずつ増減できます。`
@@ -154,6 +181,13 @@
   function normalizeRateInput() {
     rateSign = normalizeMagnitudeInput(fields.rate, rateSign);
   }
+
+  function normalizeTargetInput() {
+    targetSign = normalizeMagnitudeInput(sell.rate, targetSign);
+  }
+
+  // 株数の上下ボタンの単位: 日本株は100株（単元）、米国株は1株
+  const qtyUnit = () => (market === "us" ? 1 : 100);
 
   // 入力欄の×は値があるときだけ出す。米株は $ を数字の隣に置くため、入力欄の幅を中身に合わせる。
   const sizer = document.createElement("span");
@@ -223,51 +257,136 @@
     hold.buy.setAttribute("aria-invalid", String(Boolean(visible && badBuy)));
     hold.qty.setAttribute("aria-invalid", String(Boolean(visible && badQty)));
     get("hold-error").textContent = visible;
+    const steppingQty = hasQty ? qty : 0;
+    get("qty-up").disabled = steppingQty === null || steppingQty < 0 || steppingQty >= 1e9;
+    get("qty-down").disabled = steppingQty === null || steppingQty <= 0;
     updateClearButtons();
   }
 
-  // 01/02 の株価に対して、買値からの率と損益（株数があれば）を出す
-  function renderPnl(kind, price) {
-    const box = get(`${kind}-pnl`);
+  // 売値に対する損益。株数がなければ1株として計算する。米国株は選んでいる証券会社・口座の手数料を引く
+  function pnlOf(price) {
     const { buy, qty } = holdValues();
-    if (buy === null || price === null) {
-      box.hidden = true;
+    if (buy === null || price === null) return null;
+    const shares = qty ?? 1;
+    if (market !== "us") return { gain: (price - buy) * shares, rate: (price / buy - 1) * 100, fees: null, qty };
+    // 手数料は注文全体の金額で出す（上限が効くため）
+    const buyCents = toCents(buy * shares);
+    const sellCents = toCents(price * shares);
+    const buyFee = account === "nisa" ? 0 : buyFeeCents(buy, shares, buyCents);
+    const fees = buyFee + sellFeeCents(sellCents);
+    const net = sellCents - buyCents - fees;
+    return { gain: net / 100, rate: (net / (buyCents + buyFee)) * 100, fees, qty };
+  }
+
+  const sharesLabel = (qty) => `${qty === null ? 1 : formatNumber(qty, 4)}株${market === "us" ? "・手数料引後" : ""}`;
+
+  function gainText(gain) {
+    // 米国株は手数料を引いた額なのでセントまで出す
+    if (market !== "us") return signedMoney(gain);
+    const cents = toCents(gain);
+    return `${cents < 0 ? "−" : cents > 0 ? "+" : ""}${centsText(Math.abs(cents))}`;
+  }
+
+  function renderFeeNote(note, result) {
+    if (!result || result.fees === null) {
+      note.replaceChildren();
       return;
     }
-    box.hidden = false;
-    let rate = (price / buy - 1) * 100;
-    let gain = qty === null ? null : (price - buy) * qty;
-    let fees = null;
-    if (market === "us") {
-      // 株数がなければ1株として、注文全体の金額で手数料を出す（手数料の上限が効くため）
-      const shares = qty ?? 1;
-      const buyCents = toCents(buy * shares);
-      const sellCents = toCents(price * shares);
-      const buyFee = account === "nisa" ? 0 : buyFeeCents(buy, shares, buyCents);
-      fees = buyFee + sellFeeCents(sellCents);
-      const net = sellCents - buyCents - fees;
-      rate = (net / (buyCents + buyFee)) * 100;
-      if (gain !== null) gain = net / 100;
+    const label = document.createElement("span");
+    label.textContent = `うち手数料（${ACCOUNT_LABELS[account]}${result.qty === null ? "・1株" : ""}）`;
+    const amount = document.createElement("span");
+    amount.textContent = `−${centsText(result.fees)}`;
+    note.replaceChildren(label, amount);
+  }
+
+  function validBaseline() {
+    const value = parseNumber(fields.baseline.value);
+    return value !== null && value > 0 && value <= 1e9 ? value : null;
+  }
+
+  // 売る: 01 売値 → 損益、02 前日終値（または買値）から % → 売値
+  function updateSell() {
+    const { buy } = holdValues();
+    get("sell-empty").hidden = buy !== null;
+    get("sell-body").hidden = buy === null;
+
+    // 01
+    const hasPrice = sell.price.value.trim() !== "";
+    const price = parseNumber(sell.price.value);
+    let priceError = "";
+    if (hasPrice && price === null) priceError = "数字で入力してください。";
+    else if (hasPrice && price < 0) priceError = `売値は0${unitName()}以上で入力してください。`;
+    else if (hasPrice && price > 1e9) priceError = `売値は10億${unitName()}以下で入力してください。`;
+    const shownPriceError = document.activeElement === sell.price ? "" : priceError;
+    sell.price.setAttribute("aria-invalid", String(Boolean(shownPriceError)));
+    get("sell-price-error").textContent = shownPriceError;
+    const steppingPrice = hasPrice ? price : 0;
+    const canStep = steppingPrice !== null && steppingPrice >= 0 && steppingPrice <= 1e9;
+    for (const id of ["sell-up", "sell-fine-up"]) get(id).disabled = !canStep || steppingPrice >= 1e9;
+    for (const id of ["sell-down", "sell-fine-down"]) get(id).disabled = !canStep || steppingPrice <= 0;
+    const { qty } = holdValues();
+    get("sell-label").textContent = `損益（${sharesLabel(qty)}）`;
+    const result = hasPrice && !priceError ? pnlOf(price) : null;
+    if (result) {
+      setDirection(get("sell-panel"), result.gain);
+      get("sell-result-value").textContent = gainText(result.gain);
+      get("sell-rate").textContent = `${signed(result.rate, 2)}%`;
+    } else {
+      setDirection(get("sell-panel"), 0);
+      get("sell-result-value").textContent = "—";
+      get("sell-rate").textContent = "—";
     }
-    const direction = gain !== null ? gain : rate;
-    box.classList.toggle("is-up", direction > 0 && Math.abs(direction) > 1e-9);
-    box.classList.toggle("is-down", direction < 0 && Math.abs(direction) > 1e-9);
-    get(`${kind}-pnl-rate`).textContent = `${signed(rate, 2)}%`;
-    get(`${kind}-pnl-gain-row`).hidden = gain === null;
-    if (gain !== null) {
-      get(`${kind}-pnl-label`).textContent = `損益（${formatNumber(qty, 4)}株）`;
-      // 米国株は手数料を引いた額なのでセントまで出す
-      get(`${kind}-pnl-gain`).textContent = fees === null ? signedMoney(gain) : `${gain < 0 ? "−" : gain > 0 ? "+" : ""}${centsText(Math.abs(toCents(gain)))}`;
+    renderFeeNote(get("sell-note"), result);
+
+    // 02
+    const sign = get("target-sign");
+    sign.textContent = targetSign < 0 ? "−" : "+";
+    sign.setAttribute("aria-label", targetSign < 0 ? "現在マイナス。プラスに切り替え" : "現在プラス。マイナスに切り替え");
+    for (const button of document.querySelectorAll("[data-target-base]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.targetBase === targetBase));
     }
-    const note = get(`${kind}-pnl-note`);
-    if (fees === null) note.replaceChildren();
-    else {
-      const label = document.createElement("span");
-      label.textContent = `うち手数料（${ACCOUNT_LABELS[account]}${qty === null ? "・1株" : ""}）`;
-      const amount = document.createElement("span");
-      amount.textContent = `−${centsText(fees)}`;
-      note.replaceChildren(label, amount);
+    const baseName = targetBase === "close" ? "前日終値" : "買値";
+    get("target-heading").textContent = `${baseName} → 売値`;
+    const hasRate = sell.rate.value.trim() !== "";
+    const magnitude = hasRate ? parseNumber(sell.rate.value) : 0;
+    let rateError = "";
+    if (hasRate && (magnitude === null || magnitude < 0)) rateError = "数字で入力してください。";
+    else if (targetSign < 0 && magnitude > 100) rateError = "−100%以上で入力してください。";
+    else if (magnitude > 10000) rateError = "10,000%以下で入力してください。";
+    const shownRateError = document.activeElement === sell.rate ? "" : rateError;
+    sell.rate.setAttribute("aria-invalid", String(Boolean(shownRateError)));
+    get("target-rate-error").textContent = shownRateError;
+    const limit = targetSign < 0 ? 100 : 10000;
+    const canStepRate = magnitude !== null && magnitude >= 0 && magnitude <= limit;
+    for (const id of ["target-up", "target-fine-up"]) get(id).disabled = !canStepRate || magnitude >= limit;
+    for (const id of ["target-down", "target-fine-down"]) get(id).disabled = !canStepRate || magnitude <= 0;
+    for (const button of document.querySelectorAll("[data-target-rate]")) {
+      button.setAttribute("aria-pressed", String(hasRate && !rateError && Number(button.dataset.targetRate) === magnitude));
     }
+    const from = targetBase === "close" ? validBaseline() : buy;
+    const fromNote = get("target-from");
+    get("target-gain-label").textContent = `実現損益（${sharesLabel(qty)}）`;
+    if (from === null) fromNote.textContent = targetBase === "close" ? "「買う」で前日終値を入れると計算します。" : "";
+    if (from === null || !hasRate || rateError) {
+      setDirection(get("target-panel"), 0);
+      get("target-result-value").textContent = "—";
+      get("target-gain").textContent = "—";
+      if (from !== null) fromNote.textContent = "";
+      renderFeeNote(get("target-note"), null);
+    } else {
+      const rate = targetSign * magnitude;
+      const raw = from * (1 + rate / 100);
+      // 米国株は1セント、日本株は1円に切り上げる（呼値の刻みは考えない）
+      const target = market === "us" ? Math.ceil(raw * 100 - 1e-9) / 100 : Math.ceil(raw - 1e-9);
+      // 米国株はセントまで（48.20 のように0も出す）
+      get("target-result-value").textContent = market === "us" ? centsText(toCents(target)).slice(1) : formatNumber(target, 0);
+      fromNote.textContent = `${baseName} ${money(from)} から ${signed(rate, 2)}%`;
+      const pnl = pnlOf(target);
+      setDirection(get("target-panel"), pnl ? pnl.gain : 0);
+      get("target-gain").textContent = pnl ? gainText(pnl.gain) : "—";
+      renderFeeNote(get("target-note"), pnl);
+    }
+    updateClearButtons();
   }
 
   // --- 損益分岐点（米国株・楽天証券 / moomoo証券） --------------------------
@@ -491,7 +610,6 @@
 
     if (errors.baseline || errors.rate) {
       clearResult("percent");
-      renderPnl("percent", null);
     } else {
       const { price, delta } = calculateFromPercent(values.baseline, values.rate);
       setDirection(get("percent-panel"), delta);
@@ -500,11 +618,8 @@
       get("percent-delta").textContent = signedMoney(delta);
       get("rounded-price").textContent = roundedPriceNote(price);
       get("percent-formula").textContent = `${formatNumber(values.baseline)} × (1 ${values.rate < 0 ? "−" : "+"} ${formatNumber(Math.abs(values.rate))} ÷ 100)`;
-      renderPnl("percent", price);
     }
 
-    // 02 の損益は前日終値がなくても、株価と買値があれば出す
-    renderPnl("price", errors.price ? null : values.price);
     if (errors.baseline || errors.price) {
       clearResult("price");
     } else {
@@ -516,6 +631,7 @@
       get("rate-description").textContent = delta > 0 ? "前日終値より上昇" : delta < 0 ? "前日終値より下落" : "前日終値と同じ";
       get("price-formula").textContent = `(${formatNumber(values.price)} − ${formatNumber(values.baseline)}) ÷ ${formatNumber(values.baseline)} × 100`;
     }
+    updateSell();
   }
 
   function storageStatus() {
@@ -564,7 +680,7 @@
   }
 
   for (const field of inputs) {
-    const notifyInput = holdInputs.includes(field) ? onHoldInput : breakevenInputs.includes(field) ? onBreakevenInput : onInput;
+    const notifyInput = holdInputs.includes(field) ? onHoldInput : breakevenInputs.includes(field) ? onBreakevenInput : sellInputs.includes(field) ? onSellInput : onInput;
     field.addEventListener("focus", () => {
       if (holdInputs.includes(field)) {
         get("hold-error").textContent = "";
@@ -596,6 +712,9 @@
     });
     field.addEventListener("blur", () => {
       if (field === fields.rate) normalizeRateInput();
+      if (field === sell.rate) normalizeTargetInput();
+      // 率の欄は桁区切りも符号も付けない（符号は左のボタン）
+      const rateLike = field === fields.rate || field === sell.rate;
       const value = parseNumber(field.value);
       if (value !== null) {
         // Group the integer part without rounding the user's decimal digits.
@@ -603,9 +722,9 @@
         const unsigned = normalized.replace(/^[+-]/, "");
         const [integer, fraction] = unsigned.split(".");
         const integerValue = Number(integer || "0");
-        const sign = field === fields.rate ? "" : value < 0 || /^-/.test(normalized) ? "−" : "";
+        const sign = rateLike ? "" : value < 0 || /^-/.test(normalized) ? "−" : "";
         const integerText = formatNumber(Math.abs(integerValue), 0);
-        field.value = `${sign}${field === fields.rate ? integerText.replaceAll(",", "") : integerText}${fraction !== undefined ? `.${fraction}` : ""}`;
+        field.value = `${sign}${rateLike ? integerText.replaceAll(",", "") : integerText}${fraction !== undefined ? `.${fraction}` : ""}`;
       }
       notifyInput();
     });
@@ -620,6 +739,7 @@
       field.value = "";
       if (breakevenInputs.includes(field)) onBreakevenInput();
       else if (holdInputs.includes(field)) onHoldInput();
+      else if (sellInputs.includes(field)) onSellInput();
       else onInput();
     });
   }
@@ -647,32 +767,44 @@
     onInput();
   });
 
+  // 率の上下: 一重三角は1、二重三角は0.01。小数第三位より下は打ったまま残す
+  function stepRate(field, sign, direction, stepHundredths) {
+    const text = field.value.trim();
+    const magnitude = text === "" ? 0 : parseNumber(text);
+    const limit = sign < 0 ? 100 : 10000;
+    if (magnitude === null || magnitude < 0 || magnitude > limit) return false;
+    const [integer, fraction = ""] = text.split(".");
+    const decimalPlaces = Math.max(2, fraction.length);
+    // Only the hundredths change; retain the remaining digits without floating-point noise.
+    const hundredths = Number(integer || "0") * 100 + Number(fraction.slice(0, 2).padEnd(2, "0")) + direction * stepHundredths;
+    if (hundredths < 0) field.value = `0.${"0".repeat(decimalPlaces)}`;
+    else if (hundredths >= limit * 100) field.value = `${limit}.${"0".repeat(decimalPlaces)}`;
+    else field.value = `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, "0")}${fraction.slice(2)}`;
+    return true;
+  }
   for (const [id, direction, stepHundredths] of [
     // Keep the existing ids: single triangles use 1, double triangles use 0.01.
     ["rate-up", 1, 100], ["rate-down", -1, 100],
     ["rate-whole-up", 1, 1], ["rate-whole-down", -1, 1]
   ]) {
     get(id).addEventListener("click", () => {
-      const text = fields.rate.value.trim();
-      const magnitude = text === "" ? 0 : parseNumber(text);
-      const limit = rateSign < 0 ? 100 : 10000;
-      if (magnitude === null || magnitude < 0 || magnitude > limit) return;
-      const [integer, fraction = ""] = text.split(".");
-      const decimalPlaces = Math.max(2, fraction.length);
-      // Only the hundredths change; retain the remaining digits without floating-point noise.
-      const hundredths = Number(integer || "0") * 100 + Number(fraction.slice(0, 2).padEnd(2, "0")) + direction * stepHundredths;
-      if (hundredths < 0) fields.rate.value = `0.${"0".repeat(decimalPlaces)}`;
-      else if (hundredths >= limit * 100) fields.rate.value = `${limit}.${"0".repeat(decimalPlaces)}`;
-      else fields.rate.value = `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, "0")}${fraction.slice(2)}`;
-      onInput();
+      if (stepRate(fields.rate, rateSign, direction, stepHundredths)) onInput();
+    });
+  }
+  for (const [id, direction, stepHundredths] of [
+    ["target-up", 1, 100], ["target-down", -1, 100],
+    ["target-fine-up", 1, 1], ["target-fine-down", -1, 1]
+  ]) {
+    get(id).addEventListener("click", () => {
+      if (stepRate(sell.rate, targetSign, direction, stepHundredths)) onSellInput();
     });
   }
 
   // 一重三角は1円/1ドル、二重三角（米株のみ）は1セントで株価を増減する。
-  function stepPrice(direction, digits) {
-    const value = fields.price.value.trim() === "" ? 0 : parseNumber(fields.price.value);
+  function stepPrice(direction, digits, field = fields.price, notify = onInput) {
+    const value = field.value.trim() === "" ? 0 : parseNumber(field.value);
     if (value === null || value < 0 || value > 1e9) return;
-    const text = fields.price.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").replaceAll(",", "").trim();
+    const text = field.value.normalize("NFKC").replace(/[−–—﹣]/g, "-").replaceAll(",", "").trim();
     const [integer, fraction] = text.replace(/^[+-]/, "").split(".");
     const scale = 10 ** digits;
     // Only the first `digits` decimals change; the remaining digits are kept as typed.
@@ -683,12 +815,12 @@
     const clamped = units < 0 || units >= maxUnits;
     const bounded = Math.max(0, Math.min(maxUnits, units));
     const integerPart = Math.floor(bounded / scale);
-    const integerText = document.activeElement === fields.price ? String(integerPart) : formatNumber(integerPart, 0);
+    const integerText = document.activeElement === field ? String(integerPart) : formatNumber(integerPart, 0);
     let fractionText = "";
     if (digits === 0) fractionText = !clamped && fraction !== undefined ? `.${fraction}` : "";
     else if (!clamped) fractionText = `.${String(bounded % scale).padStart(digits, "0")}${tail}`;
-    fields.price.value = `${integerText}${fractionText}`;
-    onInput();
+    field.value = `${integerText}${fractionText}`;
+    notify();
   }
 
   get("set-baseline-price").addEventListener("click", () => {
@@ -701,11 +833,68 @@
   get("price-down").addEventListener("click", () => stepPrice(-1, 0));
   get("price-fine-up").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(1, MARKETS[market].fineDigits); });
   get("price-fine-down").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(-1, MARKETS[market].fineDigits); });
+  get("sell-up").addEventListener("click", () => stepPrice(1, 0, sell.price, onSellInput));
+  get("sell-down").addEventListener("click", () => stepPrice(-1, 0, sell.price, onSellInput));
+  get("sell-fine-up").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(1, MARKETS[market].fineDigits, sell.price, onSellInput); });
+  get("sell-fine-down").addEventListener("click", () => { if (MARKETS[market].fineDigits !== null) stepPrice(-1, MARKETS[market].fineDigits, sell.price, onSellInput); });
+
+  // 売るの 02: 符号・よく使う率・前日終値か買値か
+  get("target-sign").addEventListener("click", () => {
+    targetSign *= -1;
+    onSellInput();
+  });
+  for (const button of document.querySelectorAll("[data-target-rate]")) {
+    button.addEventListener("click", () => {
+      sell.rate.value = button.dataset.targetRate;
+      onSellInput();
+    });
+  }
+  for (const button of document.querySelectorAll("[data-target-base]")) {
+    button.addEventListener("click", () => {
+      targetBase = button.dataset.targetBase;
+      onSellInput();
+    });
+  }
+
+  // 株数の上下: 日本株は100株、米国株は1株ずつ。0 以下になったら空にする
+  for (const [id, direction] of [["qty-up", 1], ["qty-down", -1]]) {
+    get(id).addEventListener("click", () => {
+      const now = hold.qty.value.trim() === "" ? 0 : parseNumber(hold.qty.value);
+      if (now === null || now < 0) return;
+      const next = Math.min(1e9, now + direction * qtyUnit());
+      hold.qty.value = next > 0 ? formatNumber(next, 4) : "";
+      onHoldInput();
+    });
+  }
+
+  // ---- 買う / 売る ----
+  function applyMode() {
+    for (const button of document.querySelectorAll("[data-mode]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+    }
+    get("buy-view").hidden = mode !== "buy";
+    get("sell-view").hidden = mode !== "sell";
+  }
+  for (const button of document.querySelectorAll("[data-mode]")) {
+    button.addEventListener("click", () => {
+      if (mode === button.dataset.mode) return;
+      mode = button.dataset.mode;
+      applyMode();
+      save();
+    });
+  }
 
   function onHoldInput() {
     updateHolding();
     update();
     updateBreakeven();
+    save();
+    markHeldChips();
+  }
+
+  function onSellInput() {
+    normalizeTargetInput();
+    updateSell();
     save();
   }
 
@@ -731,6 +920,12 @@
 
   function resetInputs() {
     rateSign = 1;
+    targetSign = 1;
+    targetBase = "close";
+    sell.price.value = "";
+    sell.rate.value = "";
+    mode = "buy";
+    applyMode();
     account = settings.account;
     hold.buy.value = "";
     hold.qty.value = "";
@@ -739,6 +934,7 @@
     updateBreakeven();
     for (const [key, value] of Object.entries(defaults)) fields[key].value = value;
     onInput();
+    markHeldChips();
   }
 
   get("reset").addEventListener("click", resetInputs);
@@ -789,26 +985,29 @@
 
   // ---- タブ表示 ----
   function applyTabs() {
+    if (market !== "us" && activeTab.sell === "breakeven") activeTab.sell = "sell";
+    const open = new Set(Object.values(activeTab));
     for (const tab of document.querySelectorAll("[data-tab]")) {
-      const active = tab.dataset.tab === activeTab;
+      const active = open.has(tab.dataset.tab);
       tab.setAttribute("aria-selected", String(active));
       tab.tabIndex = active ? 0 : -1;
     }
     for (const panel of document.querySelectorAll("[data-panel]")) {
-      panel.classList.toggle("is-active", panel.dataset.panel === activeTab);
+      panel.classList.toggle("is-active", open.has(panel.dataset.panel));
     }
   }
   const tabs = [...document.querySelectorAll("[data-tab]")];
   for (const tab of tabs) {
+    const group = tab.closest("#sell-view") ? "sell" : "buy";
     tab.addEventListener("click", () => {
-      activeTab = tab.dataset.tab;
+      activeTab[group] = tab.dataset.tab;
       applyTabs();
     });
     tab.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-      const visible = tabs.filter((t) => !t.hidden);
+      const visible = [...tab.parentElement.querySelectorAll("[data-tab]")].filter((t) => !t.hidden);
       const next = visible[(visible.indexOf(tab) + (event.key === "ArrowRight" ? 1 : visible.length - 1)) % visible.length];
-      activeTab = next.dataset.tab;
+      activeTab[group] = next.dataset.tab;
       applyTabs();
       next.focus();
     });
@@ -970,6 +1169,8 @@
   function refreshAfterRestore() {
     setCostPanel(breakeven.cost.value.trim() !== "");
     normalizeRateInput();
+    normalizeTargetInput();
+    applyMode();
     updateHolding();
     updateBreakeven();
     update();
@@ -1004,9 +1205,19 @@
       chip.className = "fav-chip";
       chip.setAttribute("role", "radio");
       chip.setAttribute("aria-checked", String(activeFav[market] === fav.id));
+      chip.dataset.id = fav.id;
       const code = document.createElement("span");
       code.className = "fav-chip-code";
       code.textContent = fav.code;
+      const held = document.createElement("span");
+      held.className = "fav-chip-held";
+      held.textContent = " ●";
+      held.hidden = true;
+      const heldText = document.createElement("span");
+      heldText.className = "sr-only";
+      heldText.textContent = "（保有あり）";
+      held.append(heldText);
+      code.append(held);
       const name = document.createElement("span");
       name.className = "fav-chip-name";
       name.textContent = fav.name || fav.code;
@@ -1018,6 +1229,7 @@
     add.classList.toggle("is-wide", inMarket.length === 0);
     add.innerHTML = inMarket.length ? '<span class="fav-add-icon" aria-hidden="true">+</span>' : "＋ お気に入りに追加";
     chips.hidden = inMarket.length === 0;
+    markHeldChips();
     updateChipFade();
 
     // 並べ替え・編集の一覧（今の市場の銘柄だけ）
@@ -1057,6 +1269,16 @@
       list.append(row);
     }
     get("fav-empty").hidden = inMarket.length > 0;
+  }
+
+  // 保有の買値が入っている銘柄のチップに「●」を出す（選んでいる銘柄は画面の入力で判断する）
+  function markHeldChips() {
+    for (const chip of get("fav-chips").querySelectorAll(".fav-chip")) {
+      const fav = favorites.find((f) => f.id === chip.dataset.id);
+      if (!fav) continue;
+      const buy = activeFav[market] === fav.id ? hold.buy.value : fav.state.holdBuy;
+      chip.querySelector(".fav-chip-held").hidden = buy.trim() === "";
+    }
   }
 
   // 短く押すと選択、長押しで編集。長押しのあとに続く click は選択にしない
@@ -1360,7 +1582,8 @@
       }
     }, true);
   }
-  for (const id of ["rate-up", "rate-down", "rate-whole-up", "rate-whole-down", "price-up", "price-down", "price-fine-up", "price-fine-down"]) {
+  for (const id of ["rate-up", "rate-down", "rate-whole-up", "rate-whole-down", "price-up", "price-down", "price-fine-up", "price-fine-down",
+    "sell-up", "sell-down", "sell-fine-up", "sell-fine-down", "target-up", "target-down", "target-fine-up", "target-fine-down", "qty-up", "qty-down"]) {
     attachHoldRepeat(get(id));
   }
   // ---- 終値の自動取得 ----
@@ -1608,6 +1831,8 @@
   renderFavorites();
   setCostPanel(breakeven.cost.value.trim() !== "");
   normalizeRateInput();
+  normalizeTargetInput();
+  applyMode();
   updateHolding();
   updateBreakeven();
   update();

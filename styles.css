@@ -669,7 +669,8 @@ details[open] > .disclosure .chevron,
   display: grid;
   grid-template-columns: repeat(var(--tab-count, 3), minmax(0, 1fr));
 }
-[data-layout="tabs"][data-market="jp"] .calc-tabs {
+#buy-tabs,
+[data-market="jp"] #sell-tabs {
   --tab-count: 2;
 }
 .calc-tabs button {
@@ -678,6 +679,90 @@ details[open] > .disclosure .chevron,
 }
 [data-layout="tabs"] .calc-card:not(.is-active) {
   display: none;
+}
+
+/* ---- 買う / 売る（お気に入りのすぐ下。銘柄ごとに覚える） ---- */
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 3px;
+}
+.mode-tabs button {
+  height: 36px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.mode-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+/* 売るで買値がまだないときの案内 */
+.sell-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+/* 売るの 02 の見出し右の［前日終値｜買値］ */
+.target-base {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.target-base button {
+  height: 30px;
+  padding: 0 11px;
+}
+.card-heading h2 {
+  white-space: nowrap;
+}
+/* 保有は売るの一番上のカード */
+.card.hold-block {
+  margin-top: 0;
+  padding: 14px 16px;
+  border-top: 0;
+}
+/* 株数の欄の右の上下ボタン（日本株100株、米国株1株ずつ） */
+.hold-grid .field-sm:has(.qty-steps) {
+  padding-right: 6px;
+}
+.qty-steps {
+  display: grid;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+.qty-steps button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 17px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--sub);
+}
+.qty-steps svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.qty-steps button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* お気に入りのチップ: 保有がある銘柄の「●」 */
+.fav-chip-held {
+  color: var(--ok);
+}
+.fav-chip[aria-checked="true"] .fav-chip-held {
+  color: inherit;
 }
 
 /* ---- 保有（買値・株数）と損益 ---- */
