@@ -1114,7 +1114,17 @@
     const state = history.state || {};
     showSheet(Boolean(state.sheet));
     showView(state.view || "main");
+    if (!state.sheet) openPendingKabutan();
   });
+
+  // 保存した日本株の銘柄の株探を開く（「株探で取得」を押したのと同じ）
+  let pendingKabutan = null;
+  function openPendingKabutan() {
+    const fav = pendingKabutan;
+    pendingKabutan = null;
+    if (!fav || !favorites.includes(fav)) return;
+    openKabutan(fav);
+  }
 
   // ---- お気に入り銘柄 ----
   const FAV_CODE_RULES = {
@@ -1503,7 +1513,17 @@
     }
     storeCurrent();
     const existing = favorites.find((f) => f.id === sheetFavId);
+    // 新しく追加したときと、コード（か市場）を変えたときは終値と名前を取りに行く。日本株は保存したらそのまま株探を開く
+    let fetchFor = null;
     if (existing) {
+      if (existing.code !== code || existing.market !== sheetMarket) {
+        fetchFor = existing;
+        // 前の銘柄の終値は使わない
+        const state = activeFavorite() === existing ? null : existing.state;
+        if (state) Object.assign(state, { closeDate: "", closeAt: 0 });
+        else { closeDate = ""; closeAt = 0; }
+        delete quoteStatus[existing.id];
+      }
       if (existing.market !== sheetMarket && activeFav[existing.market] === existing.id) {
         // 市場を変えたら、元の市場では選択を外す
         activeFav[existing.market] = null;
@@ -1527,10 +1547,15 @@
       // 新しい銘柄は一番左（先頭）に置く
       favorites.unshift(fav);
       activeFav[sheetMarket] = fav.id;
+      fetchFor = fav;
     }
     restore(currentState());
+    if (fetchFor && fetchFor.market === "jp") pendingKabutan = fetchFor;
     closeSheet();
     refreshAfterRestore();
+    if (fetchFor && fetchFor.market === "us") fetchUsClose(fetchFor, true);
+    // シートを閉じる戻る操作が終わってから開く（popstate）。履歴を使わずに閉じたときはここで開く
+    if (pendingKabutan && get("fav-sheet").hidden) openPendingKabutan();
   });
 
   get("fav-delete").addEventListener("click", () => {
@@ -1815,13 +1840,23 @@
     }
   });
   get("close-refresh").addEventListener("click", () => fetchUsClose(activeFavorite(), true));
-  get("kabutan-link").addEventListener("click", () => {
-    // 自分で株探を開いたなら、同じ銘柄・同じ日の値でももう一度入れる
+  // 株探を開いた記録。自分で株探を開いたなら、同じ銘柄・同じ日の値でももう一度入れる
+  function markKabutan(code) {
     quotes.kabutanAt = Date.now();
-    quotes.kabutanCode = activeFavorite() ? activeFavorite().code : "";
+    quotes.kabutanCode = code;
     quotes.lastClip = "";
     saveQuotes();
-  });
+  }
+  get("kabutan-link").addEventListener("click", () => markKabutan(activeFavorite() ? activeFavorite().code : ""));
+
+  function openKabutan(fav) {
+    markKabutan(fav.code);
+    const link = document.createElement("a");
+    link.href = kabutanUrl(fav.code);
+    link.target = link.href.startsWith("intent:") ? "_self" : "_blank";
+    link.rel = "noopener";
+    link.click();
+  }
   get("quotes-us-clear").addEventListener("click", () => {
     if (!window.confirm("米国株の終値の自動取得を解除しますか？もう一度使うには設定用リンクを開きます。")) return;
     quotes.gas = "";
