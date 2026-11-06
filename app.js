@@ -1427,6 +1427,8 @@
   }
 
   function openSheet(id) {
+    // 前の削除のお知らせがシートの「お気に入りから削除」に重なるので、シートを開いたら消す
+    hideToast();
     sheetReturnFocus = document.activeElement;
     sheetFavId = id;
     const fav = favorites.find((f) => f.id === id);
