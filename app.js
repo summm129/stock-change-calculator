@@ -1565,13 +1565,44 @@
   get("fav-delete").addEventListener("click", () => {
     const fav = favorites.find((f) => f.id === sheetFavId);
     if (!fav) return;
-    if (!window.confirm(`${fav.name || fav.code}をお気に入りから削除しますか？保存していた入力も消えます。`)) return;
+    // 確認は出さずにすぐ消して、下のお知らせの「元に戻す」で戻せるようにする
     storeCurrent();
+    const index = favorites.indexOf(fav);
+    const wasActive = activeFav[fav.market] === fav.id;
     favorites = favorites.filter((f) => f.id !== fav.id);
-    if (activeFav[fav.market] === fav.id) activeFav[fav.market] = null;
+    if (wasActive) activeFav[fav.market] = null;
     restore(currentState());
     closeSheet();
     refreshAfterRestore();
+    showToast(`${fav.name || fav.code}を削除しました`, () => {
+      storeCurrent();
+      favorites.splice(Math.min(index, favorites.length), 0, fav);
+      if (wasActive) activeFav[fav.market] = fav.id;
+      restore(currentState());
+      refreshAfterRestore();
+    });
+  });
+
+  // ---- 下に出るお知らせ（「元に戻す」つき）。しばらくすると消える ----
+  let toastTimer = null;
+  let toastUndo = null;
+  function hideToast() {
+    clearTimeout(toastTimer);
+    toastUndo = null;
+    get("toast").hidden = true;
+  }
+  function showToast(text, undo) {
+    clearTimeout(toastTimer);
+    get("toast-text").textContent = text;
+    toastUndo = undo;
+    get("toast-undo").hidden = !undo;
+    get("toast").hidden = false;
+    toastTimer = setTimeout(hideToast, 6000);
+  }
+  get("toast-undo").addEventListener("click", () => {
+    const undo = toastUndo;
+    hideToast();
+    if (undo) undo();
   });
 
   get("fav-list-add").addEventListener("click", () => openSheet(null));
@@ -1864,10 +1895,18 @@
     link.click();
   }
   get("quotes-us-clear").addEventListener("click", () => {
-    if (!window.confirm("米国株の終値の自動取得を解除しますか？もう一度使うには設定用リンクを開きます。")) return;
+    // 確認は出さずに解除して、「元に戻す」で戻せるようにする（消すと設定用リンクを開き直すまで使えないため）
+    const gas = quotes.gas;
     quotes.gas = "";
     saveQuotes();
     renderQuotesSettings();
+    renderClose();
+    showToast("米国株の終値の自動取得を解除しました", () => {
+      quotes.gas = gas;
+      saveQuotes();
+      renderQuotesSettings();
+      renderClose();
+    });
   });
   // 同じブラウザの別のタブ（TS終値から開いた TickShift など）が入力を書き換えたら、戻ったときに読み直す。
   // 読み直さずに保存すると、古い入力で上書きしてしまう

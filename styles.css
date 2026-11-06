@@ -243,6 +243,45 @@ main,
   background: var(--field);
 }
 
+/* ---- 下に出るお知らせ（削除・解除のあとに「元に戻す」） ---- */
+.toast {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 12px 8px 12px 16px;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--menu-shadow);
+  font-size: 13px;
+  font-weight: 600;
+}
+.toast span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.toast-undo {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ---- 更新のお知らせ ---- */
 .update-notice {
   display: flex;
