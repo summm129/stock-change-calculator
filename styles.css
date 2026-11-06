@@ -1470,7 +1470,9 @@ details[open] > .disclosure .chevron,
 .fav-chips::-webkit-scrollbar {
   display: none;
 }
+/* position: relative は中の読み上げ用の文字（「保有あり」）をチップの中に収めるため。ないと、帯の外に隠れたチップの文字がページを横に広げる */
 .fav-chip {
+  position: relative;
   flex-shrink: 0;
   min-height: 48px;
   padding: 7px 14px;
