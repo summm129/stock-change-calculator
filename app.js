@@ -1148,6 +1148,7 @@
           code: typeof f.code === "string" ? f.code.slice(0, 12) : "",
           name: typeof f.name === "string" ? f.name.slice(0, 60) : "",
           autoName: f.autoName === true,
+          autoPrefix: typeof f.autoPrefix === "string" && /^\(\d{1,3}\)$/.test(f.autoPrefix) ? f.autoPrefix : "",
           state: isObject(f.state) ? readState(f.state) : emptyState()
         }));
       if (isObject(saved.active)) {
@@ -1487,18 +1488,21 @@
   get("fav-save").addEventListener("click", () => {
     const code = get("fav-code").value.normalize("NFKC").trim().toUpperCase();
     let name = get("fav-name").value.normalize("NFKC").trim();
+    const editing = favorites.find((f) => f.id === sheetFavId);
+    // 編集でコード（か市場）を変えて、表示名は触っていなければ、新しい銘柄の名前を取り直す
+    if (editing && (editing.code !== code || editing.market !== sheetMarket) && name === editing.name) name = "";
     // 表示名を空にしたら、終値と一緒に取れた銘柄名を入れる（米国株は GAS、日本株は株探で取得）
     let autoName = name === "";
+    let autoPrefix = "";
     const rule = FAV_CODE_RULES[sheetMarket];
-    // 同じコードがもうあって表示名が空なら、「SOXL2」「SOXL3」のように空いている番号を付ける
+    // 同じコードがもうあって表示名が空なら、取れた名前の先頭に「(2)」「(3)」のように空いている番号を付ける
     const sameCode = favorites.filter((f) => f.market === sheetMarket && f.code === code && f.id !== sheetFavId);
     if (!name && sameCode.length) {
-      const taken = new Set(sameCode.map((f) => f.name || f.code));
       let number = 2;
-      while (taken.has(`${code}${number}`)) number += 1;
-      name = `${code}${number}`;
-      // 同じ銘柄の2つ目以降は番号の名前のままにする（取れた名前だと1つ目と見分けがつかない）
-      autoName = false;
+      while (sameCode.some((f) => (f.name || "").startsWith(`(${number})`) || f.autoPrefix === `(${number})`)) number += 1;
+      autoPrefix = `(${number})`;
+      // 名前が取れるまではコードに番号を付けて出す
+      name = `${autoPrefix}${code}`;
     }
     let error = "";
     if (!code) error = `${rule.label}を入れてください。`;
@@ -1528,11 +1532,10 @@
         // 市場を変えたら、元の市場では選択を外す
         activeFav[existing.market] = null;
       }
-      // コードを変えたら、前の銘柄の名前は使わない
-      if (existing.autoName && existing.code !== code) name = "";
       existing.code = code;
       existing.name = name;
       existing.autoName = autoName;
+      existing.autoPrefix = autoPrefix;
       existing.market = sheetMarket;
     } else {
       // 追加するときは全部の欄を空にして、そのまま選んだ状態にする（米国株は前日終値だけ自動で入る）
@@ -1542,6 +1545,7 @@
         code,
         name,
         autoName,
+        autoPrefix,
         state: emptyState()
       };
       // 新しい銘柄は一番左（先頭）に置く
@@ -1725,8 +1729,10 @@
     if (fav.market === "us") text = text.replace(/,? (Inc|Corp|Corporation|Co|Ltd|Plc|PLC|Holdings|Group|N\.?V|S\.?A|Class [A-C])\.?$/g, "").replace(/,? (Inc|Corp|Corporation|Co|Ltd|Plc|PLC)\.?$/g, "").trim();
     text = text.slice(0, 60).trim();
     if (!text) return;
-    fav.name = text;
+    // 同じ銘柄の2つ目以降は「(2)ハイブリッドテクノロジーズ」のように番号を先頭に
+    fav.name = `${fav.autoPrefix || ""}${text}`.slice(0, 60);
     fav.autoName = false;
+    fav.autoPrefix = "";
     save();
     renderFavorites();
   }
