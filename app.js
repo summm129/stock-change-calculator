@@ -324,7 +324,8 @@
     const canStep = steppingPrice !== null && steppingPrice >= 0 && steppingPrice <= 1e9;
     for (const id of ["sell-up", "sell-fine-up"]) get(id).disabled = !canStep || steppingPrice >= 1e9;
     for (const id of ["sell-down", "sell-fine-down"]) get(id).disabled = !canStep || steppingPrice <= 0;
-    const { qty } = holdValues();
+    const { qty, buy: heldBuy } = holdValues();
+    get("set-hold-buy").disabled = heldBuy === null;
     get("sell-label").textContent = `損益（${sharesLabel(qty)}）`;
     const result = hasPrice && !priceError ? pnlOf(price) : null;
     if (result) {
@@ -358,8 +359,8 @@
     get("target-rate-error").textContent = shownRateError;
     const limit = targetSign < 0 ? 100 : 10000;
     const canStepRate = magnitude !== null && magnitude >= 0 && magnitude <= limit;
-    for (const id of ["target-up", "target-fine-up"]) get(id).disabled = !canStepRate || magnitude >= limit;
-    for (const id of ["target-down", "target-fine-down"]) get(id).disabled = !canStepRate || magnitude <= 0;
+    for (const id of ["target-up", "target-tenth-up", "target-fine-up"]) get(id).disabled = !canStepRate || magnitude >= limit;
+    for (const id of ["target-down", "target-tenth-down", "target-fine-down"]) get(id).disabled = !canStepRate || magnitude <= 0;
     for (const button of document.querySelectorAll("[data-target-rate]")) {
       button.setAttribute("aria-pressed", String(hasRate && !rateError && Number(button.dataset.targetRate) === magnitude));
     }
@@ -598,9 +599,9 @@
     const rateLimit = rateSign < 0 ? 100 : 10000;
     const canStepRate = magnitude !== null && magnitude >= 0 && magnitude <= rateLimit;
     get("rate-up").disabled = !canStepRate || magnitude >= rateLimit;
-    get("rate-whole-up").disabled = !canStepRate || magnitude >= rateLimit;
+    for (const id of ["rate-tenth-up", "rate-whole-up"]) get(id).disabled = !canStepRate || magnitude >= rateLimit;
     get("rate-down").disabled = !canStepRate || magnitude <= 0;
-    get("rate-whole-down").disabled = !canStepRate || magnitude <= 0;
+    for (const id of ["rate-tenth-down", "rate-whole-down"]) get(id).disabled = !canStepRate || magnitude <= 0;
     const steppingPrice = fields.price.value.trim() === "" ? 0 : values.price;
     const canStepPrice = steppingPrice !== null && steppingPrice >= 0 && steppingPrice <= 1e9;
     for (const id of ["price-up", "price-fine-up"]) get(id).disabled = !canStepPrice || steppingPrice >= 1e9;
@@ -767,7 +768,7 @@
     onInput();
   });
 
-  // 率の上下: 一重三角は1、二重三角は0.01。小数第三位より下は打ったまま残す
+  // 率の上下: 一重三角は1、二重三角は0.1、三重三角は0.01。小数第三位より下は打ったまま残す
   function stepRate(field, sign, direction, stepHundredths) {
     const text = field.value.trim();
     const magnitude = text === "" ? 0 : parseNumber(text);
@@ -783,8 +784,9 @@
     return true;
   }
   for (const [id, direction, stepHundredths] of [
-    // Keep the existing ids: single triangles use 1, double triangles use 0.01.
+    // ids は据え置き: 一重 rate-up(1)、二重 rate-tenth(0.1)、三重 rate-whole(0.01)
     ["rate-up", 1, 100], ["rate-down", -1, 100],
+    ["rate-tenth-up", 1, 10], ["rate-tenth-down", -1, 10],
     ["rate-whole-up", 1, 1], ["rate-whole-down", -1, 1]
   ]) {
     get(id).addEventListener("click", () => {
@@ -793,6 +795,7 @@
   }
   for (const [id, direction, stepHundredths] of [
     ["target-up", 1, 100], ["target-down", -1, 100],
+    ["target-tenth-up", 1, 10], ["target-tenth-down", -1, 10],
     ["target-fine-up", 1, 1], ["target-fine-down", -1, 1]
   ]) {
     get(id).addEventListener("click", () => {
@@ -827,6 +830,13 @@
     if (validation("baseline", parseNumber(fields.baseline.value))) return;
     fields.price.value = fields.baseline.value;
     onInput();
+  });
+
+  // 売る 01 の「買値をセット」: 保有の買値をそのまま売値へ
+  get("set-hold-buy").addEventListener("click", () => {
+    if (holdValues().buy === null) return;
+    sell.price.value = hold.buy.value;
+    onSellInput();
   });
 
   get("price-up").addEventListener("click", () => stepPrice(1, 0));
@@ -1653,8 +1663,8 @@
       }
     }, true);
   }
-  for (const id of ["rate-up", "rate-down", "rate-whole-up", "rate-whole-down", "price-up", "price-down", "price-fine-up", "price-fine-down",
-    "sell-up", "sell-down", "sell-fine-up", "sell-fine-down", "target-up", "target-down", "target-fine-up", "target-fine-down", "qty-up", "qty-down"]) {
+  for (const id of ["rate-up", "rate-down", "rate-tenth-up", "rate-tenth-down", "rate-whole-up", "rate-whole-down", "price-up", "price-down", "price-fine-up", "price-fine-down",
+    "sell-up", "sell-down", "sell-fine-up", "sell-fine-down", "target-up", "target-down", "target-tenth-up", "target-tenth-down", "target-fine-up", "target-fine-down", "qty-up", "qty-down"]) {
     attachHoldRepeat(get(id));
   }
   // ---- 終値の自動取得 ----

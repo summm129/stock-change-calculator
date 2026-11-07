@@ -511,6 +511,13 @@ main,
   gap: 4px;
   flex-shrink: 0;
 }
+/* 率は3列: 一重 = 1、二重 = 0.1、三重 = 0.01 */
+.stepper-grid.stepper-triple {
+  grid-template-columns: repeat(3, 40px);
+}
+.stepper-grid svg.tri {
+  height: 16px;
+}
 .price-steppers {
   display: flex;
   gap: 4px;

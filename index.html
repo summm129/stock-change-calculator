@@ -110,14 +110,16 @@
                 <input id="rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
                 <span class="field-suffix" aria-hidden="true">%</span>
               </div>
-              <div class="stepper-grid">
+              <div class="stepper-grid stepper-triple">
                 <button id="rate-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                <button id="rate-whole-up" type="button" aria-label="0.01増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                <button id="rate-tenth-up" type="button" aria-label="0.1増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                <button id="rate-whole-up" type="button" aria-label="0.01増やす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 11l6-6 6 6M6 19l6-6 6 6M6 27l6-6 6 6"/></svg></button>
                 <button id="rate-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-                <button id="rate-whole-down" type="button" aria-label="0.01減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                <button id="rate-tenth-down" type="button" aria-label="0.1減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                <button id="rate-whole-down" type="button" aria-label="0.01減らす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6M6 23l6 6 6-6"/></svg></button>
               </div>
             </div>
-            <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.01ずつ数字を増減できます。</p>
+            <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.1ずつ、三重三角で0.01ずつ数字を増減できます。</p>
             <div class="presets" role="group" aria-label="よく使う騰落率">
               <button type="button" data-rate="1" aria-pressed="false">1%</button>
               <button type="button" data-rate="2" aria-pressed="false">2%</button>
@@ -233,6 +235,7 @@
               <div class="card-heading">
                 <span class="step">01</span>
                 <h2 id="sell-heading">売値 → 損益</h2>
+                <button id="set-hold-buy" class="set-baseline" type="button" aria-label="01の売値に買値を入れる" disabled>買値をセット</button>
               </div>
               <label class="sr-only" for="sell-price">売値<span class="unit-name">（円）</span></label>
               <div class="entry-row">
@@ -279,11 +282,13 @@
                   <input id="target-rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="target-rate-error" maxlength="24">
                   <span class="field-suffix" aria-hidden="true">%</span>
                 </div>
-                <div class="stepper-grid">
+                <div class="stepper-grid stepper-triple">
                   <button id="target-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                  <button id="target-fine-up" type="button" aria-label="0.01増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                  <button id="target-tenth-up" type="button" aria-label="0.1増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
+                  <button id="target-fine-up" type="button" aria-label="0.01増やす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 11l6-6 6 6M6 19l6-6 6 6M6 27l6-6 6 6"/></svg></button>
                   <button id="target-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-                  <button id="target-fine-down" type="button" aria-label="0.01減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                  <button id="target-tenth-down" type="button" aria-label="0.1減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                  <button id="target-fine-down" type="button" aria-label="0.01減らす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6M6 23l6 6 6-6"/></svg></button>
                 </div>
               </div>
               <div class="presets" role="group" aria-label="よく使う率">
