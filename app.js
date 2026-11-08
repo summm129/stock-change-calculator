@@ -920,14 +920,47 @@
     get("buy-view").hidden = mode !== "buy";
     get("sell-view").hidden = mode !== "sell";
   }
-  for (const button of document.querySelectorAll("[data-mode]")) {
-    button.addEventListener("click", () => {
-      if (mode === button.dataset.mode) return;
-      mode = button.dataset.mode;
-      applyMode();
-      save();
-    });
+  // 切り替えたほうの画面を、売るは右から・買うは左から少しすべらせて出す
+  function switchMode(next) {
+    if (mode === next) return;
+    mode = next;
+    applyMode();
+    const view = get(next === "sell" ? "sell-view" : "buy-view");
+    view.classList.remove("is-entering-left", "is-entering-right");
+    void view.offsetWidth;
+    view.classList.add(next === "sell" ? "is-entering-right" : "is-entering-left");
+    save();
   }
+  for (const button of document.querySelectorAll("[data-mode]")) {
+    button.addEventListener("click", () => switchMode(button.dataset.mode));
+  }
+  for (const view of [get("buy-view"), get("sell-view")]) {
+    view.addEventListener("animationend", () => view.classList.remove("is-entering-left", "is-entering-right"));
+  }
+
+  // スワイプ: 左へはらうと「売る」、右へはらうと「買う」。
+  // 横に動かす部品（ルーラー・お気に入りの帯・入力欄・上下ボタン・メニュー）から始めたときは切り替えない
+  const SWIPE_MIN = 60;
+  const SWIPE_SKIP = ".ruler, .fav-strip, input, textarea, .stepper-grid, .qty-steps, .account-menu, .sheet";
+  let swipe = null;
+  const mainArea = document.querySelector("#main-view main");
+  mainArea.addEventListener("touchstart", (event) => {
+    swipe = null;
+    if (event.touches.length !== 1 || event.target.closest(SWIPE_SKIP)) return;
+    const touch = event.touches[0];
+    swipe = { x: touch.clientX, y: touch.clientY, at: Date.now() };
+  }, { passive: true });
+  mainArea.addEventListener("touchend", (event) => {
+    if (!swipe) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - swipe.x;
+    const dy = touch.clientY - swipe.y;
+    const quick = Date.now() - swipe.at < 700;
+    swipe = null;
+    if (!quick || Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    switchMode(dx < 0 ? "sell" : "buy");
+  }, { passive: true });
+  mainArea.addEventListener("touchcancel", () => { swipe = null; }, { passive: true });
 
   function onHoldInput() {
     updateHolding();

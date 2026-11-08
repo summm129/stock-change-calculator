@@ -511,6 +511,35 @@ main,
   gap: 4px;
   flex-shrink: 0;
 }
+/* 買う / 売る の切り替え（ボタンでもスワイプでも）。すべらせた分で横にはみ出さないよう main で切る */
+#main-view main {
+  overflow-x: clip;
+}
+/* 横にはらったときに、ブラウザの「戻る」が動かないようにする */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+@keyframes mode-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mode-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: none; }
+}
+.mode-view.is-entering-right {
+  animation: mode-in-right 0.22s ease-out;
+}
+.mode-view.is-entering-left {
+  animation: mode-in-left 0.22s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-view.is-entering-right,
+  .mode-view.is-entering-left {
+    animation: none;
+  }
+}
 /* Tick: 上下ボタンの左に 1 / 0.1 / 0.01 を縦に並べ、選んだ刻みで増減する */
 .stepper-grid .tick-stack {
   display: grid;
