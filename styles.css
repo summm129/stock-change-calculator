@@ -1960,6 +1960,25 @@ details[open] > .disclosure .chevron,
   font-size: 15px;
   font-weight: 700;
 }
+/* 複製: 保存のすぐ下の灰色のボタン */
+.sheet-duplicate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+.sheet-duplicate svg {
+  width: 16px;
+  height: 16px;
+}
 .sheet-delete {
   min-height: 44px;
   color: var(--danger);

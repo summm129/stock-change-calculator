@@ -1486,6 +1486,7 @@
     get("fav-error").textContent = "";
     get("fav-code").setAttribute("aria-invalid", "false");
     get("fav-delete").hidden = !fav;
+    get("fav-duplicate").hidden = !fav;
     codeLetters = false;
     applySheetMarket();
     history.pushState({ view: currentView === "main" ? undefined : currentView, sheet: true }, "");
@@ -1627,6 +1628,41 @@
       storeCurrent();
       favorites.splice(Math.min(index, favorites.length), 0, fav);
       if (wasActive) activeFav[fav.market] = fav.id;
+      restore(currentState());
+      refreshAfterRestore();
+    });
+  });
+
+  // 複製: コード・市場と入力（前日終値・保有・口座・売値など）を全部コピーして、すぐ右に「(2)」付きで足し、複製したほうを選ぶ
+  get("fav-duplicate").addEventListener("click", () => {
+    const fav = favorites.find((f) => f.id === sheetFavId);
+    if (!fav) return;
+    storeCurrent();
+    const sameCode = favorites.filter((f) => f.market === fav.market && f.code === fav.code);
+    let number = 2;
+    while (sameCode.some((f) => (f.name || "").startsWith(`(${number})`) || f.autoPrefix === `(${number})`)) number += 1;
+    const prefix = `(${number})`;
+    const base = (fav.name || fav.code).replace(/^\(\d{1,3}\)/, "");
+    const copy = {
+      id: `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      market: fav.market,
+      code: fav.code,
+      // 名前がまだ取れていなければ、取れたときに番号を付ける
+      name: `${prefix}${fav.autoName ? fav.code : base}`.slice(0, 60),
+      autoName: fav.autoName,
+      autoPrefix: fav.autoName ? prefix : "",
+      state: structuredClone(fav.state)
+    };
+    const previous = activeFav[fav.market];
+    favorites.splice(favorites.indexOf(fav) + 1, 0, copy);
+    activeFav[fav.market] = copy.id;
+    restore(currentState());
+    closeSheet();
+    refreshAfterRestore();
+    showToast(`${fav.name || fav.code}を複製しました`, () => {
+      storeCurrent();
+      favorites = favorites.filter((f) => f.id !== copy.id);
+      if (activeFav[copy.market] === copy.id) activeFav[copy.market] = previous;
       restore(currentState());
       refreshAfterRestore();
     });
