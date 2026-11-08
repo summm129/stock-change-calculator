@@ -1779,6 +1779,120 @@ details[open] > .disclosure .chevron,
 .fav-hint {
   margin: 0 4px;
 }
+/* ---- まとめて削除（並べ替え・編集の「選択」） ---- */
+.select-toggle {
+  flex-shrink: 0;
+  min-height: 36px;
+  margin-left: auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pill-line);
+  color: var(--sub);
+  font-size: 13px;
+  font-weight: 700;
+}
+.select-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.select-toggle:disabled {
+  opacity: 0.4;
+}
+/* 選ぶときは、行の左の「≡」が丸いチェックになる */
+.fav-check {
+  display: none;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.is-selecting .fav-check {
+  display: grid;
+}
+.is-selecting .fav-handle,
+.is-selecting #fav-list-add {
+  display: none;
+}
+.is-selecting .fav-row-open > svg {
+  visibility: hidden;
+}
+.select-mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--pill-line);
+  border-radius: 999px;
+}
+.select-mark svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+.fav-row[aria-selected="true"] .select-mark,
+.select-all[aria-pressed="true"] .select-mark {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.fav-row[aria-selected="true"] .select-mark svg,
+.select-all[aria-pressed="true"] .select-mark svg {
+  visibility: visible;
+}
+/* 下のバー（すべて選択 / 〇件を削除） */
+#favorites-view.is-selecting {
+  padding-bottom: 88px;
+}
+.select-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: var(--card);
+  box-shadow: 0 -6px 20px rgba(28, 28, 26, 0.08);
+}
+.select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--sub);
+  font-size: 13px;
+  font-weight: 700;
+}
+.delete-selected {
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.delete-selected:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 .fav-list-card {
   padding: 6px 8px;
 }

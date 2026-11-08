@@ -770,13 +770,19 @@
           </svg>
         </button>
         <h1 id="favorites-title" tabindex="-1">お気に入りの編集</h1>
+        <button id="fav-select" class="select-toggle" type="button" aria-pressed="false">選択</button>
       </header>
-      <p class="settings-foot fav-hint">「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。</p>
+      <p id="fav-hint" class="settings-foot fav-hint">「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。</p>
       <section class="card fav-list-card">
         <ul id="fav-list" class="fav-list" aria-label="お気に入り銘柄の一覧"></ul>
         <p id="fav-empty" class="fav-empty">この市場のお気に入りはまだありません。</p>
       </section>
       <button id="fav-list-add" class="dashed-button" type="button">＋ 銘柄を追加</button>
+      <!-- 選んでいるあいだだけ下に出る -->
+      <div id="select-bar" class="select-bar" hidden>
+        <button id="select-all" class="select-all" type="button" aria-pressed="false"><span class="select-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg></span>すべて選択</button>
+        <button id="delete-selected" class="delete-selected" type="button" disabled>削除</button>
+      </div>
     </div>
   </div>
 

@@ -1661,6 +1661,7 @@
       get(id).hidden = name !== view;
     const from = currentView;
     currentView = view;
+    if (view !== "favorites" && selectingFavs) setSelecting(false);
     if (view === "main") {
       window.scrollTo(0, mainScroll);
       get(from === "favorites" ? "open-favorites" : "open-settings").focus({
@@ -1869,6 +1870,14 @@
       );
       handle.innerHTML = svg("M5 9h14M5 15h14");
       attachDrag(handle, row);
+      const mark = document.createElement("button");
+      mark.type = "button";
+      mark.className = "fav-check";
+      mark.tabIndex = -1;
+      mark.setAttribute("aria-hidden", "true");
+      mark.innerHTML = '<span class="select-mark"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>';
+      mark.addEventListener("click", () => toggleSelected(fav.id));
+      row.setAttribute("aria-selected", String(selectedFavs.has(fav.id)));
       const open = document.createElement("button");
       open.type = "button";
       open.className = "fav-row-open";
@@ -1887,12 +1896,80 @@
       open.append(text);
       open.insertAdjacentHTML("beforeend", svg("M9 6l6 6-6 6"));
       open.setAttribute("aria-label", `${fav.name || fav.code}を編集`);
-      open.addEventListener("click", () => openSheet(fav.id));
-      row.append(handle, open);
+      open.addEventListener("click", () => (selectingFavs ? toggleSelected(fav.id) : openSheet(fav.id)));
+      row.append(mark, handle, open);
       list.append(row);
     }
     get("fav-empty").hidden = inMarket.length > 0;
+    applySelecting();
   }
+
+  // ---- まとめて削除: 「選択」で選ぶモードにして、下のバーから削除する ----
+  let selectingFavs = false;
+  const selectedFavs = new Set();
+  const FAV_HINT = "「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。";
+  function applySelecting() {
+    const inMarket = favorites.filter((f) => f.market === market);
+    // 今の市場にない銘柄は選択から外す
+    for (const id of [...selectedFavs]) if (!inMarket.some((f) => f.id === id)) selectedFavs.delete(id);
+    if (!inMarket.length) selectingFavs = false;
+    get("favorites-view").classList.toggle("is-selecting", selectingFavs);
+    get("fav-select").textContent = selectingFavs ? "完了" : "選択";
+    get("fav-select").setAttribute("aria-pressed", String(selectingFavs));
+    get("fav-select").disabled = !inMarket.length;
+    get("fav-hint").textContent = selectingFavs ? "削除する銘柄をタップして選ぶ" : FAV_HINT;
+    get("select-bar").hidden = !selectingFavs;
+    for (const row of get("fav-list").querySelectorAll(".fav-row")) {
+      row.setAttribute("aria-selected", String(selectedFavs.has(row.dataset.id)));
+      // 選ぶモードでは行のボタンが「選ぶ」になるので、選んだかどうかを読み上げられるようにする
+      const open = row.querySelector(".fav-row-open");
+      if (selectingFavs) open.setAttribute("aria-pressed", String(selectedFavs.has(row.dataset.id)));
+      else open.removeAttribute("aria-pressed");
+    }
+    const count = selectedFavs.size;
+    get("delete-selected").disabled = count === 0;
+    get("delete-selected").textContent = count ? `${count}件を削除` : "削除";
+    get("select-all").setAttribute("aria-pressed", String(count > 0 && count === inMarket.length));
+  }
+  function setSelecting(on) {
+    selectingFavs = on;
+    selectedFavs.clear();
+    if (on) hideToast();
+    applySelecting();
+  }
+  function toggleSelected(id) {
+    if (!selectingFavs) return;
+    if (selectedFavs.has(id)) selectedFavs.delete(id);
+    else selectedFavs.add(id);
+    applySelecting();
+  }
+  get("fav-select").addEventListener("click", () => setSelecting(!selectingFavs));
+  get("select-all").addEventListener("click", () => {
+    const inMarket = favorites.filter((f) => f.market === market);
+    if (selectedFavs.size === inMarket.length) selectedFavs.clear();
+    else for (const f of inMarket) selectedFavs.add(f.id);
+    applySelecting();
+  });
+  get("delete-selected").addEventListener("click", () => {
+    if (!selectedFavs.size) return;
+    storeCurrent();
+    const before = favorites.slice();
+    const beforeActive = { ...activeFav };
+    const gone = new Set(selectedFavs);
+    favorites = favorites.filter((f) => !gone.has(f.id));
+    for (const key of Object.keys(activeFav)) if (gone.has(activeFav[key])) activeFav[key] = null;
+    selectingFavs = false;
+    selectedFavs.clear();
+    restore(currentState());
+    refreshAfterRestore();
+    showToast(`${gone.size}件を削除しました`, () => {
+      storeCurrent();
+      favorites = before;
+      Object.assign(activeFav, beforeActive);
+      restore(currentState());
+      refreshAfterRestore();
+    });
+  });
 
   // 保有の買値が入っている銘柄のチップに「●」を出す（選んでいる銘柄は画面の入力で判断する）
   function markHeldChips() {
