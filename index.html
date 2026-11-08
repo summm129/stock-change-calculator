@@ -453,7 +453,13 @@
         <h2 id="backup-heading" class="settings-title">バックアップ</h2>
         <p class="settings-desc">お気に入り（入力ごと）と設定を別のスマホへ移す</p>
         <div class="backup-group">
-          <div class="backup-label">書き出し</div>
+          <div class="backup-head">
+            <div class="backup-label">書き出し</div>
+            <div class="backup-parts" role="group" aria-label="書き出すもの">
+              <button type="button" class="part-chip" data-export-part="favorites" aria-pressed="true"><span class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>お気に入り</button>
+              <button type="button" class="part-chip" data-export-part="settings" aria-pressed="true"><span class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>設定</button>
+            </div>
+          </div>
           <div class="backup-buttons">
             <button id="backup-save" type="button" class="backup-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>ファイルに保存</button>
             <button id="backup-copy" type="button" class="backup-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>コピー</button>
@@ -467,7 +473,6 @@
           </div>
           <input id="backup-file" type="file" accept=".json,application/json,text/plain" hidden>
         </div>
-        <p class="settings-row-desc backup-note">米国株の自動取得のリンクは入らない（新しいスマホで設定用リンクを開き直す）</p>
       </section>
 
       <section class="card" aria-labelledby="fine-heading">
@@ -617,15 +622,20 @@
         <h2 id="import-title" tabindex="-1">読み込む内容</h2>
         <button class="link-button" type="button" data-backup-close>キャンセル</button>
       </div>
-      <div class="import-summary">
-        <div><span>日本株のお気に入り</span><b id="import-jp">0件</b></div>
-        <div><span>米国株のお気に入り</span><b id="import-us">0件</b></div>
-        <div><span>設定</span><b id="import-settings">あり</b></div>
-        <div><span>書き出した日</span><b id="import-date">—</b></div>
+      <div>
+        <div class="backup-label">読み込むもの</div>
+        <div class="import-parts" role="group" aria-label="読み込むもの">
+          <button type="button" class="import-part" data-import-part="favorites" aria-pressed="true"><span class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span><span><b>お気に入り</b><small id="import-fav-count">日本株 0件・米国株 0件</small></span></button>
+          <button type="button" class="import-part" data-import-part="settings" aria-pressed="true"><span class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span><span><b>設定</b><small id="import-settings-note">今の設定と入れ替わる</small></span></button>
+        </div>
+        <p class="import-date">書き出した日 <b id="import-date">—</b></p>
       </div>
-      <div class="import-modes" role="radiogroup" aria-label="読み込み方">
-        <button type="button" class="import-mode" role="radio" data-import-mode="add" aria-checked="true"><span><b>今のに追加する</b><small>同じ銘柄（市場・コード・表示名が同じ）は足さない。設定は今のまま</small></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>
-        <button type="button" class="import-mode" role="radio" data-import-mode="replace" aria-checked="false"><span><b>今のを置き換える</b><small>今のお気に入りと設定を消して、読み込んだものにする</small></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>
+      <div id="import-mode-block">
+        <div class="backup-label">お気に入りの読み込み方</div>
+        <div class="import-modes" role="radiogroup" aria-label="お気に入りの読み込み方">
+        <button type="button" class="import-mode" role="radio" data-import-mode="add" aria-checked="true"><span><b>今のに追加する</b><small>同じ銘柄（市場・コード・表示名が同じ）は足さない</small></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>
+        <button type="button" class="import-mode" role="radio" data-import-mode="replace" aria-checked="false"><span><b>今のを置き換える</b><small>今のお気に入りを消して、読み込んだものにする</small></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>
+        </div>
       </div>
       <button id="import-go" class="primary-button sheet-primary" type="button">読み込む</button>
     </div>

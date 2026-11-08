@@ -1765,35 +1765,49 @@
   // ---- バックアップ: お気に入り（入力ごと）・市場ごとの入力・設定を書き出し、読み込む。米国株の GAS のリンクは入れない ----
   const BACKUP_VERSION = 1;
   let pendingImport = null;
+  // 書き出すもの。お気に入りには市場ごとの入力もいっしょに入れる
+  const exportParts = { favorites: true, settings: true };
   function backupData() {
     storeCurrent();
-    return {
-      app: "TickShift",
-      type: "backup",
-      version: BACKUP_VERSION,
-      exportedAt: new Date().toISOString(),
-      settings: { ...settings },
-      inputs: { market, jp: states.jp, us: states.us },
-      favorites: { list: favorites, active: activeFav }
-    };
+    const data = { app: "TickShift", type: "backup", version: BACKUP_VERSION, exportedAt: new Date().toISOString() };
+    if (exportParts.settings) data.settings = { ...settings };
+    if (exportParts.favorites) {
+      data.inputs = { market, jp: states.jp, us: states.us };
+      data.favorites = { list: favorites, active: activeFav };
+    }
+    return data;
   }
   function backupFileName() {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    return `tickshift-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+    const part = exportParts.favorites && exportParts.settings ? "" : exportParts.favorites ? "-favorites" : "-settings";
+    return `tickshift${part}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+  }
+  function applyExportParts() {
+    for (const chip of document.querySelectorAll("[data-export-part]")) chip.setAttribute("aria-pressed", String(exportParts[chip.dataset.exportPart]));
+    const none = !exportParts.favorites && !exportParts.settings;
+    get("backup-save").disabled = none;
+    get("backup-copy").disabled = none;
+  }
+  for (const chip of document.querySelectorAll("[data-export-part]")) {
+    chip.addEventListener("click", () => {
+      exportParts[chip.dataset.exportPart] = !exportParts[chip.dataset.exportPart];
+      applyExportParts();
+    });
   }
   get("backup-save").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify(backupData())], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const name = backupFileName();
     link.href = url;
-    link.download = name;
+    link.download = backupFileName();
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    showToast(`${name} を保存しました`);
+    // 保存したかどうか（ブラウザの確認でキャンセルされたか）はページから分からないので、お知らせは出さない。
+    // 保存の確認やダウンロードの通知はブラウザが出す
+    hideToast();
   });
   get("backup-copy").addEventListener("click", async () => {
     try {
@@ -1809,7 +1823,8 @@
     let data;
     try { data = JSON.parse(String(text).trim()); } catch { return null; }
     if (!isObject(data) || data.app !== "TickShift" || data.type !== "backup" || data.version !== BACKUP_VERSION) return null;
-    const list = isObject(data.favorites) && Array.isArray(data.favorites.list) ? readFavorites(data.favorites.list) : [];
+    const hasFavorites = isObject(data.favorites) && Array.isArray(data.favorites.list);
+    const list = hasFavorites ? readFavorites(data.favorites.list) : [];
     const active = {};
     for (const key of Object.keys(MARKETS)) {
       const id = isObject(data.favorites) && isObject(data.favorites.active) ? data.favorites.active[key] : null;
@@ -1821,8 +1836,10 @@
     }
     const inputs = {};
     for (const key of Object.keys(MARKETS)) inputs[key] = isObject(data.inputs) && isObject(data.inputs[key]) ? readState(data.inputs[key]) : emptyState();
+    const hasSettings = Object.keys(nextSettings).length > 0;
+    if (!hasFavorites && !hasSettings) return null;
     const at = new Date(data.exportedAt);
-    return { list, active, settings: nextSettings, inputs, exportedAt: Number.isNaN(at.getTime()) ? null : at };
+    return { hasFavorites, hasSettings, hasInputs: isObject(data.inputs), list, active, settings: nextSettings, inputs, exportedAt: Number.isNaN(at.getTime()) ? null : at };
   }
 
   function showBackupSheet(name) {
@@ -1849,14 +1866,30 @@
   function openImport(backup) {
     pendingImport = backup;
     const count = (key) => backup.list.filter((f) => f.market === key).length;
-    get("import-jp").textContent = `${count("jp")}件`;
-    get("import-us").textContent = `${count("us")}件`;
-    get("import-settings").textContent = Object.keys(backup.settings).length ? "あり" : "なし";
+    get("import-fav-count").textContent = backup.hasFavorites ? `日本株 ${count("jp")}件・米国株 ${count("us")}件` : "このバックアップには入っていない";
+    get("import-settings-note").textContent = backup.hasSettings ? "今の設定と入れ替わる" : "このバックアップには入っていない";
+    importParts.favorites = backup.hasFavorites;
+    importParts.settings = backup.hasSettings;
+    get("import-sheet").querySelector('[data-import-part="favorites"]').disabled = !backup.hasFavorites;
+    get("import-sheet").querySelector('[data-import-part="settings"]').disabled = !backup.hasSettings;
+    applyImportParts();
     const d = backup.exportedAt;
     const pad = (n) => String(n).padStart(2, "0");
     get("import-date").textContent = d ? `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}` : "—";
     setImportMode("add");
     openBackupSheet("import");
+  }
+  const importParts = { favorites: true, settings: true };
+  function applyImportParts() {
+    for (const button of document.querySelectorAll("[data-import-part]")) button.setAttribute("aria-pressed", String(importParts[button.dataset.importPart]));
+    get("import-mode-block").hidden = !importParts.favorites;
+    get("import-go").disabled = !importParts.favorites && !importParts.settings;
+  }
+  for (const button of document.querySelectorAll("[data-import-part]")) {
+    button.addEventListener("click", () => {
+      importParts[button.dataset.importPart] = !importParts[button.dataset.importPart];
+      applyImportParts();
+    });
   }
   function setImportMode(value) {
     for (const button of document.querySelectorAll("[data-import-mode]")) button.setAttribute("aria-checked", String(button.dataset.importMode === value));
@@ -1903,15 +1936,19 @@
       states: { jp: { ...states.jp }, us: { ...states.us } },
       settings: { ...settings }
     };
-    let message;
-    if (replace) {
+    const withFavorites = importParts.favorites && backup.hasFavorites;
+    const withSettings = importParts.settings && backup.hasSettings;
+    if (!withFavorites && !withSettings) return;
+    let message = "";
+    if (withFavorites && replace) {
       favorites = backup.list;
       Object.assign(activeFav, backup.active);
-      states.jp = backup.inputs.jp;
-      states.us = backup.inputs.us;
-      Object.assign(settings, backup.settings);
-      message = "置き換えました";
-    } else {
+      if (backup.hasInputs) {
+        states.jp = backup.inputs.jp;
+        states.us = backup.inputs.us;
+      }
+      message = withSettings ? "お気に入りと設定を置き換えました" : "お気に入りを置き換えました";
+    } else if (withFavorites) {
       let added = 0;
       let skipped = 0;
       for (const fav of backup.list) {
@@ -1921,8 +1958,12 @@
         favorites.push(fav);
         added += 1;
       }
-      message = skipped ? `${added}件を追加しました（同じ銘柄の${skipped}件は足していません）` : `${added}件を追加しました`;
+      message = withSettings ? `お気に入りを${added}件追加して、設定を読み込みました` : `${added}件を追加しました`;
+      if (skipped) message += `（同じ銘柄の${skipped}件は足していません）`;
+    } else {
+      message = "設定を読み込みました";
     }
+    if (withSettings) Object.assign(settings, backup.settings);
     pendingImport = null;
     restore(currentState());
     applySettings();

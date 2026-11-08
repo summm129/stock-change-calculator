@@ -2008,6 +2008,116 @@ details[open] > .disclosure .chevron,
   font-weight: 700;
 }
 /* ---- バックアップ（設定） ---- */
+/* 書き出すもの・読み込むもの（お気に入り / 設定）のチェック */
+.backup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.backup-head .backup-label {
+  margin-bottom: 0;
+}
+.backup-parts {
+  display: flex;
+  gap: 6px;
+}
+.part-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px 0 6px;
+  border: 1.5px solid var(--pill-line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.part-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.part-check {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--pill-line);
+  border-radius: 999px;
+}
+.part-check svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+[aria-pressed="true"] > .part-check {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+[aria-pressed="true"] > .part-check svg {
+  visibility: visible;
+}
+.backup-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.import-parts {
+  display: grid;
+  gap: 8px;
+}
+.import-part {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+}
+.import-part[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+.import-part:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.import-part b {
+  display: block;
+  font-size: 14px;
+}
+.import-part small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.import-part .part-check {
+  width: 22px;
+  height: 22px;
+}
+.import-date {
+  margin: 8px 2px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.import-date b {
+  color: var(--sub);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 .backup-group + .backup-group {
   margin-top: 14px;
 }
@@ -2059,24 +2169,6 @@ details[open] > .disclosure .chevron,
 }
 .paste-area:focus {
   border-color: var(--focus);
-}
-.import-summary {
-  display: grid;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--field);
-  color: var(--sub);
-  font-size: 13px;
-}
-.import-summary div {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.import-summary b {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
 }
 .import-modes {
   display: grid;
