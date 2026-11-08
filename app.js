@@ -1633,7 +1633,7 @@
     });
   });
 
-  // 複製: コード・市場と入力（前日終値・保有・口座・売値など）を全部コピーして、すぐ右に「(2)」付きで足し、複製したほうを選ぶ
+  // 複製: コード・市場と入力（前日終値・保有・口座・売値など）を全部コピーして、新規と同じく一番左に「(2)」付きで足し、複製したほうを選ぶ
   get("fav-duplicate").addEventListener("click", () => {
     const fav = favorites.find((f) => f.id === sheetFavId);
     if (!fav) return;
@@ -1654,7 +1654,7 @@
       state: structuredClone(fav.state)
     };
     const previous = activeFav[fav.market];
-    favorites.splice(favorites.indexOf(fav) + 1, 0, copy);
+    favorites.unshift(copy);
     activeFav[fav.market] = copy.id;
     restore(currentState());
     closeSheet();

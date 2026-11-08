@@ -1960,6 +1960,13 @@ details[open] > .disclosure .chevron,
   font-size: 15px;
   font-weight: 700;
 }
+/* エラーがないときは場所を取らない（コード・表示名の下に空白ができるので） */
+.sheet-panel .field-error:empty {
+  display: none;
+}
+.sheet-panel .sub-note {
+  margin-top: 0;
+}
 /* 複製: 保存のすぐ下の灰色のボタン */
 .sheet-duplicate {
   display: inline-flex;
