@@ -110,16 +110,20 @@
                 <input id="rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="rate-help rate-error" maxlength="24">
                 <span class="field-suffix" aria-hidden="true">%</span>
               </div>
-              <div class="stepper-grid stepper-triple">
-                <button id="rate-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                <button id="rate-tenth-up" type="button" aria-label="0.1増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
-                <button id="rate-whole-up" type="button" aria-label="0.01増やす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 11l6-6 6 6M6 19l6-6 6 6M6 27l6-6 6 6"/></svg></button>
-                <button id="rate-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-                <button id="rate-tenth-down" type="button" aria-label="0.1減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
-                <button id="rate-whole-down" type="button" aria-label="0.01減らす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6M6 23l6 6 6-6"/></svg></button>
+              <div class="stepper-grid price-steppers tick-steppers" data-tick-for="rate">
+                <div class="tick-stack" role="radiogroup" aria-label="前日比の Tick">
+                  <button type="button" role="radio" data-tick="0" aria-checked="true">1</button>
+                  <button type="button" role="radio" data-tick="1" aria-checked="false">0.1</button>
+                  <button type="button" role="radio" data-tick="2" aria-checked="false">0.01</button>
+                </div>
+                <div class="stepper-col" role="group" aria-label="前日比を調整">
+                  <button id="rate-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                  <button id="rate-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                </div>
               </div>
             </div>
-            <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の一重三角で1ずつ、二重三角で0.1ずつ、三重三角で0.01ずつ数字を増減できます。</p>
+            <div class="ruler" data-ruler="rate" aria-hidden="true"><div class="ruler-marks"></div><span class="ruler-hint">◀ DRAG ▶</span></div>
+            <p id="rate-help" class="sr-only">左のボタンで符号を切り替えます。右の上下ボタンで、選んだ Tick（1・0.1・0.01）ずつ数字を増減できます。</p>
             <div class="presets" role="group" aria-label="よく使う騰落率">
               <button type="button" data-rate="1" aria-pressed="false">1%</button>
               <button type="button" data-rate="2" aria-pressed="false">2%</button>
@@ -153,17 +157,19 @@
                 <span class="input-unit" aria-hidden="true">円</span>
                 <input id="price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="price-help price-error" maxlength="24">
               </div>
-              <div class="stepper-grid price-steppers">
-                <div id="price-stepper" class="stepper-col" role="group" aria-label="株価を1円ずつ調整">
-                  <button id="price-up" type="button" aria-label="1円増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                  <button id="price-down" type="button" aria-label="1円減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+              <div class="stepper-grid price-steppers tick-steppers" data-tick-for="price">
+                <div class="tick-stack price-tick" role="radiogroup" aria-label="株価の Tick">
+                  <button type="button" role="radio" data-tick="0" aria-checked="true">1</button>
+                  <button type="button" role="radio" data-tick="1" aria-checked="false">0.1</button>
+                  <button type="button" role="radio" data-tick="2" aria-checked="false">0.01</button>
                 </div>
-                <div id="price-fine-stepper" class="stepper-col" role="group" aria-label="株価を1セントずつ調整" hidden>
-                  <button id="price-fine-up" type="button" aria-label="1セント増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
-                  <button id="price-fine-down" type="button" aria-label="1セント減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                <div class="stepper-col" role="group" aria-label="株価を調整">
+                  <button id="price-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                  <button id="price-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
                 </div>
               </div>
             </div>
+            <div class="ruler" data-ruler="price" aria-hidden="true"><div class="ruler-marks"></div><span class="ruler-hint">◀ DRAG ▶</span></div>
             <p id="price-help" class="sr-only">現在値や目標の株価を入力してください。右の上下ボタンで1円ずつ増減できます。</p>
             <p class="field-error" id="price-error" aria-live="polite"></p>
 
@@ -244,17 +250,19 @@
                   <span class="input-unit" aria-hidden="true">円</span>
                   <input id="sell-price" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="sell-price-error" maxlength="24">
                 </div>
-                <div class="stepper-grid price-steppers">
-                  <div class="stepper-col" role="group" aria-label="売値を調整">
-                    <button id="sell-up" class="unit-step" type="button" data-step-dir="1" aria-label="1円増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                    <button id="sell-down" class="unit-step" type="button" data-step-dir="-1" aria-label="1円減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="stepper-grid price-steppers tick-steppers" data-tick-for="sell">
+                  <div class="tick-stack price-tick" role="radiogroup" aria-label="売値の Tick">
+                    <button type="button" role="radio" data-tick="0" aria-checked="true">1</button>
+                    <button type="button" role="radio" data-tick="1" aria-checked="false">0.1</button>
+                    <button type="button" role="radio" data-tick="2" aria-checked="false">0.01</button>
                   </div>
-                  <div class="stepper-col fine-stepper" role="group" aria-label="売値を1セントずつ調整" hidden>
-                    <button id="sell-fine-up" type="button" aria-label="1セント増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
-                    <button id="sell-fine-down" type="button" aria-label="1セント減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
+                  <div class="stepper-col" role="group" aria-label="売値を調整">
+                    <button id="sell-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                    <button id="sell-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
                   </div>
                 </div>
               </div>
+              <div class="ruler" data-ruler="sell" aria-hidden="true"><div class="ruler-marks"></div><span class="ruler-hint">◀ DRAG ▶</span></div>
               <p class="field-error" id="sell-price-error" aria-live="polite"></p>
 
               <div id="sell-panel" class="result-panel is-flat" aria-live="polite" aria-atomic="true">
@@ -282,15 +290,19 @@
                   <input id="target-rate" type="text" inputmode="decimal" enterkeyhint="done" value="" autocomplete="off" spellcheck="false" aria-describedby="target-rate-error" maxlength="24">
                   <span class="field-suffix" aria-hidden="true">%</span>
                 </div>
-                <div class="stepper-grid stepper-triple">
-                  <button id="target-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-                  <button id="target-tenth-up" type="button" aria-label="0.1増やす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 13l6-6 6 6M6 21l6-6 6 6"/></svg></button>
-                  <button id="target-fine-up" type="button" aria-label="0.01増やす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 11l6-6 6 6M6 19l6-6 6 6M6 27l6-6 6 6"/></svg></button>
-                  <button id="target-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-                  <button id="target-tenth-down" type="button" aria-label="0.1減らす"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6"/></svg></button>
-                  <button id="target-fine-down" type="button" aria-label="0.01減らす"><svg class="tri" viewBox="0 0 24 34" aria-hidden="true"><path d="M6 7l6 6 6-6M6 15l6 6 6-6M6 23l6 6 6-6"/></svg></button>
+                <div class="stepper-grid price-steppers tick-steppers" data-tick-for="target">
+                  <div class="tick-stack" role="radiogroup" aria-label="目標の率の Tick">
+                    <button type="button" role="radio" data-tick="0" aria-checked="true">1</button>
+                    <button type="button" role="radio" data-tick="1" aria-checked="false">0.1</button>
+                    <button type="button" role="radio" data-tick="2" aria-checked="false">0.01</button>
+                  </div>
+                  <div class="stepper-col" role="group" aria-label="目標の率を調整">
+                    <button id="target-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+                    <button id="target-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                  </div>
                 </div>
               </div>
+              <div class="ruler" data-ruler="target" aria-hidden="true"><div class="ruler-marks"></div><span class="ruler-hint">◀ DRAG ▶</span></div>
               <div class="presets" role="group" aria-label="よく使う率">
                 <button type="button" data-target-rate="1" aria-pressed="false">1%</button>
                 <button type="button" data-target-rate="2" aria-pressed="false">2%</button>
@@ -379,7 +391,7 @@
 
       <section class="card" aria-labelledby="theme-heading">
         <h2 id="theme-heading" class="settings-title">テーマ</h2>
-        <p class="settings-desc">画面の色を選びます。</p>
+        <p class="settings-desc">画面の色を選ぶ</p>
         <div class="option-grid" role="radiogroup" aria-labelledby="theme-heading">
           <button type="button" class="option-tile" role="radio" data-setting="theme" data-value="light" aria-checked="true">
             <span class="mini mini-light" aria-hidden="true"><span></span><span></span><span class="mini-accent"></span></span>
@@ -394,7 +406,7 @@
 
       <section class="card" aria-labelledby="layout-heading">
         <h2 id="layout-heading" class="settings-title">画面の作り</h2>
-        <p class="settings-desc">計算カードの並べ方を選びます。</p>
+        <p class="settings-desc">計算カードの並べ方を選ぶ</p>
         <div class="option-grid" role="radiogroup" aria-labelledby="layout-heading">
           <button type="button" class="option-tile" role="radio" data-setting="layout" data-value="scroll" aria-checked="true">
             <span class="mini mini-scroll" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
@@ -411,12 +423,11 @@
         <h2 id="account-heading" class="settings-title">米国株の証券会社・口座</h2>
         <div class="settings-row">
           <div>
-            <div class="settings-row-title">最初の証券会社・口座</div>
-            <div class="settings-row-desc">新しく登録する銘柄の初期値</div>
+            <div class="settings-row-desc">新しくお気に入り登録する銘柄の初期値</div>
           </div>
           <div class="account-picker">
-            <button id="settings-account-pick" class="account-pick" type="button" aria-expanded="false" aria-controls="settings-account-menu" aria-label="最初の証券会社・口座（楽天・特定）"><span class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-            <div id="settings-account-menu" class="account-menu" role="group" aria-label="最初の証券会社・口座" hidden>
+            <button id="settings-account-pick" class="account-pick" type="button" aria-expanded="false" aria-controls="settings-account-menu" aria-label="新しくお気に入り登録する銘柄の初期値（楽天・特定）"><span class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <div id="settings-account-menu" class="account-menu" role="group" aria-label="新しくお気に入り登録する銘柄の初期値" hidden>
               <div class="account-menu-group">
                 <div class="account-menu-name">楽天証券</div>
                 <div class="account-menu-chips">
@@ -435,12 +446,31 @@
         </div>
       </section>
 
+      <section class="card" aria-labelledby="fine-heading">
+        <h2 id="fine-heading" class="settings-title">数値の調整</h2>
+        <p class="settings-desc">上下ボタンの刻みの変え方を選ぶ</p>
+        <div class="option-grid option-grid-3" role="radiogroup" aria-labelledby="fine-heading">
+          <button type="button" class="option-tile" role="radio" data-setting="fine" data-value="tick" aria-checked="false">
+            <span class="mini mini-fine" aria-hidden="true"><span class="mf-row"><span class="mf-field"></span><span class="mf-tick"><i></i><i></i><i></i></span><span class="mf-arrows"><i></i><i></i></span></span></span>
+            <span class="option-foot"><span><span class="option-name">Tick</span><span class="option-desc">刻みを選ぶ</span></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></span>
+          </button>
+          <button type="button" class="option-tile" role="radio" data-setting="fine" data-value="ruler" aria-checked="false">
+            <span class="mini mini-fine" aria-hidden="true"><span class="mf-row"><span class="mf-field"></span><span class="mf-arrows"><i></i><i></i></span></span><span class="mf-ruler"></span></span>
+            <span class="option-foot"><span><span class="option-name">ルーラー</span><span class="option-desc">左右に動かす</span></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></span>
+          </button>
+          <button type="button" class="option-tile" role="radio" data-setting="fine" data-value="both" aria-checked="true">
+            <span class="mini mini-fine" aria-hidden="true"><span class="mf-row"><span class="mf-field"></span><span class="mf-tick"><i></i><i></i><i></i></span><span class="mf-arrows"><i></i><i></i></span></span><span class="mf-ruler"></span></span>
+            <span class="option-foot"><span><span class="option-name">両方</span><span class="option-desc">両方を使う</span></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></span>
+          </button>
+        </div>
+      </section>
+
       <section class="card" aria-labelledby="keypad-heading">
         <h2 id="keypad-heading" class="settings-title">テンキー</h2>
         <div class="settings-row">
           <div>
             <div class="settings-row-title">数字の入力</div>
-            <div class="settings-row-desc">「.」が出ないときに切り替え</div>
+            <div class="settings-row-desc">「.」が出ないときに切り替える</div>
           </div>
           <div class="segmented segmented-sm" role="group" aria-label="数字の入力">
             <button type="button" data-setting="keypad" data-value="standard" aria-pressed="true">デフォルト</button>
@@ -454,7 +484,7 @@
         <div class="settings-row">
           <div>
             <div class="settings-row-title">米国株</div>
-            <div id="quotes-us-desc" class="settings-row-desc">未設定（設定用リンクを開くと使えます）</div>
+            <div id="quotes-us-desc" class="settings-row-desc">未設定（設定用リンクを開くと使える）</div>
           </div>
           <button id="quotes-us-clear" class="link-button" type="button" hidden>解除</button>
         </div>
@@ -481,7 +511,7 @@
         </div>
       </section>
 
-      <p class="settings-foot">設定と入力はこのブラウザに保存されます。</p>
+      <p class="settings-foot">設定と入力はこのブラウザに保存</p>
     </div>
 
     <div id="favorites-view" hidden>

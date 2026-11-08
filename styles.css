@@ -511,12 +511,97 @@ main,
   gap: 4px;
   flex-shrink: 0;
 }
-/* 率は3列: 一重 = 1、二重 = 0.1、三重 = 0.01 */
-.stepper-grid.stepper-triple {
-  grid-template-columns: repeat(3, 40px);
+/* Tick: 上下ボタンの左に 1 / 0.1 / 0.01 を縦に並べ、選んだ刻みで増減する */
+.stepper-grid .tick-stack {
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  width: 40px;
+  height: 52px;
+  padding: 2px;
+  border-radius: 12px;
+  background: var(--field);
 }
-.stepper-grid svg.tri {
-  height: 16px;
+.stepper-grid .tick-stack button {
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stepper-grid .tick-stack button[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+[data-fine="ruler"] .tick-stack,
+[data-market="jp"] .tick-stack.price-tick {
+  display: none;
+}
+/* ルーラー: 入力の行の下。左右になぞると最小単位ずつ動く */
+.ruler {
+  position: relative;
+  height: 34px;
+  margin-top: 8px;
+  border-radius: 12px;
+  background: var(--field);
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: ew-resize;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[data-fine="tick"] .ruler {
+  display: none;
+}
+.ruler-marks {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -160px;
+  right: -160px;
+  background-image:
+    repeating-linear-gradient(90deg, var(--sub) 0 1.5px, transparent 1.5px 80px),
+    repeating-linear-gradient(90deg, var(--unit) 0 1px, transparent 1px 8px);
+  background-size: 100% 16px, 100% 8px;
+  background-repeat: no-repeat;
+  background-position: 0 50%, 0 50%;
+  opacity: 0.7;
+}
+.ruler::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 50%;
+  z-index: 1;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.ruler::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--field), transparent 24%, transparent 76%, var(--field));
+}
+.ruler-hint {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  z-index: 2;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.ruler.is-dragging .ruler-hint {
+  opacity: 0.4;
 }
 .price-steppers {
   display: flex;
@@ -1352,6 +1437,67 @@ details[open] > .disclosure .chevron,
 }
 .mini-dark > .mini-accent {
   background: #e8e2d6;
+}
+/* 数値の調整: 3枚のタイル。見本は入力欄・Tick・▲▼・ルーラーの形だけ描く */
+.option-grid.option-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.option-grid-3 .option-tile {
+  padding: 6px 6px 10px;
+}
+.option-grid-3 .option-foot {
+  margin-top: 8px;
+}
+.option-grid-3 .option-desc {
+  font-size: 10px;
+}
+.mini-fine {
+  justify-content: center;
+  gap: 6px;
+  height: 72px;
+  padding: 8px 7px;
+  background: var(--field);
+}
+.mini .mf-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+}
+.mf-field {
+  flex: 1;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--card);
+}
+.mini .mf-tick,
+.mini .mf-arrows {
+  display: grid;
+  gap: 2px;
+  width: 12px;
+  height: 100%;
+}
+.mf-tick {
+  grid-template-rows: repeat(3, 1fr);
+}
+.mf-tick > i,
+.mf-arrows > i {
+  display: block;
+  border-radius: 3px;
+  background: var(--pill-line);
+}
+.mf-tick > i:first-child {
+  background: var(--accent);
+}
+.mini .mf-ruler {
+  height: 14px;
+  border-radius: 4px;
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(90deg, var(--unit) 0 1px, transparent 1px 5px);
+  background-size: 100% 6px;
+  background-repeat: no-repeat;
+  background-position: 0 50%;
 }
 .mini-scroll,
 .mini-tabs {
