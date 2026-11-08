@@ -2008,6 +2008,17 @@ details[open] > .disclosure .chevron,
   font-weight: 700;
 }
 /* ---- バックアップ（設定） ---- */
+/* 見出し「バックアップ」の右上に、書き出すもの（お気に入り銘柄 / 設定）のチェック */
+.backup-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.backup-title-row .settings-title {
+  margin-bottom: 0;
+}
 /* 書き出すもの・読み込むもの（お気に入り / 設定）のチェック */
 .backup-head {
   display: flex;
@@ -2198,6 +2209,11 @@ details[open] > .disclosure .chevron,
   margin-top: 2px;
   color: var(--muted);
   font-size: 11px;
+}
+/* 補足（※）は説明よりひと回り小さく */
+.import-mode small.import-mode-note {
+  margin-top: 4px;
+  font-size: 10px;
 }
 .import-mode .option-check {
   margin-top: 2px;
