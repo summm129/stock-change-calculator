@@ -938,29 +938,85 @@
     view.addEventListener("animationend", () => view.classList.remove("is-entering-left", "is-entering-right"));
   }
 
-  // スワイプ: 左へはらうと「売る」、右へはらうと「買う」。
-  // 横に動かす部品（ルーラー・お気に入りの帯・入力欄・上下ボタン・メニュー）から始めたときは切り替えない
-  const SWIPE_MIN = 60;
+  // スワイプ: なぞっている間は買う・売るが横に並んで指についてくる。離したら近いほうへ吸い付く
+  // （半分より先まで動かすか、素早くはらえば切り替え）。左へなぞると売る、右へなぞると買う。
+  // 横に動かす部品（ルーラー・お気に入りの帯・入力欄・上下ボタン・メニュー）から始めたときは動かさない
   const SWIPE_SKIP = ".ruler, .fav-strip, input, textarea, .stepper-grid, .qty-steps, .account-menu, .sheet";
+  const SWIPE_GAP = 16;
+  const track = get("mode-track");
+  // 計算画面のどこから始めてもよい（画面の下の空いているところも）。設定・お気に入り一覧・シートを開いているときは動かさない
+  const swipeReady = () => currentView === "main" && get("fav-sheet").hidden;
   let swipe = null;
-  const mainArea = document.querySelector("#main-view main");
-  mainArea.addEventListener("touchstart", (event) => {
+  const views = { buy: get("buy-view"), sell: get("sell-view") };
+  const pageWidth = () => track.getBoundingClientRect().width + SWIPE_GAP;
+  const offsetOf = (which) => (which === "sell" ? -pageWidth() : 0);
+  function beginSwipe() {
+    track.classList.add("is-swiping");
+    views.buy.hidden = false;
+    views.sell.hidden = false;
+    track.style.transition = "none";
+    track.style.transform = `translateX(${offsetOf(mode)}px)`;
+  }
+  function endSwipe(next) {
+    track.classList.remove("is-swiping");
+    track.style.transition = "";
+    track.style.transform = "";
+    if (next !== mode) {
+      mode = next;
+      save();
+    }
+    applyMode();
+  }
+  document.addEventListener("touchstart", (event) => {
+    if (swipe && swipe.settling) return;
     swipe = null;
-    if (event.touches.length !== 1 || event.target.closest(SWIPE_SKIP)) return;
+    if (!swipeReady() || event.touches.length !== 1 || event.target.closest(SWIPE_SKIP)) return;
     const touch = event.touches[0];
-    swipe = { x: touch.clientX, y: touch.clientY, at: Date.now() };
+    swipe = { x: touch.clientX, y: touch.clientY, dx: 0, state: "pending", samples: [[touch.clientX, Date.now()]] };
   }, { passive: true });
-  mainArea.addEventListener("touchend", (event) => {
-    if (!swipe) return;
-    const touch = event.changedTouches[0];
+  document.addEventListener("touchmove", (event) => {
+    if (!swipe || swipe.settling || swipe.state === "vertical") return;
+    const touch = event.touches[0];
     const dx = touch.clientX - swipe.x;
     const dy = touch.clientY - swipe.y;
-    const quick = Date.now() - swipe.at < 700;
-    swipe = null;
-    if (!quick || Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    switchMode(dx < 0 ? "sell" : "buy");
-  }, { passive: true });
-  mainArea.addEventListener("touchcancel", () => { swipe = null; }, { passive: true });
+    if (swipe.state === "pending") {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) >= Math.abs(dx)) { swipe.state = "vertical"; return; }
+      swipe.state = "horizontal";
+      swipe.x = touch.clientX;
+      beginSwipe();
+    }
+    event.preventDefault();
+    let move = touch.clientX - swipe.x;
+    // 端（買うでさらに右、売るでさらに左）はゴムのように少しだけ動く
+    if ((mode === "buy" && move > 0) || (mode === "sell" && move < 0)) move *= 0.25;
+    swipe.dx = move;
+    swipe.samples.push([touch.clientX, Date.now()]);
+    if (swipe.samples.length > 5) swipe.samples.shift();
+    track.style.transform = `translateX(${offsetOf(mode) + move}px)`;
+  }, { passive: false });
+  const finishSwipe = () => {
+    if (!swipe || swipe.state !== "horizontal" || swipe.settling) { if (swipe && !swipe.settling) swipe = null; return; }
+    const [first, last] = [swipe.samples[0], swipe.samples[swipe.samples.length - 1]];
+    const velocity = (last[0] - first[0]) / Math.max(1, last[1] - first[1]);
+    const width = pageWidth();
+    let next = mode;
+    if (mode === "buy" && (swipe.dx < -width / 2 || (velocity < -0.4 && swipe.dx < -40))) next = "sell";
+    if (mode === "sell" && (swipe.dx > width / 2 || (velocity > 0.4 && swipe.dx > 40))) next = "buy";
+    swipe.settling = true;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { swipe = null; endSwipe(next); return; }
+    track.style.transition = "transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1)";
+    track.style.transform = `translateX(${offsetOf(next)}px)`;
+    // 吸い付いている間にボタンの色も先に切り替える
+    for (const button of document.querySelectorAll("[data-mode]")) button.setAttribute("aria-pressed", String(button.dataset.mode === next));
+    let done = false;
+    const settle = () => { if (done) return; done = true; swipe = null; endSwipe(next); };
+    track.addEventListener("transitionend", settle, { once: true });
+    setTimeout(settle, 400);
+  };
+  document.addEventListener("touchend", finishSwipe, { passive: true });
+  document.addEventListener("touchcancel", finishSwipe, { passive: true });
 
   function onHoldInput() {
     updateHolding();

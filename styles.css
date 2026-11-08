@@ -515,10 +515,28 @@ main,
 #main-view main {
   overflow-x: clip;
 }
+/* 縦スクロールと拡大はブラウザに任せ、横の動きはスワイプで受ける（お気に入りの帯は自分で横に流れる） */
+body {
+  touch-action: pan-y pinch-zoom;
+}
 /* 横にはらったときに、ブラウザの「戻る」が動かないようにする */
 html,
 body {
   overscroll-behavior-x: none;
+}
+/* スワイプ中だけ、買う・売るを横に並べてレールごと動かす */
+.mode-track {
+  min-width: 0;
+}
+.mode-track.is-swiping {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  will-change: transform;
+}
+.mode-track.is-swiping > .mode-view {
+  flex: 0 0 100%;
+  animation: none;
 }
 @keyframes mode-in-right {
   from { opacity: 0; transform: translateX(28px); }

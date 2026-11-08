@@ -72,6 +72,8 @@
           <button type="button" data-mode="sell" aria-pressed="false">売る</button>
         </div>
 
+        <!-- 買う・売るは横に並んだレール。ふだんは片方だけ出し、スワイプ中だけ両方を並べて指についてこさせる -->
+        <div id="mode-track" class="mode-track">
         <div id="buy-view" class="mode-view">
           <section class="card baseline-card" aria-labelledby="baseline-heading">
             <div class="card-heading">
@@ -370,6 +372,7 @@
               <p id="breakeven-note" class="breakeven-note">楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。</p>
             </section>
           </div>
+        </div>
         </div>
 
         <noscript><p class="noscript-message">計算するには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
