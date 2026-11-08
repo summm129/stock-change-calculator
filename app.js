@@ -1248,7 +1248,8 @@
 
   window.addEventListener("popstate", () => {
     const state = history.state || {};
-    showSheet(Boolean(state.sheet));
+    showSheet(state.sheet === true);
+    showBackupSheet(typeof state.sheet === "string" ? state.sheet : null);
     showView(state.view || "main");
     if (!state.sheet) openPendingKabutan();
   });
@@ -1272,21 +1273,25 @@
   let sheetMarket = "jp";
   let codeLetters = false;
 
+  function readFavorites(list) {
+    return list.filter((f) => isObject(f) && typeof f.id === "string" && Object.hasOwn(MARKETS, f.market))
+      .slice(0, 100)
+      .map((f) => ({
+        id: f.id.slice(0, 40),
+        market: f.market,
+        code: typeof f.code === "string" ? f.code.slice(0, 12) : "",
+        name: typeof f.name === "string" ? f.name.slice(0, 60) : "",
+        autoName: f.autoName === true,
+        autoPrefix: typeof f.autoPrefix === "string" && /^\(\d{1,3}\)$/.test(f.autoPrefix) ? f.autoPrefix : "",
+        state: isObject(f.state) ? readState(f.state) : emptyState()
+      }));
+  }
+
   function loadFavorites() {
     try {
       const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY));
       if (!isObject(saved) || !Array.isArray(saved.list)) return;
-      favorites = saved.list.filter((f) => isObject(f) && typeof f.id === "string" && Object.hasOwn(MARKETS, f.market))
-        .slice(0, 100)
-        .map((f) => ({
-          id: f.id.slice(0, 40),
-          market: f.market,
-          code: typeof f.code === "string" ? f.code.slice(0, 12) : "",
-          name: typeof f.name === "string" ? f.name.slice(0, 60) : "",
-          autoName: f.autoName === true,
-          autoPrefix: typeof f.autoPrefix === "string" && /^\(\d{1,3}\)$/.test(f.autoPrefix) ? f.autoPrefix : "",
-          state: isObject(f.state) ? readState(f.state) : emptyState()
-        }));
+      favorites = readFavorites(saved.list);
       if (isObject(saved.active)) {
         for (const key of Object.keys(MARKETS)) {
           const id = saved.active[key];
@@ -1753,6 +1758,186 @@
       favorites = favorites.filter((f) => f.id !== copy.id);
       if (activeFav[copy.market] === copy.id) activeFav[copy.market] = previous;
       restore(currentState());
+      refreshAfterRestore();
+    });
+  });
+
+  // ---- バックアップ: お気に入り（入力ごと）・市場ごとの入力・設定を書き出し、読み込む。米国株の GAS のリンクは入れない ----
+  const BACKUP_VERSION = 1;
+  let pendingImport = null;
+  function backupData() {
+    storeCurrent();
+    return {
+      app: "TickShift",
+      type: "backup",
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      settings: { ...settings },
+      inputs: { market, jp: states.jp, us: states.us },
+      favorites: { list: favorites, active: activeFav }
+    };
+  }
+  function backupFileName() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `tickshift-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+  }
+  get("backup-save").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(backupData())], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const name = backupFileName();
+    link.href = url;
+    link.download = name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    showToast(`${name} を保存しました`);
+  });
+  get("backup-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(backupData()));
+      showToast("コピーしました");
+    } catch {
+      showToast("コピーできませんでした。ファイルに保存を使ってください");
+    }
+  });
+
+  // 読み込んだ文字を確かめて、使える形にする。だめなら null
+  function parseBackup(text) {
+    let data;
+    try { data = JSON.parse(String(text).trim()); } catch { return null; }
+    if (!isObject(data) || data.app !== "TickShift" || data.type !== "backup" || data.version !== BACKUP_VERSION) return null;
+    const list = isObject(data.favorites) && Array.isArray(data.favorites.list) ? readFavorites(data.favorites.list) : [];
+    const active = {};
+    for (const key of Object.keys(MARKETS)) {
+      const id = isObject(data.favorites) && isObject(data.favorites.active) ? data.favorites.active[key] : null;
+      active[key] = list.some((f) => f.id === id && f.market === key) ? id : null;
+    }
+    const nextSettings = {};
+    if (isObject(data.settings)) {
+      for (const [key, values] of Object.entries(SETTING_VALUES)) if (values.includes(data.settings[key])) nextSettings[key] = data.settings[key];
+    }
+    const inputs = {};
+    for (const key of Object.keys(MARKETS)) inputs[key] = isObject(data.inputs) && isObject(data.inputs[key]) ? readState(data.inputs[key]) : emptyState();
+    const at = new Date(data.exportedAt);
+    return { list, active, settings: nextSettings, inputs, exportedAt: Number.isNaN(at.getTime()) ? null : at };
+  }
+
+  function showBackupSheet(name) {
+    for (const id of ["paste", "import"]) get(`${id}-sheet`).hidden = id !== name;
+    document.body.classList.toggle("has-sheet", Boolean(name) || !get("fav-sheet").hidden);
+    if (name) get(`${name}-title`).focus({ preventScroll: true });
+  }
+  function openBackupSheet(name) {
+    hideToast();
+    const state = { view: currentView === "main" ? undefined : currentView, sheet: name };
+    if (history.state && typeof history.state.sheet === "string") history.replaceState(state, "");
+    else history.pushState(state, "");
+    showBackupSheet(name);
+  }
+  function closeBackupSheet() {
+    if (history.state && typeof history.state.sheet === "string") history.back();
+    else showBackupSheet(null);
+  }
+  for (const closer of document.querySelectorAll("[data-backup-close]")) closer.addEventListener("click", closeBackupSheet);
+  for (const id of ["paste-sheet", "import-sheet"]) {
+    get(id).addEventListener("keydown", (event) => { if (event.key === "Escape") closeBackupSheet(); });
+  }
+
+  function openImport(backup) {
+    pendingImport = backup;
+    const count = (key) => backup.list.filter((f) => f.market === key).length;
+    get("import-jp").textContent = `${count("jp")}件`;
+    get("import-us").textContent = `${count("us")}件`;
+    get("import-settings").textContent = Object.keys(backup.settings).length ? "あり" : "なし";
+    const d = backup.exportedAt;
+    const pad = (n) => String(n).padStart(2, "0");
+    get("import-date").textContent = d ? `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}` : "—";
+    setImportMode("add");
+    openBackupSheet("import");
+  }
+  function setImportMode(value) {
+    for (const button of document.querySelectorAll("[data-import-mode]")) button.setAttribute("aria-checked", String(button.dataset.importMode === value));
+  }
+  for (const button of document.querySelectorAll("[data-import-mode]")) button.addEventListener("click", () => setImportMode(button.dataset.importMode));
+
+  get("backup-pick").addEventListener("click", () => {
+    get("backup-file").value = "";
+    get("backup-file").click();
+  });
+  get("backup-file").addEventListener("change", async () => {
+    const file = get("backup-file").files[0];
+    if (!file) return;
+    const backup = file.size <= 2_000_000 ? parseBackup(await file.text()) : null;
+    // 同じファイルをもう一度選んでも読み込めるように空にしておく
+    get("backup-file").value = "";
+    if (!backup) { showToast("読み込めませんでした。TickShift のバックアップを選んでください"); return; }
+    openImport(backup);
+  });
+  get("backup-paste").addEventListener("click", () => {
+    get("paste-area").value = "";
+    get("paste-error").textContent = "";
+    openBackupSheet("paste");
+  });
+  get("paste-next").addEventListener("click", () => {
+    const text = get("paste-area").value.trim();
+    const backup = text ? parseBackup(text) : null;
+    if (!backup) {
+      get("paste-error").textContent = text ? "TickShift のバックアップではないようです。書き出しでコピーした文字を貼ってください。" : "書き出しでコピーした文字を貼ってください。";
+      return;
+    }
+    openImport(backup);
+  });
+
+  get("import-go").addEventListener("click", () => {
+    const backup = pendingImport;
+    if (!backup) return;
+    const replace = document.querySelector('[data-import-mode="replace"]').getAttribute("aria-checked") === "true";
+    storeCurrent();
+    // 元に戻す用に今の状態を取っておく
+    const before = {
+      favorites: favorites.slice(),
+      active: { ...activeFav },
+      states: { jp: { ...states.jp }, us: { ...states.us } },
+      settings: { ...settings }
+    };
+    let message;
+    if (replace) {
+      favorites = backup.list;
+      Object.assign(activeFav, backup.active);
+      states.jp = backup.inputs.jp;
+      states.us = backup.inputs.us;
+      Object.assign(settings, backup.settings);
+      message = "置き換えました";
+    } else {
+      let added = 0;
+      let skipped = 0;
+      for (const fav of backup.list) {
+        const same = favorites.some((f) => f.market === fav.market && f.code === fav.code && (f.name || f.code) === (fav.name || fav.code));
+        if (same) { skipped += 1; continue; }
+        if (favorites.some((f) => f.id === fav.id)) fav.id = `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        favorites.push(fav);
+        added += 1;
+      }
+      message = skipped ? `${added}件を追加しました（同じ銘柄の${skipped}件は足していません）` : `${added}件を追加しました`;
+    }
+    pendingImport = null;
+    restore(currentState());
+    applySettings();
+    saveSettings();
+    closeBackupSheet();
+    refreshAfterRestore();
+    showToast(message, () => {
+      favorites = before.favorites;
+      Object.assign(activeFav, before.active);
+      states.jp = before.states.jp;
+      states.us = before.states.us;
+      Object.assign(settings, before.settings);
+      restore(currentState());
+      applySettings();
+      saveSettings();
       refreshAfterRestore();
     });
   });

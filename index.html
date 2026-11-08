@@ -449,6 +449,27 @@
         </div>
       </section>
 
+      <section class="card" aria-labelledby="backup-heading">
+        <h2 id="backup-heading" class="settings-title">バックアップ</h2>
+        <p class="settings-desc">お気に入り（入力ごと）と設定を別のスマホへ移す</p>
+        <div class="backup-group">
+          <div class="backup-label">書き出し</div>
+          <div class="backup-buttons">
+            <button id="backup-save" type="button" class="backup-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>ファイルに保存</button>
+            <button id="backup-copy" type="button" class="backup-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>コピー</button>
+          </div>
+        </div>
+        <div class="backup-group">
+          <div class="backup-label">読み込み</div>
+          <div class="backup-buttons">
+            <button id="backup-pick" type="button" class="backup-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>ファイルを選ぶ</button>
+            <button id="backup-paste" type="button" class="backup-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h4"/></svg>貼り付け</button>
+          </div>
+          <input id="backup-file" type="file" accept=".json,application/json,text/plain" hidden>
+        </div>
+        <p class="settings-row-desc backup-note">米国株の自動取得のリンクは入らない（新しいスマホで設定用リンクを開き直す）</p>
+      </section>
+
       <section class="card" aria-labelledby="fine-heading">
         <h2 id="fine-heading" class="settings-title">数値の調整</h2>
         <p class="settings-desc">上下ボタンの刻みの変え方を選ぶ</p>
@@ -571,6 +592,42 @@
       <button id="fav-save" class="primary-button sheet-primary" type="button">保存する</button>
       <button id="fav-duplicate" class="sheet-duplicate" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>複製する</button>
       <button id="fav-delete" class="link-button sheet-delete" type="button" hidden>お気に入りから削除</button>
+    </div>
+  </div>
+  <div id="paste-sheet" class="sheet" hidden>
+    <div class="sheet-backdrop" data-backup-close></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="paste-title">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <h2 id="paste-title" tabindex="-1">貼り付けて読み込む</h2>
+        <button class="link-button" type="button" data-backup-close>キャンセル</button>
+      </div>
+      <label class="sr-only" for="paste-area">書き出しでコピーした文字</label>
+      <textarea id="paste-area" class="paste-area" placeholder="書き出しでコピーした文字をここに貼る" spellcheck="false" autocomplete="off"></textarea>
+      <p id="paste-error" class="field-error" aria-live="polite"></p>
+      <button id="paste-next" class="primary-button sheet-primary" type="button">次へ</button>
+    </div>
+  </div>
+
+  <div id="import-sheet" class="sheet" hidden>
+    <div class="sheet-backdrop" data-backup-close></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="import-title">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <h2 id="import-title" tabindex="-1">読み込む内容</h2>
+        <button class="link-button" type="button" data-backup-close>キャンセル</button>
+      </div>
+      <div class="import-summary">
+        <div><span>日本株のお気に入り</span><b id="import-jp">0件</b></div>
+        <div><span>米国株のお気に入り</span><b id="import-us">0件</b></div>
+        <div><span>設定</span><b id="import-settings">あり</b></div>
+        <div><span>書き出した日</span><b id="import-date">—</b></div>
+      </div>
+      <div class="import-modes" role="radiogroup" aria-label="読み込み方">
+        <button type="button" class="import-mode" role="radio" data-import-mode="add" aria-checked="true"><span><b>今のに追加する</b><small>同じ銘柄（市場・コード・表示名が同じ）は足さない。設定は今のまま</small></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>
+        <button type="button" class="import-mode" role="radio" data-import-mode="replace" aria-checked="false"><span><b>今のを置き換える</b><small>今のお気に入りと設定を消して、読み込んだものにする</small></span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>
+      </div>
+      <button id="import-go" class="primary-button sheet-primary" type="button">読み込む</button>
     </div>
   </div>
 </body>

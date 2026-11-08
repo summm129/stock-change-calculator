@@ -2007,6 +2007,113 @@ details[open] > .disclosure .chevron,
   font-size: 15px;
   font-weight: 700;
 }
+/* ---- バックアップ（設定） ---- */
+.backup-group + .backup-group {
+  margin-top: 14px;
+}
+.backup-label {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.backup-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.backup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.backup-button svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.backup-note {
+  margin-top: 12px;
+}
+.paste-area {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 14px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  outline: 0;
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  resize: none;
+}
+.paste-area:focus {
+  border-color: var(--focus);
+}
+.import-summary {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--sub);
+  font-size: 13px;
+}
+.import-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.import-summary b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.import-modes {
+  display: grid;
+  gap: 8px;
+}
+.import-mode {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+}
+.import-mode[aria-checked="true"] {
+  border-color: var(--accent);
+}
+.import-mode b {
+  display: block;
+  font-size: 14px;
+}
+.import-mode small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.import-mode .option-check {
+  margin-top: 2px;
+  margin-left: auto;
+}
+.import-mode[aria-checked="true"] .option-check {
+  visibility: visible;
+}
 /* エラーがないときは場所を取らない（コード・表示名の下に空白ができるので） */
 .sheet-panel .field-error:empty {
   display: none;
