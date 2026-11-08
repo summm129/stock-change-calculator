@@ -589,18 +589,23 @@ main,
   inset: 0;
   background: linear-gradient(90deg, var(--field), transparent 24%, transparent 76%, var(--field));
 }
-.ruler-hint {
+/* 両端の三角: 左右に動かせることだけ示す */
+.ruler-arrow {
   position: absolute;
   top: 50%;
-  left: 10px;
   z-index: 2;
   transform: translateY(-50%);
   color: var(--muted);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  line-height: 1;
 }
-.ruler.is-dragging .ruler-hint {
+.ruler-arrow.is-left {
+  left: 10px;
+}
+.ruler-arrow.is-right {
+  right: 10px;
+}
+.ruler.is-dragging .ruler-arrow {
   opacity: 0.4;
 }
 .price-steppers {
