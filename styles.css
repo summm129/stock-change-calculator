@@ -1779,6 +1779,235 @@ details[open] > .disclosure .chevron,
 .fav-hint {
   margin: 0 4px;
 }
+/* ---- 実現損益（B24） ---- */
+/* 売る 01・02 の結果の見出しの行の右に「売却を記録」。見出しの行の高さに収めて枠は広げない
+   （見出しが長いときは見出しのほうが折り返す） */
+.result-panel.has-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+}
+.result-panel.has-record > * {
+  grid-column: 1 / -1;
+}
+.result-panel.has-record > .result-label {
+  grid-row: 1;
+  grid-column: 1;
+}
+.result-panel.has-record > .confirm-sell {
+  grid-row: 1;
+  grid-column: 2;
+}
+.confirm-sell {
+  display: inline-flex;
+  grid-row: 1;
+  grid-column: 2;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  margin: -7px -6px -7px 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(28, 28, 26, 0.08);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.confirm-sell svg {
+  width: 15px;
+  height: 15px;
+}
+.confirm-sell:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* 日付: ブラウザの日付の欄は端末の言語で「月/日/年」になるので、見た目は自分で「年/月/日（曜）」に出す */
+.date-field {
+  position: relative;
+}
+.date-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  text-align: left;
+  padding: 0 12px;
+  font-size: 16px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.date-button svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+}
+.date-native {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.sold-qty-field {
+  height: 48px;
+}
+#sell-sheet .entry-row .field {
+  flex: 1;
+  min-width: 0;
+}
+.sell-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 16px;
+}
+.sell-target-market {
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+}
+.sell-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.sell-grid .field-label,
+#sell-sheet .field-label {
+  display: block;
+  margin-bottom: 6px;
+}
+.sheet-input-sm {
+  font-size: 15px;
+  font-weight: 500;
+}
+#sell-sheet .result-panel {
+  margin: 0;
+}
+/* 一覧 */
+#records-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.records-totals {
+  display: grid;
+  gap: 6px;
+}
+.records-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--sub);
+  font-size: 13px;
+}
+.records-total strong {
+  color: var(--text);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.records-total.is-up strong,
+.record-gain.is-up {
+  color: var(--up);
+}
+.records-total.is-down strong,
+.record-gain.is-down {
+  color: var(--down);
+}
+.records-none {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.records-day {
+  padding-top: 12px;
+  padding-bottom: 6px;
+}
+.records-date {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.record-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+.records-date + .record-row {
+  border-top: 0;
+}
+.record-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.record-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.record-name b {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.record-sub {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.record-gain {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.record-detail {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--sub);
+  font-size: 13px;
+}
+.record-detail div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.record-detail b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---- まとめて削除（並べ替え・編集の「選択」） ---- */
 .select-toggle {
   flex-shrink: 0;
@@ -2373,6 +2602,22 @@ body.has-sheet {
 }
 
 /* ---- 幅の調整 ---- */
+/* 実現損益のアイコンを足したので、幅が狭いときはヘッダーを詰めて「TickShift」が切れないようにする */
+@media (max-width: 399px) {
+  .header-tools {
+    gap: 6px;
+  }
+  .site-header .round-button {
+    width: 38px;
+    height: 38px;
+  }
+  .site-header .segmented button {
+    padding: 0 10px;
+  }
+  .brand {
+    gap: 8px;
+  }
+}
 @media (max-width: 359px) {
   .page-shell {
     padding-left: 12px;

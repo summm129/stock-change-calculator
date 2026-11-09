@@ -19,6 +19,7 @@
     account: ["tokutei", "nisa", "moomoo"],
     keypad: ["standard", "simeji"],
     fine: ["both", "tick", "ruler"],
+    afterSell: ["keep", "remove"],
   };
   const ACCOUNT_LABELS = {
     tokutei: "楽天・特定",
@@ -84,10 +85,13 @@
     account: "tokutei",
     keypad: "standard",
     fine: "both",
+    afterSell: "keep",
   };
   // 上下ボタンの刻み（Tick）。0=1、1=0.1、2=0.01。画面を開くたびに1から
-  const tickIndex = { rate: 0, price: 0, sell: 0, target: 0 };
+  const tickIndex = { rate: 0, price: 0, sell: 0, target: 0, sold: 0 };
   const TICK_TEXT = ["1", "0.1", "0.01"];
+  // 売る 02 で出た売値（「売却を記録」で使う）
+  let lastTargetPrice = null;
   let favorites = [];
   const activeFav = { jp: null, us: null };
   let account = "tokutei";
@@ -361,8 +365,11 @@
   }
 
   // 売値に対する損益。株数がなければ1株として計算する。米国株は選んでいる証券会社・口座の手数料を引く
-  function pnlOf(price) {
-    const { buy, qty } = holdValues();
+  // shares を渡すと、その株数で出す（売却の確定で、一部だけ売るとき）
+  function pnlOf(price, sharesOverride = null) {
+    const held = holdValues();
+    const buy = held.buy;
+    const qty = sharesOverride ?? held.qty;
     if (buy === null || price === null) return null;
     const shares = qty ?? 1;
     if (market !== "us")
@@ -453,6 +460,7 @@
       get("sell-rate").textContent = "—";
     }
     renderFeeNote(get("sell-note"), result);
+    get("confirm-sell").disabled = !result;
 
     // 02
     const sign = get("target-sign");
@@ -514,6 +522,7 @@
       get("target-gain").textContent = "—";
       if (from !== null) fromNote.textContent = "";
       renderFeeNote(get("target-note"), null);
+      lastTargetPrice = null;
     } else {
       const rate = targetSign * magnitude;
       const raw = from * (1 + rate / 100);
@@ -532,7 +541,9 @@
       setDirection(get("target-panel"), pnl ? pnl.gain : 0);
       get("target-gain").textContent = pnl ? gainText(pnl.gain) : "—";
       renderFeeNote(get("target-note"), pnl);
+      lastTargetPrice = pnl ? target : null;
     }
+    get("confirm-target").disabled = lastTargetPrice === null;
     updateClearButtons();
   }
 
@@ -766,7 +777,9 @@
   }
 
   function setDirection(panel, value) {
-    panel.className = `result-panel ${value > 0 ? "is-up" : value < 0 ? "is-down" : "is-flat"}`;
+    // 色の印だけ付け替える（has-record などほかの印は残す）
+    panel.classList.remove("is-up", "is-down", "is-flat");
+    panel.classList.add(value > 0 ? "is-up" : value < 0 ? "is-down" : "is-flat");
   }
 
   function clearResult(kind) {
@@ -928,6 +941,7 @@
       // Broken saved JSON is ignored. A storage access error is caught by save().
     }
     loadFavorites();
+    loadRecords();
     restore(currentState());
   }
 
@@ -1073,7 +1087,7 @@
   }
   // ---- Tick とルーラー ----
   // Tick は 0=1、1=0.1、2=0.01。日本株の株価・売値は1円だけ。設定が「ルーラー」なら上下ボタンは1ずつ
-  const isPriceKey = (key) => key === "price" || key === "sell";
+  const isPriceKey = (key) => key === "price" || key === "sell" || key === "sold";
   function activeTick(key) {
     if (settings.fine === "ruler") return 0;
     if (isPriceKey(key) && MARKETS[market].fineDigits === null) return 0;
@@ -1089,6 +1103,11 @@
     if (key === "target") {
       if (stepRate(sell.rate, targetSign, direction, [100, 10, 1][tick]))
         onSellInput();
+      return;
+    }
+    // sold は売却を記録のシートの売値
+    if (key === "sold") {
+      stepPrice(direction, tick, get("sold-price"), updateSellSheet, tick > 0 ? (MARKETS[market].fineDigits ?? 0) : 0);
       return;
     }
     const field = key === "price" ? fields.price : sell.price;
@@ -1645,10 +1664,12 @@
     main: "main-view",
     settings: "settings-view",
     favorites: "favorites-view",
+    records: "records-view",
   };
   const VIEW_FOCUS = {
     settings: "settings-title",
     favorites: "favorites-title",
+    records: "records-title",
   };
   let currentView = "main";
   let mainScroll = 0;
@@ -1664,7 +1685,7 @@
     if (view !== "favorites" && selectingFavs) setSelecting(false);
     if (view === "main") {
       window.scrollTo(0, mainScroll);
-      get(from === "favorites" ? "open-favorites" : "open-settings").focus({
+      get({ favorites: "open-favorites", records: "open-records" }[from] || "open-settings").focus({
         preventScroll: true,
       });
     } else {
@@ -1687,6 +1708,11 @@
   get("close-settings").addEventListener("click", closeView);
   get("open-favorites").addEventListener("click", () => openView("favorites"));
   get("close-favorites").addEventListener("click", closeView);
+  get("open-records").addEventListener("click", () => {
+    renderRecords();
+    openView("records");
+  });
+  get("close-records").addEventListener("click", closeView);
 
   window.addEventListener("popstate", () => {
     const state = history.state || {};
@@ -2520,7 +2546,7 @@
   }
 
   function showBackupSheet(name) {
-    for (const id of ["paste", "import"])
+    for (const id of ["paste", "import", "sell", "record"])
       get(`${id}-sheet`).hidden = id !== name;
     document.body.classList.toggle(
       "has-sheet",
@@ -2546,7 +2572,7 @@
   }
   for (const closer of document.querySelectorAll("[data-backup-close]"))
     closer.addEventListener("click", closeBackupSheet);
-  for (const id of ["paste-sheet", "import-sheet"]) {
+  for (const id of ["paste-sheet", "import-sheet", "sell-sheet", "record-sheet"]) {
     get(id).addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeBackupSheet();
     });
@@ -2718,6 +2744,369 @@
     });
   });
 
+  // ---- 実現損益（B24）: 売る 01・02 の結果の「売却を記録」→ 記録のシート → 記録。記録はヘッダーのアイコンから一覧で見る ----
+  // 記録は端末に保存する。金額は記録したときの値（あとから手数料の計算が変わっても変えない）
+  const RECORDS_KEY = "stock-change-calculator:records";
+  let records = [];
+  let sellDraft = null;
+  let recordEditId = null;
+
+  function loadRecords() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(RECORDS_KEY));
+      if (!isObject(saved) || !Array.isArray(saved.list)) return;
+      records = saved.list
+        .filter((r) => isObject(r) && typeof r.id === "string" && Object.hasOwn(MARKETS, r.market) && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && [r.buy, r.sell, r.qty, r.gain].every(Number.isFinite))
+        .slice(0, 5000)
+        .map((r) => ({
+          id: r.id.slice(0, 40),
+          date: r.date,
+          market: r.market,
+          code: typeof r.code === "string" ? r.code.slice(0, 12) : "",
+          name: typeof r.name === "string" ? r.name.slice(0, 60) : "",
+          account: SETTING_VALUES.account.includes(r.account) ? r.account : "",
+          buy: r.buy,
+          sell: r.sell,
+          qty: r.qty,
+          fees: Number.isFinite(r.fees) ? r.fees : null,
+          gain: r.gain,
+          memo: typeof r.memo === "string" ? r.memo.slice(0, 100) : "",
+          at: Number.isFinite(r.at) ? r.at : 0,
+        }));
+    } catch {
+      // 読めない記録は無視する
+    }
+  }
+
+  function saveRecords() {
+    try {
+      localStorage.setItem(RECORDS_KEY, JSON.stringify({ list: records }));
+    } catch {
+      // 保存できなくても、この画面では記録が見える
+    }
+  }
+
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const todayText = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  };
+  const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+  function dateLabel(text) {
+    const [y, m, d] = text.split("-").map(Number);
+    const day = new Date(y, m - 1, d);
+    return `${m}月${d}日（${WEEKDAYS[day.getDay()]}）`;
+  }
+  // 記録の市場に合わせた金額の書き方（今の画面の市場とは別）
+  function recordMoney(rec, value) {
+    // 米国株はセントまでの値ならセントで、それより細かく入れた値はそのまま出す
+    if (rec.market === "us") return Math.abs(value * 100 - Math.round(value * 100)) < 1e-9 ? centsText(toCents(value)) : `$${formatNumber(value, MARKETS.us.priceDigits)}`;
+    return `${formatNumber(value, MARKETS.jp.priceDigits)}円`;
+  }
+  function recordGain(market, gain) {
+    if (market === "us") {
+      const cents = toCents(gain);
+      return `${cents < 0 ? "−" : cents > 0 ? "+" : ""}${centsText(Math.abs(cents))}`;
+    }
+    const text = formatNumber(Math.abs(gain), MARKETS.jp.priceDigits);
+    return text === "0" ? "0円" : `${gain < 0 ? "−" : "+"}${text}円`;
+  }
+
+  function showDate(id) {
+    const value = get(id).value;
+    get(`${id}-text`).textContent = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value.replaceAll("-", "/")}(${WEEKDAYS[new Date(...value.split("-").map((n, i) => Number(n) - (i === 1 ? 1 : 0))).getDay()]})` : "日付を選ぶ";
+  }
+  for (const id of ["sold-date", "record-date"]) {
+    get(`${id}-button`).addEventListener("click", () => {
+      const input = get(id);
+      try {
+        input.showPicker();
+      } catch {
+        input.focus();
+        input.click();
+      }
+    });
+    get(id).addEventListener("change", () => {
+      showDate(id);
+      if (id === "sold-date") updateSellSheet();
+    });
+  }
+
+  // ---- 売却の確定 ----
+  function openSellSheet(price) {
+    const { buy, qty } = holdValues();
+    if (buy === null || price === null) return;
+    storeCurrent();
+    const fav = activeFavorite();
+    sellDraft = { buy, heldQty: qty };
+    get("sell-sheet-code").textContent = fav ? fav.code : "";
+    get("sell-sheet-name").textContent = fav ? fav.name || fav.code : "お気に入り外の銘柄";
+    get("sell-sheet-market").textContent = market === "us" ? `米国株・${ACCOUNT_LABELS[account]}` : "日本株";
+    get("sold-date").value = todayText();
+    showDate("sold-date");
+    tickIndex.sold = 0;
+    applyTicks();
+    get("sold-price").value = formatNumber(price, priceDigits());
+    get("sold-qty").value = qty === null ? "" : formatNumber(qty, 4);
+    get("sold-memo").value = "";
+    get("sold-error").textContent = "";
+    for (const el of document.querySelectorAll(".sell-unit")) el.textContent = MARKETS[market].symbol;
+    updateSellSheet();
+    openBackupSheet("sell");
+  }
+
+  // 入力を確かめて、売値・株数・損益を返す。だめならエラーの文
+  function readSellSheet() {
+    const price = parseNumber(get("sold-price").value);
+    const qty = parseNumber(get("sold-qty").value);
+    const date = get("sold-date").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "売った日を入れてください。" };
+    if (price === null || price <= 0 || price > 1e9) return { error: "売値を入れてください。" };
+    if (qty === null || qty <= 0 || qty > 1e9) return { error: "株数を入れてください。" };
+    if (sellDraft.heldQty !== null && qty > sellDraft.heldQty + 1e-9)
+      return { error: `株数は保有（${formatNumber(sellDraft.heldQty, 4)}株）以下で入れてください。` };
+    const pnl = pnlOf(price, qty);
+    if (!pnl) return { error: "保有の買値を入れてください。" };
+    return { date, price, qty, pnl };
+  }
+
+  function updateSellSheet() {
+    if (!sellDraft) return;
+    const read = readSellSheet();
+    const panel = get("sold-panel");
+    if (read.error) {
+      setDirection(panel, 0);
+      get("sold-gain").textContent = "—";
+      get("sold-rate").textContent = "—";
+      renderFeeNote(get("sold-note"), null);
+    } else {
+      setDirection(panel, read.pnl.gain);
+      get("sold-gain").textContent = gainText(read.pnl.gain);
+      get("sold-rate").textContent = `${signed(read.pnl.rate, 2)}%`;
+      renderFeeNote(get("sold-note"), read.pnl);
+    }
+    get("sold-label").textContent = market === "us" ? "実現損益（手数料引後）" : "実現損益";
+    const qtyNow = parseNumber(get("sold-qty").value);
+    get("sold-qty-down").disabled = qtyNow === null || qtyNow <= 0;
+    get("sold-qty-up").disabled = qtyNow !== null && sellDraft.heldQty !== null && qtyNow >= sellDraft.heldQty;
+    get("sold-qty-up").setAttribute("aria-label", `${qtyUnit()}株増やす`);
+    get("sold-qty-down").setAttribute("aria-label", `${qtyUnit()}株減らす`);
+    const priceNow = parseNumber(get("sold-price").value);
+    get("sold-down").disabled = priceNow === null || priceNow <= 0;
+  }
+  // 売る株数の上下: 日本株は100株、米国株は1株ずつ（保有より多くはしない）
+  for (const [id, direction] of [["sold-qty-up", 1], ["sold-qty-down", -1]]) {
+    get(id).addEventListener("click", () => {
+      const now = get("sold-qty").value.trim() === "" ? 0 : parseNumber(get("sold-qty").value);
+      if (now === null || now < 0) return;
+      let next = now + direction * qtyUnit();
+      if (sellDraft && sellDraft.heldQty !== null) next = Math.min(next, sellDraft.heldQty);
+      get("sold-qty").value = next > 0 ? formatNumber(next, 4) : "";
+      updateSellSheet();
+    });
+  }
+  for (const id of ["sold-price", "sold-qty", "sold-date"]) {
+    get(id).addEventListener("input", () => {
+      get("sold-error").textContent = "";
+      updateSellSheet();
+    });
+  }
+
+  get("confirm-sell").addEventListener("click", () => openSellSheet(parseNumber(sell.price.value)));
+  get("confirm-target").addEventListener("click", () => openSellSheet(lastTargetPrice));
+
+  get("sold-go").addEventListener("click", () => {
+    const read = readSellSheet();
+    if (read.error) {
+      get("sold-error").textContent = read.error;
+      return;
+    }
+    storeCurrent();
+    // 元に戻す用に、お気に入り・入力・記録を丸ごと写しておく
+    const before = JSON.parse(JSON.stringify({ favorites, activeFav, states, records }));
+    const fav = activeFavorite();
+    const rec = {
+      id: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      date: read.date,
+      market,
+      code: fav ? fav.code : "",
+      name: fav ? fav.name || fav.code : "",
+      account: market === "us" ? account : "",
+      buy: sellDraft.buy,
+      sell: read.price,
+      qty: read.qty,
+      fees: read.pnl.fees,
+      gain: market === "us" ? toCents(read.pnl.gain) / 100 : read.pnl.gain,
+      memo: get("sold-memo").value.normalize("NFKC").trim().slice(0, 100),
+      at: Date.now(),
+    };
+    records.unshift(rec);
+    saveRecords();
+    // 保有を減らす。全部売ったら、設定に合わせて保有を空にするか、お気に入りから消す
+    const left = sellDraft.heldQty === null ? 0 : sellDraft.heldQty - read.qty;
+    let message = "売却を記録しました";
+    if (left > 1e-9) {
+      hold.qty.value = formatNumber(left, 4);
+    } else if (fav && settings.afterSell === "remove") {
+      favorites = favorites.filter((f) => f.id !== fav.id);
+      activeFav[market] = null;
+      restore(currentState());
+      message = `売却を記録して、${fav.name || fav.code}をお気に入りから消しました`;
+    } else {
+      hold.buy.value = "";
+      hold.qty.value = "";
+      breakeven.cost.value = "";
+      sell.price.value = "";
+    }
+    sellDraft = null;
+    closeBackupSheet();
+    // 画面で直した保有を、選んでいる銘柄（なければ市場ごとの入力）へ書き戻す
+    storeCurrent();
+    restore(currentState());
+    refreshAfterRestore();
+    renderRecords();
+    showToast(message, () => {
+      favorites = before.favorites;
+      Object.assign(activeFav, before.activeFav);
+      states.jp = before.states.jp;
+      states.us = before.states.us;
+      records = before.records;
+      saveRecords();
+      restore(currentState());
+      refreshAfterRestore();
+      renderRecords();
+    });
+  });
+
+  // ---- 一覧 ----
+  function renderRecords() {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+    get("records-month").textContent = `${now.getMonth() + 1}月の実現損益`;
+    const totals = get("records-totals");
+    totals.replaceChildren();
+    for (const key of Object.keys(MARKETS)) {
+      const inMonth = records.filter((r) => r.market === key && r.date.startsWith(month));
+      if (!inMonth.length) continue;
+      const sum = key === "us" ? inMonth.reduce((s, r) => s + toCents(r.gain), 0) / 100 : inMonth.reduce((s, r) => s + r.gain, 0);
+      const row = document.createElement("div");
+      row.className = `records-total ${sum > 0 ? "is-up" : sum < 0 ? "is-down" : ""}`;
+      const label = document.createElement("span");
+      label.textContent = `${MARKET_NAMES[key]}（${inMonth.length}件）`;
+      const value = document.createElement("strong");
+      value.textContent = recordGain(key, sum);
+      row.append(label, value);
+      totals.append(row);
+    }
+    if (!totals.children.length) {
+      const none = document.createElement("p");
+      none.className = "records-none";
+      none.textContent = "今月の記録はまだありません";
+      totals.append(none);
+    }
+    // 日付ごと（新しい順）
+    const list = get("records-list");
+    list.replaceChildren();
+    const sorted = records.slice().sort((a, b) => (a.date === b.date ? b.at - a.at : a.date < b.date ? 1 : -1));
+    let group = null;
+    for (const rec of sorted) {
+      if (!group || group.dataset.date !== rec.date) {
+        group = document.createElement("section");
+        group.className = "card records-day";
+        group.dataset.date = rec.date;
+        const head = document.createElement("h2");
+        head.className = "records-date";
+        head.textContent = dateLabel(rec.date);
+        group.append(head);
+        list.append(group);
+      }
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "record-row";
+      row.dataset.id = rec.id;
+      const text = document.createElement("span");
+      text.className = "record-text";
+      const name = document.createElement("span");
+      name.className = "record-name";
+      const code = document.createElement("span");
+      code.className = "fav-row-code";
+      code.textContent = rec.code || MARKET_NAMES[rec.market];
+      const title = document.createElement("b");
+      title.textContent = rec.name || "お気に入り外の銘柄";
+      name.append(code, title);
+      const sub = document.createElement("span");
+      sub.className = "record-sub";
+      sub.textContent = `${recordMoney(rec, rec.sell)} × ${formatNumber(rec.qty, 4)}株${rec.memo ? `・${rec.memo}` : ""}`;
+      text.append(name, sub);
+      const gain = document.createElement("strong");
+      gain.className = `record-gain ${rec.gain > 0 ? "is-up" : rec.gain < 0 ? "is-down" : ""}`;
+      gain.textContent = recordGain(rec.market, rec.gain);
+      row.append(text, gain);
+      row.addEventListener("click", () => openRecordSheet(rec.id));
+      group.append(row);
+    }
+  }
+
+  // ---- 記録を直す・消す ----
+  function openRecordSheet(id) {
+    const rec = records.find((r) => r.id === id);
+    if (!rec) return;
+    recordEditId = id;
+    get("record-name").textContent = rec.name || "お気に入り外の銘柄";
+    get("record-code").textContent = rec.code || MARKET_NAMES[rec.market];
+    const lines = [
+      ["市場", rec.market === "us" ? `米国株${rec.account ? `・${ACCOUNT_LABELS[rec.account]}` : ""}` : "日本株"],
+      ["買値", recordMoney(rec, rec.buy)],
+      ["売値", recordMoney(rec, rec.sell)],
+      ["株数", `${formatNumber(rec.qty, 4)}株`],
+    ];
+    if (rec.fees !== null) lines.push(["手数料", `−${centsText(rec.fees)}`]);
+    lines.push(["実現損益", recordGain(rec.market, rec.gain)]);
+    const box = get("record-detail");
+    box.replaceChildren();
+    for (const [k, v] of lines) {
+      const row = document.createElement("div");
+      const key = document.createElement("span");
+      key.textContent = k;
+      const value = document.createElement("b");
+      value.textContent = v;
+      row.append(key, value);
+      box.append(row);
+    }
+    get("record-date").value = rec.date;
+    showDate("record-date");
+    get("record-memo").value = rec.memo;
+    get("record-error").textContent = "";
+    openBackupSheet("record");
+  }
+  get("record-save").addEventListener("click", () => {
+    const rec = records.find((r) => r.id === recordEditId);
+    if (!rec) return;
+    const date = get("record-date").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      get("record-error").textContent = "売った日を入れてください。";
+      return;
+    }
+    rec.date = date;
+    rec.memo = get("record-memo").value.normalize("NFKC").trim().slice(0, 100);
+    saveRecords();
+    closeBackupSheet();
+    renderRecords();
+  });
+  get("record-delete").addEventListener("click", () => {
+    const index = records.findIndex((r) => r.id === recordEditId);
+    if (index < 0) return;
+    const [gone] = records.splice(index, 1);
+    saveRecords();
+    closeBackupSheet();
+    renderRecords();
+    showToast("記録を削除しました", () => {
+      records.splice(Math.min(index, records.length), 0, gone);
+      saveRecords();
+      renderRecords();
+    });
+  });
+
   // ---- 下に出るお知らせ（「元に戻す」つき）。しばらくすると消える ----
   let toastTimer = null;
   let toastUndo = null;
@@ -2807,6 +3196,10 @@
     "target-down",
     "qty-up",
     "qty-down",
+    "sold-up",
+    "sold-down",
+    "sold-qty-up",
+    "sold-qty-down",
   ]) {
     attachHoldRepeat(get(id));
   }
