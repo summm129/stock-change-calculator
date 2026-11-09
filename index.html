@@ -71,14 +71,14 @@
         <button class="primary-button install-trigger" type="button">追加する</button>
       </aside>
 
-      <section class="fav-bar" aria-labelledby="fav-bar-title">
-        <div class="fav-head">
-          <h2 id="fav-bar-title" class="fav-title">お気に入り</h2>
-          <button id="open-favorites" class="link-button" type="button">並べ替え・編集</button>
+      <section class="stock-bar" aria-labelledby="stock-bar-title">
+        <div class="stock-head">
+          <h2 id="stock-bar-title" class="stock-title">銘柄</h2>
+          <button id="open-stocks" class="link-button" type="button">並べ替え・編集</button>
         </div>
-        <div class="fav-strip">
-          <div id="fav-chips" class="fav-chips" role="radiogroup" aria-labelledby="fav-bar-title"></div>
-          <button id="fav-add" class="fav-add" type="button" aria-label="お気に入りに追加"><span class="fav-add-icon"
+        <div class="stock-strip">
+          <div id="stock-chips" class="stock-chips" role="radiogroup" aria-labelledby="stock-bar-title"></div>
+          <button id="stock-add" class="stock-add" type="button" aria-label="銘柄を追加"><span class="stock-add-icon"
               aria-hidden="true">+</span></button>
         </div>
         <p class="sr-only">銘柄を選ぶと、その銘柄で入れた値に切り替わります。もう一度押すと選択を外します。長押しで編集できます。</p>
@@ -359,7 +359,12 @@
                 <p class="field-error" id="sell-price-error" aria-live="polite"></p>
 
                 <div id="sell-panel" class="result-panel has-record is-flat" aria-live="polite" aria-atomic="true">
-                  <button id="confirm-sell" class="confirm-sell" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>売却を記録</button>
+                  <button id="confirm-sell" class="confirm-sell" type="button" disabled><svg viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                      stroke-linejoin="round" aria-hidden="true">
+                      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+                      <path d="M9 8h6M9 12h6M9 16h3" />
+                    </svg>売却を記録</button>
                   <div id="sell-label" class="result-label">損益</div>
                   <output id="sell-result" class="main-result" for="hold-buy hold-qty sell-price"><span
                       id="sell-result-value">—</span></output>
@@ -423,7 +428,12 @@
                 <p class="field-error" id="target-rate-error" aria-live="polite"></p>
 
                 <div id="target-panel" class="result-panel has-record is-flat" aria-live="polite" aria-atomic="true">
-                  <button id="confirm-target" class="confirm-sell" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>売却を記録</button>
+                  <button id="confirm-target" class="confirm-sell" type="button" disabled><svg viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                      stroke-linejoin="round" aria-hidden="true">
+                      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+                      <path d="M9 8h6M9 12h6M9 16h3" />
+                    </svg>売却を記録</button>
                   <div class="result-label">売値</div>
                   <output id="target-result" class="main-result" for="target-rate"><span
                       class="result-unit money-unit">円</span><span id="target-result-value">—</span></output>
@@ -596,16 +606,16 @@
         <h2 id="account-heading" class="settings-title">米国株の証券会社・口座</h2>
         <div class="settings-row">
           <div>
-            <div class="settings-row-desc">新しくお気に入り登録する銘柄の初期値</div>
+            <div class="settings-row-desc">新しく登録する銘柄の初期値</div>
           </div>
           <div class="account-picker">
             <button id="settings-account-pick" class="account-pick" type="button" aria-expanded="false"
-              aria-controls="settings-account-menu" aria-label="新しくお気に入り登録する銘柄の初期値（楽天・特定）"><span
+              aria-controls="settings-account-menu" aria-label="新しく登録する銘柄の初期値（楽天・特定）"><span
                 class="account-pick-label">楽天・特定</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 9l6 6 6-6" />
               </svg></button>
-            <div id="settings-account-menu" class="account-menu" role="group" aria-label="新しくお気に入り登録する銘柄の初期値" hidden>
+            <div id="settings-account-menu" class="account-menu" role="group" aria-label="新しく登録する銘柄の初期値" hidden>
               <div class="account-menu-group">
                 <div class="account-menu-name">楽天証券</div>
                 <div class="account-menu-chips">
@@ -631,14 +641,18 @@
         <div class="backup-title-row">
           <h2 id="backup-heading" class="settings-title">バックアップ</h2>
           <div class="backup-parts" role="group" aria-label="書き出すもの">
-            <button type="button" class="part-chip" data-export-part="favorites" aria-pressed="true"><span
+            <button type="button" class="part-chip" data-export-part="stocks" aria-pressed="true"><span
                 class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24">
                   <path d="M5 12l5 5 9-10" />
-                </svg></span>お気に入り銘柄</button>
+                </svg></span>銘柄</button>
             <button type="button" class="part-chip" data-export-part="settings" aria-pressed="true"><span
                 class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24">
                   <path d="M5 12l5 5 9-10" />
                 </svg></span>設定</button>
+            <button type="button" class="part-chip" data-export-part="records" aria-pressed="true"><span
+                class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24">
+                  <path d="M5 12l5 5 9-10" />
+                </svg></span>実現損益</button>
           </div>
         </div>
         <div class="backup-group">
@@ -681,7 +695,7 @@
         <div class="settings-row">
           <div>
             <div class="settings-row-title">全部売ったとき</div>
-            <div class="settings-row-desc">お気に入りの銘柄を残すか消すか</div>
+            <div class="settings-row-desc">売却と同時に銘柄一覧から消すかどうか</div>
           </div>
           <div class="segmented segmented-sm" role="group" aria-label="全部売ったとき">
             <button type="button" data-setting="afterSell" data-value="keep" aria-pressed="true">残す</button>
@@ -777,40 +791,47 @@
         </button>
         <div class="settings-link is-static">
           <span>バージョン</span>
-          <span class="settings-value">4.0.0</span>
+          <span class="settings-value">4.1.0</span>
         </div>
       </section>
 
       <p class="settings-foot">設定と入力はこのブラウザに保存</p>
     </div>
 
-    <div id="favorites-view" hidden>
+    <div id="stocks-view" hidden>
       <header class="settings-header">
-        <button id="close-favorites" class="round-button" type="button" aria-label="戻る">
+        <button id="close-stocks" class="round-button" type="button" aria-label="戻る">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" />
           </svg>
         </button>
-        <h1 id="favorites-title" tabindex="-1">お気に入りの編集</h1>
-        <button id="fav-select" class="select-toggle" type="button" aria-pressed="false">選択</button>
+        <h1 id="stocks-title" tabindex="-1">銘柄の編集</h1>
+        <button id="stock-select" class="select-toggle" type="button" aria-pressed="false">選択</button>
       </header>
-      <p id="fav-hint" class="settings-foot fav-hint">「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。</p>
-      <section class="card fav-list-card">
-        <ul id="fav-list" class="fav-list" aria-label="お気に入り銘柄の一覧"></ul>
-        <p id="fav-empty" class="fav-empty">この市場のお気に入りはまだありません。</p>
+      <p id="stock-hint" class="settings-foot stock-hint">「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。</p>
+      <section class="card stock-list-card">
+        <ul id="stock-list" class="stock-list" aria-label="銘柄の一覧"></ul>
+        <p id="stock-empty" class="stock-empty">この市場の銘柄はまだありません。</p>
       </section>
-      <button id="fav-list-add" class="dashed-button" type="button">＋ 銘柄を追加</button>
+      <button id="stock-list-add" class="dashed-button" type="button">＋ 銘柄を追加</button>
       <!-- 選んでいるあいだだけ下に出る -->
       <div id="select-bar" class="select-bar" hidden>
-        <button id="select-all" class="select-all" type="button" aria-pressed="false"><span class="select-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg></span>すべて選択</button>
+        <button id="select-all" class="select-all" type="button" aria-pressed="false"><span class="select-mark"
+            aria-hidden="true"><svg viewBox="0 0 24 24">
+              <path d="M5 12l5 5 9-10" />
+            </svg></span>すべて選択</button>
         <button id="delete-selected" class="delete-selected" type="button" disabled>削除</button>
       </div>
     </div>
 
     <div id="records-view" hidden>
       <header class="settings-header">
-        <button id="close-records" class="round-button" type="button" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg></button>
+        <button id="close-records" class="round-button" type="button" aria-label="戻る"><svg viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true">
+            <path d="M15 6l-6 6 6 6" />
+          </svg></button>
         <h1 id="records-title" tabindex="-1">実現損益</h1>
       </header>
       <section class="card records-summary" aria-labelledby="records-month">
@@ -826,45 +847,45 @@
     <button id="toast-undo" class="toast-undo" type="button">元に戻す</button>
   </div>
 
-  <div id="fav-sheet" class="sheet" hidden>
+  <div id="stock-sheet" class="sheet" hidden>
     <div class="sheet-backdrop" data-sheet-close></div>
-    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="fav-sheet-title">
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="stock-sheet-title">
       <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="sheet-head">
-        <h2 id="fav-sheet-title" tabindex="-1">お気に入りに追加</h2>
+        <h2 id="stock-sheet-title" tabindex="-1">銘柄を追加</h2>
         <button class="link-button" type="button" data-sheet-close>キャンセル</button>
       </div>
       <div>
-        <span id="fav-market-label" class="field-label">市場</span>
-        <div class="segmented sheet-segmented" role="group" aria-labelledby="fav-market-label">
-          <button type="button" data-fav-market="jp" aria-pressed="true">日本株</button>
-          <button type="button" data-fav-market="us" aria-pressed="false">米国株</button>
+        <span id="stock-market-label" class="field-label">市場</span>
+        <div class="segmented sheet-segmented" role="group" aria-labelledby="stock-market-label">
+          <button type="button" data-stock-market="jp" aria-pressed="true">日本株</button>
+          <button type="button" data-stock-market="us" aria-pressed="false">米国株</button>
         </div>
       </div>
       <div class="sheet-grid">
         <div>
           <div class="sheet-code-head">
-            <label id="fav-code-label" class="field-label" for="fav-code">証券コード</label>
-            <button id="fav-code-mode" class="code-mode" type="button" hidden>ABC</button>
+            <label id="stock-code-label" class="field-label" for="stock-code">証券コード</label>
+            <button id="stock-code-mode" class="code-mode" type="button" hidden>ABC</button>
           </div>
-          <input id="fav-code" class="sheet-input" type="text" autocomplete="off" autocapitalize="characters"
+          <input id="stock-code" class="sheet-input" type="text" autocomplete="off" autocapitalize="characters"
             spellcheck="false" maxlength="12" enterkeyhint="next">
         </div>
         <div>
-          <label class="field-label" for="fav-name">表示名</label>
-          <input id="fav-name" class="sheet-input" type="text" autocomplete="off" maxlength="60" enterkeyhint="done"
+          <label class="field-label" for="stock-name">表示名</label>
+          <input id="stock-name" class="sheet-input" type="text" autocomplete="off" maxlength="60" enterkeyhint="done"
             placeholder="空欄時は自動取得されます">
         </div>
       </div>
-      <p id="fav-error" class="field-error" aria-live="polite"></p>
+      <p id="stock-error" class="field-error" aria-live="polite"></p>
       <p class="sub-note">前日終値・前日比・株価などは、計算画面で入れた値がこの銘柄に自動で保存されます。</p>
-      <button id="fav-save" class="primary-button sheet-primary" type="button">保存する</button>
-      <button id="fav-duplicate" class="sheet-duplicate" type="button" hidden><svg viewBox="0 0 24 24" fill="none"
+      <button id="stock-save" class="primary-button sheet-primary" type="button">保存する</button>
+      <button id="stock-duplicate" class="sheet-duplicate" type="button" hidden><svg viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="8" y="8" width="12" height="12" rx="3" />
           <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
         </svg>複製する</button>
-      <button id="fav-delete" class="link-button sheet-delete" type="button" hidden>お気に入りから削除</button>
+      <button id="stock-delete" class="link-button sheet-delete" type="button" hidden>この銘柄を削除</button>
     </div>
   </div>
   <div id="paste-sheet" class="sheet" hidden>
@@ -894,28 +915,32 @@
       <div>
         <div class="backup-label">読み込むもの</div>
         <div class="import-parts" role="group" aria-label="読み込むもの">
-          <button type="button" class="import-part" data-import-part="favorites" aria-pressed="true"><span
+          <button type="button" class="import-part" data-import-part="stocks" aria-pressed="true"><span
               class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24">
                 <path d="M5 12l5 5 9-10" />
-              </svg></span><span><b>お気に入り銘柄</b><small id="import-fav-count">日本株 0件・米国株 0件</small></span></button>
+              </svg></span><span><b>銘柄</b><small id="import-stock-count">日本株 0件・米国株 0件</small></span></button>
           <button type="button" class="import-part" data-import-part="settings" aria-pressed="true"><span
               class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24">
                 <path d="M5 12l5 5 9-10" />
-              </svg></span><span><b>設定</b><small id="import-settings-note">今の設定と入れ替わる</small></span></button>
+              </svg></span><span><b>設定</b><small id="import-settings-note">現在の設定と置き換えます</small></span></button>
+          <button type="button" class="import-part" data-import-part="records" aria-pressed="true"><span
+              class="part-check" aria-hidden="true"><svg viewBox="0 0 24 24">
+                <path d="M5 12l5 5 9-10" />
+              </svg></span><span><b>実現損益</b><small id="import-records-count">0件</small></span></button>
         </div>
         <p class="import-date">書き出した日 <b id="import-date">—</b></p>
       </div>
       <div id="import-mode-block">
-        <div class="backup-label">お気に入りの読み込み方</div>
-        <div class="import-modes" role="radiogroup" aria-label="お気に入りの読み込み方">
+        <div class="backup-label">銘柄の読み込み方</div>
+        <div class="import-modes" role="radiogroup" aria-label="銘柄の読み込み方">
           <button type="button" class="import-mode" role="radio" data-import-mode="add"
-            aria-checked="true"><span><b>追加する</b><small>今のお気に入りを消さずに、読み込んだものを追加する</small>
+            aria-checked="true"><span><b>追加する</b><small>今の銘柄を消さずに、読み込んだものを追加する</small>
               <small class="import-mode-note">※同じ銘柄（コード・表示名が同じ）はスキップ</small>
             </span><span class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24">
                 <path d="M5 12l5 5 9-10" />
               </svg></span></button>
           <button type="button" class="import-mode" role="radio" data-import-mode="replace"
-            aria-checked="false"><span><b>置き換える</b><small>今のお気に入りを消して、読み込んだものに置き換える</small></span><span
+            aria-checked="false"><span><b>置き換える</b><small>今の銘柄を消して、読み込んだものに置き換える</small></span><span
               class="option-check" aria-hidden="true"><svg viewBox="0 0 24 24">
                 <path d="M5 12l5 5 9-10" />
               </svg></span></button>
@@ -933,14 +958,20 @@
         <button class="link-button" type="button" data-backup-close>キャンセル</button>
       </div>
       <div class="sell-target">
-        <span id="sell-sheet-code" class="fav-row-code"></span><b id="sell-sheet-name"></b>
+        <span id="sell-sheet-code" class="stock-row-code"></span><b id="sell-sheet-name"></b>
         <span id="sell-sheet-market" class="sell-target-market"></span>
       </div>
       <div class="sell-grid">
         <div>
           <span id="sold-date-label" class="field-label">売った日</span>
           <div class="date-field">
-            <button id="sold-date-button" class="sheet-input date-button" type="button" aria-describedby="sold-date-label"><span id="sold-date-text"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8 3v4M16 3v4M4 10h16" /></svg></button>
+            <button id="sold-date-button" class="sheet-input date-button" type="button"
+              aria-describedby="sold-date-label"><span id="sold-date-text"></span><svg viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <rect x="4" y="5" width="16" height="15" rx="3" />
+                <path d="M8 3v4M16 3v4M4 10h16" />
+              </svg></button>
             <input id="sold-date" class="date-native" type="date" tabindex="-1" aria-hidden="true">
           </div>
         </div>
@@ -949,7 +980,13 @@
           <div class="field field-sm sold-qty-field">
             <input id="sold-qty" type="text" inputmode="decimal" autocomplete="off" maxlength="16">
             <span class="field-suffix" aria-hidden="true">株</span>
-            <div class="qty-steps" role="group" aria-label="売る株数を調整"><button id="sold-qty-up" type="button" aria-label="増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg></button><button id="sold-qty-down" type="button" aria-label="減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button></div>
+            <div class="qty-steps" role="group" aria-label="売る株数を調整"><button id="sold-qty-up" type="button"
+                aria-label="増やす"><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 15l6-6 6 6" />
+                </svg></button><button id="sold-qty-down" type="button" aria-label="減らす"><svg viewBox="0 0 24 24"
+                  aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" />
+                </svg></button></div>
           </div>
         </div>
       </div>
@@ -967,8 +1004,12 @@
               <button type="button" role="radio" data-tick="2" aria-checked="false">0.01</button>
             </div>
             <div class="stepper-col" role="group" aria-label="売値を調整">
-              <button id="sold-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg></button>
-              <button id="sold-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
+              <button id="sold-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 15l6-6 6 6" />
+                </svg></button>
+              <button id="sold-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" />
+                </svg></button>
             </div>
           </div>
         </div>
@@ -996,13 +1037,19 @@
         <h2 id="record-title" tabindex="-1">記録</h2>
         <button class="link-button" type="button" data-backup-close>キャンセル</button>
       </div>
-      <div class="sell-target"><span id="record-code" class="fav-row-code"></span><b id="record-name"></b></div>
+      <div class="sell-target"><span id="record-code" class="stock-row-code"></span><b id="record-name"></b></div>
       <div id="record-detail" class="record-detail"></div>
       <div class="sell-grid">
         <div>
           <span id="record-date-label" class="field-label">売った日</span>
           <div class="date-field">
-            <button id="record-date-button" class="sheet-input date-button" type="button" aria-describedby="record-date-label"><span id="record-date-text"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8 3v4M16 3v4M4 10h16" /></svg></button>
+            <button id="record-date-button" class="sheet-input date-button" type="button"
+              aria-describedby="record-date-label"><span id="record-date-text"></span><svg viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <rect x="4" y="5" width="16" height="15" rx="3" />
+                <path d="M8 3v4M16 3v4M4 10h16" />
+              </svg></button>
             <input id="record-date" class="date-native" type="date" tabindex="-1" aria-hidden="true">
           </div>
         </div>

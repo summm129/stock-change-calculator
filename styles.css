@@ -515,7 +515,7 @@ main,
 #main-view main {
   overflow-x: clip;
 }
-/* 縦スクロールと拡大はブラウザに任せ、横の動きはスワイプで受ける（お気に入りの帯は自分で横に流れる） */
+/* 縦スクロールと拡大はブラウザに任せ、横の動きはスワイプで受ける（銘柄の帯は自分で横に流れる） */
 body {
   touch-action: pan-y pinch-zoom;
 }
@@ -864,7 +864,7 @@ details[open] > .disclosure .chevron,
   display: none;
 }
 
-/* ---- 買う / 売る（お気に入りのすぐ下。銘柄ごとに覚える） ---- */
+/* ---- 買う / 売る（銘柄のすぐ下。銘柄ごとに覚える） ---- */
 .mode-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -940,11 +940,11 @@ details[open] > .disclosure .chevron,
   opacity: 0.35;
   cursor: default;
 }
-/* お気に入りのチップ: 保有がある銘柄の「●」 */
-.fav-chip-held {
+/* 銘柄のチップ: 保有がある銘柄の「●」 */
+.stock-chip-held {
   color: var(--ok);
 }
-.fav-chip[aria-checked="true"] .fav-chip-held {
+.stock-chip[aria-checked="true"] .stock-chip-held {
   color: inherit;
 }
 
@@ -1660,17 +1660,17 @@ details[open] > .disclosure .chevron,
   touch-action: manipulation;
 }
 
-/* ---- お気に入り ---- */
-.fav-bar {
+/* ---- 銘柄 ---- */
+.stock-bar {
   margin-bottom: 12px;
 }
-.fav-head {
+.stock-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 4px 6px;
 }
-.fav-title {
+.stock-title {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
@@ -1684,13 +1684,13 @@ details[open] > .disclosure .chevron,
   color: var(--muted);
   font-size: 12px;
 }
-.fav-strip {
+.stock-strip {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 /* チップ列だけ横にスクロールし、＋ボタンは常に右端に見せる */
-.fav-chips {
+.stock-chips {
   display: flex;
   flex: 0 1 auto;
   gap: 5px;
@@ -1699,23 +1699,23 @@ details[open] > .disclosure .chevron,
   scrollbar-width: none;
 }
 /* 続きがある側の端をふわっと透かす（右は＋ボタンの手前、左はスクロールしたとき） */
-.fav-chips.is-fading {
+.stock-chips.is-fading {
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
 }
-.fav-chips.is-fading-left {
+.stock-chips.is-fading-left {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 32px);
   mask-image: linear-gradient(to right, transparent, #000 32px);
 }
-.fav-chips.is-fading.is-fading-left {
+.stock-chips.is-fading.is-fading-left {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 40px), transparent);
 }
-.fav-chips::-webkit-scrollbar {
+.stock-chips::-webkit-scrollbar {
   display: none;
 }
 /* position: relative は中の読み上げ用の文字（「保有あり」）をチップの中に収めるため。ないと、帯の外に隠れたチップの文字がページを横に広げる */
-.fav-chip {
+.stock-chip {
   position: relative;
   flex-shrink: 0;
   min-height: 48px;
@@ -1729,18 +1729,18 @@ details[open] > .disclosure .chevron,
   user-select: none;
   -webkit-touch-callout: none;
 }
-.fav-chip[aria-checked="true"] {
+.stock-chip[aria-checked="true"] {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
 }
-.fav-chip-code {
+.stock-chip-code {
   display: block;
   font-size: 10px;
   opacity: 0.75;
 }
 /* 名前は日本語7文字分の幅で「…」にする（英字は細いので12文字くらい入る） */
-.fav-chip-name {
+.stock-chip-name {
   display: block;
   max-width: 7em;
   overflow: hidden;
@@ -1749,7 +1749,7 @@ details[open] > .disclosure .chevron,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.fav-add {
+.stock-add {
   flex-shrink: 0;
   min-width: 52px;
   min-height: 48px;
@@ -1761,22 +1761,22 @@ details[open] > .disclosure .chevron,
   font-size: 13px;
   font-weight: 600;
 }
-.fav-add.is-wide {
+.stock-add.is-wide {
   flex: 0 0 auto;
 }
-.fav-add-icon {
+.stock-add-icon {
   font-size: 22px;
   font-weight: 400;
   line-height: 1;
 }
 
-/* ---- お気に入りの編集画面 ---- */
-#favorites-view {
+/* ---- 銘柄の編集画面 ---- */
+#stocks-view {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.fav-hint {
+.stock-hint {
   margin: 0 4px;
 }
 /* ---- 実現損益（B24） ---- */
@@ -2029,7 +2029,7 @@ details[open] > .disclosure .chevron,
   opacity: 0.4;
 }
 /* 選ぶときは、行の左の「≡」が丸いチェックになる */
-.fav-check {
+.stock-check {
   display: none;
   place-items: center;
   flex-shrink: 0;
@@ -2039,14 +2039,14 @@ details[open] > .disclosure .chevron,
   border: 0;
   background: transparent;
 }
-.is-selecting .fav-check {
+.is-selecting .stock-check {
   display: grid;
 }
-.is-selecting .fav-handle,
-.is-selecting #fav-list-add {
+.is-selecting .stock-handle,
+.is-selecting #stock-list-add {
   display: none;
 }
-.is-selecting .fav-row-open > svg {
+.is-selecting .stock-row-open > svg {
   visibility: hidden;
 }
 .select-mark {
@@ -2068,18 +2068,18 @@ details[open] > .disclosure .chevron,
   stroke-linejoin: round;
   visibility: hidden;
 }
-.fav-row[aria-selected="true"] .select-mark,
+.stock-row[aria-selected="true"] .select-mark,
 .select-all[aria-pressed="true"] .select-mark {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
 }
-.fav-row[aria-selected="true"] .select-mark svg,
+.stock-row[aria-selected="true"] .select-mark svg,
 .select-all[aria-pressed="true"] .select-mark svg {
   visibility: visible;
 }
 /* 下のバー（すべて選択 / 〇件を削除） */
-#favorites-view.is-selecting {
+#stocks-view.is-selecting {
   padding-bottom: 88px;
 }
 .select-bar {
@@ -2122,15 +2122,15 @@ details[open] > .disclosure .chevron,
   opacity: 0.35;
   cursor: default;
 }
-.fav-list-card {
+.stock-list-card {
   padding: 6px 8px;
 }
-.fav-list {
+.stock-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.fav-row {
+.stock-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2138,20 +2138,20 @@ details[open] > .disclosure .chevron,
   border-top: 1px solid var(--line);
   background: var(--card);
 }
-.fav-row:first-child {
+.stock-row:first-child {
   border-top: 0;
 }
-.fav-row.is-dragging {
+.stock-row.is-dragging {
   position: relative;
   z-index: 2;
   border-top-color: transparent;
   border-radius: 16px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
-.fav-row.is-dragging + .fav-row {
+.stock-row.is-dragging + .stock-row {
   border-top-color: transparent;
 }
-.fav-handle {
+.stock-handle {
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -2167,16 +2167,16 @@ details[open] > .disclosure .chevron,
   user-select: none;
   -webkit-touch-callout: none;
 }
-.fav-row.is-dragging .fav-handle {
+.stock-row.is-dragging .stock-handle {
   color: var(--text);
   cursor: grabbing;
 }
-.fav-handle svg,
-.fav-row-open svg {
+.stock-handle svg,
+.stock-row-open svg {
   width: 18px;
   height: 18px;
 }
-.fav-row-open {
+.stock-row-open {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2189,33 +2189,33 @@ details[open] > .disclosure .chevron,
   color: inherit;
   text-align: left;
 }
-.fav-row-text {
+.stock-row-text {
   flex: 1;
   min-width: 0;
 }
-.fav-row-line {
+.stock-row-line {
   display: flex;
   align-items: baseline;
   gap: 6px;
   min-width: 0;
 }
-.fav-row-code {
+.stock-row-code {
   flex-shrink: 0;
   color: var(--muted);
   font-size: 11px;
 }
-.fav-row-name {
+.stock-row-name {
   overflow: hidden;
   font-size: 15px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.fav-row-open > svg {
+.stock-row-open > svg {
   flex-shrink: 0;
   color: var(--unit);
 }
-.fav-empty {
+.stock-empty {
   margin: 0;
   padding: 18px 10px;
   color: var(--muted);
@@ -2336,7 +2336,7 @@ details[open] > .disclosure .chevron,
   font-weight: 600;
 }
 /* 日本語入力の変換中は中身を大文字にできないので、見た目だけ先に大文字にする（確定したら中身も大文字になる） */
-#fav-code {
+#stock-code {
   text-transform: uppercase;
 }
 .sheet-input:focus {
@@ -2351,9 +2351,10 @@ details[open] > .disclosure .chevron,
   font-weight: 700;
 }
 /* ---- バックアップ（設定） ---- */
-/* 見出し「バックアップ」の右上に、書き出すもの（お気に入り銘柄 / 設定）のチェック */
+/* 見出し「バックアップ」の右上に、書き出すもの（銘柄 / 設定）のチェック */
 .backup-title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
@@ -2362,7 +2363,7 @@ details[open] > .disclosure .chevron,
 .backup-title-row .settings-title {
   margin-bottom: 0;
 }
-/* 書き出すもの・読み込むもの（お気に入り / 設定）のチェック */
+/* 書き出すもの・読み込むもの（銘柄 / 設定）のチェック */
 .backup-head {
   display: flex;
   align-items: center;

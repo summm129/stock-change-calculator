@@ -10,8 +10,8 @@
   const STORAGE_KEY = "stock-change-calculator:v2";
   // 見た目の設定は入力値と分けて保存する。index.html の先頭でも同じキーを読んでちらつきを防ぐ。
   const SETTINGS_KEY = "stock-change-calculator:settings";
-  // お気に入り銘柄。各銘柄が自分の入力値（前日終値など）を持つ。active は市場ごとに選んでいる銘柄
-  const FAVORITES_KEY = "stock-change-calculator:favorites";
+  // 銘柄。各銘柄が自分の入力値（前日終値など）を持つ。active は市場ごとに選んでいる銘柄
+  const STOCKS_KEY = "stock-change-calculator:stocks";
   // account は米国株の証券会社と口座。tokutei / nisa は楽天証券（以前の保存値のまま）、moomoo は moomoo証券の特定口座
   const SETTING_VALUES = {
     theme: ["light", "dark"],
@@ -92,8 +92,8 @@
   const TICK_TEXT = ["1", "0.1", "0.01"];
   // 売る 02 で出た売値（「売却を記録」で使う）
   let lastTargetPrice = null;
-  let favorites = [];
-  const activeFav = { jp: null, us: null };
+  let stocks = [];
+  const activeStockIds = { jp: null, us: null };
   let account = "tokutei";
   // 前日終値を自動で入れたときの終値の日付と、取得した時刻。手で打ち直したら空に戻す
   let closeDate = "";
@@ -779,7 +779,9 @@
   function setDirection(panel, value) {
     // 色の印だけ付け替える（has-record などほかの印は残す）
     panel.classList.remove("is-up", "is-down", "is-flat");
-    panel.classList.add(value > 0 ? "is-up" : value < 0 ? "is-down" : "is-flat");
+    panel.classList.add(
+      value > 0 ? "is-up" : value < 0 ? "is-down" : "is-flat",
+    );
   }
 
   function clearResult(kind) {
@@ -914,8 +916,8 @@
         JSON.stringify({ market, jp: states.jp, us: states.us }),
       );
       localStorage.setItem(
-        FAVORITES_KEY,
-        JSON.stringify({ list: favorites, active: activeFav }),
+        STOCKS_KEY,
+        JSON.stringify({ list: stocks, active: activeStockIds }),
       );
       storageAvailable = true;
     } catch {
@@ -940,7 +942,7 @@
     } catch {
       // Broken saved JSON is ignored. A storage access error is caught by save().
     }
-    loadFavorites();
+    loadStocks();
     loadRecords();
     restore(currentState());
   }
@@ -1087,7 +1089,8 @@
   }
   // ---- Tick とルーラー ----
   // Tick は 0=1、1=0.1、2=0.01。日本株の株価・売値は1円だけ。設定が「ルーラー」なら上下ボタンは1ずつ
-  const isPriceKey = (key) => key === "price" || key === "sell" || key === "sold";
+  const isPriceKey = (key) =>
+    key === "price" || key === "sell" || key === "sold";
   function activeTick(key) {
     if (settings.fine === "ruler") return 0;
     if (isPriceKey(key) && MARKETS[market].fineDigits === null) return 0;
@@ -1107,7 +1110,13 @@
     }
     // sold は売却を記録のシートの売値
     if (key === "sold") {
-      stepPrice(direction, tick, get("sold-price"), updateSellSheet, tick > 0 ? (MARKETS[market].fineDigits ?? 0) : 0);
+      stepPrice(
+        direction,
+        tick,
+        get("sold-price"),
+        updateSellSheet,
+        tick > 0 ? (MARKETS[market].fineDigits ?? 0) : 0,
+      );
       return;
     }
     const field = key === "price" ? fields.price : sell.price;
@@ -1311,13 +1320,13 @@
 
   // スワイプ: なぞっている間は買う・売るが横に並んで指についてくる。離したら近いほうへ吸い付く
   // （半分より先まで動かすか、素早くはらえば切り替え）。左へなぞると売る、右へなぞると買う。
-  // 横に動かす部品（ルーラー・お気に入りの帯・入力欄・上下ボタン・メニュー）から始めたときは動かさない
+  // 横に動かす部品（ルーラー・銘柄の帯・入力欄・上下ボタン・メニュー）から始めたときは動かさない
   const SWIPE_SKIP =
-    ".ruler, .fav-strip, input, textarea, .stepper-grid, .qty-steps, .account-menu, .sheet";
+    ".ruler, .stock-strip, input, textarea, .stepper-grid, .qty-steps, .account-menu, .sheet";
   const SWIPE_GAP = 16;
   const track = get("mode-track");
-  // 計算画面のどこから始めてもよい（画面の下の空いているところも）。設定・お気に入り一覧・シートを開いているときは動かさない
-  const swipeReady = () => currentView === "main" && get("fav-sheet").hidden;
+  // 計算画面のどこから始めてもよい（画面の下の空いているところも）。設定・銘柄一覧・シートを開いているときは動かさない
+  const swipeReady = () => currentView === "main" && get("stock-sheet").hidden;
   let swipe = null;
   const views = { buy: get("buy-view"), sell: get("sell-view") };
   const pageWidth = () => track.getBoundingClientRect().width + SWIPE_GAP;
@@ -1642,7 +1651,7 @@
       ACCOUNT_LABELS[settings.account];
     pick.setAttribute(
       "aria-label",
-      `新しくお気に入り登録する銘柄の初期値（${ACCOUNT_LABELS[settings.account]}）`,
+      `新しく登録する銘柄の初期値（${ACCOUNT_LABELS[settings.account]}）`,
     );
   }
 
@@ -1659,16 +1668,16 @@
     });
   }
 
-  // ---- 画面の切り替え（計算・設定・お気に入りの編集）とシート。端末の戻る操作でも戻れる ----
+  // ---- 画面の切り替え（計算・設定・銘柄の編集）とシート。端末の戻る操作でも戻れる ----
   const VIEWS = {
     main: "main-view",
     settings: "settings-view",
-    favorites: "favorites-view",
+    stocks: "stocks-view",
     records: "records-view",
   };
   const VIEW_FOCUS = {
     settings: "settings-title",
-    favorites: "favorites-title",
+    stocks: "stocks-title",
     records: "records-title",
   };
   let currentView = "main";
@@ -1682,10 +1691,13 @@
       get(id).hidden = name !== view;
     const from = currentView;
     currentView = view;
-    if (view !== "favorites" && selectingFavs) setSelecting(false);
+    if (view !== "stocks" && selectingStocks) setSelecting(false);
     if (view === "main") {
       window.scrollTo(0, mainScroll);
-      get({ favorites: "open-favorites", records: "open-records" }[from] || "open-settings").focus({
+      get(
+        { stocks: "open-stocks", records: "open-records" }[from] ||
+          "open-settings",
+      ).focus({
         preventScroll: true,
       });
     } else {
@@ -1706,8 +1718,8 @@
 
   get("open-settings").addEventListener("click", () => openView("settings"));
   get("close-settings").addEventListener("click", closeView);
-  get("open-favorites").addEventListener("click", () => openView("favorites"));
-  get("close-favorites").addEventListener("click", closeView);
+  get("open-stocks").addEventListener("click", () => openView("stocks"));
+  get("close-stocks").addEventListener("click", closeView);
   get("open-records").addEventListener("click", () => {
     renderRecords();
     openView("records");
@@ -1725,14 +1737,14 @@
   // 保存した日本株の銘柄の株探を開く（「株探で取得」を押したのと同じ）
   let pendingKabutan = null;
   function openPendingKabutan() {
-    const fav = pendingKabutan;
+    const stock = pendingKabutan;
     pendingKabutan = null;
-    if (!fav || !favorites.includes(fav)) return;
-    openKabutan(fav);
+    if (!stock || !stocks.includes(stock)) return;
+    openKabutan(stock);
   }
 
-  // ---- お気に入り銘柄 ----
-  const FAV_CODE_RULES = {
+  // ---- 銘柄 ----
+  const STOCK_CODE_RULES = {
     jp: {
       label: "証券コード",
       pattern: /^[0-9][0-9A-Z]{3}$/,
@@ -1745,11 +1757,11 @@
     },
   };
   const MARKET_NAMES = { jp: "日本株", us: "米国株" };
-  let sheetFavId = null;
+  let sheetStockId = null;
   let sheetMarket = "jp";
   let codeLetters = false;
 
-  function readFavorites(list) {
+  function readStocks(list) {
     return list
       .filter(
         (f) =>
@@ -1772,36 +1784,36 @@
       }));
   }
 
-  function loadFavorites() {
+  function loadStocks() {
     try {
-      const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY));
+      const saved = JSON.parse(localStorage.getItem(STOCKS_KEY));
       if (!isObject(saved) || !Array.isArray(saved.list)) return;
-      favorites = readFavorites(saved.list);
+      stocks = readStocks(saved.list);
       if (isObject(saved.active)) {
         for (const key of Object.keys(MARKETS)) {
           const id = saved.active[key];
-          if (favorites.some((f) => f.id === id && f.market === key))
-            activeFav[key] = id;
+          if (stocks.some((f) => f.id === id && f.market === key))
+            activeStockIds[key] = id;
         }
       }
     } catch {
-      // 読めないお気に入りは無視して、空の一覧で始める
+      // 読めない銘柄は無視して、空の一覧で始める
     }
   }
 
-  function activeFavorite() {
-    return favorites.find((f) => f.id === activeFav[market]) || null;
+  function activeStock() {
+    return stocks.find((f) => f.id === activeStockIds[market]) || null;
   }
 
   function currentState() {
-    const fav = activeFavorite();
-    return fav ? fav.state : states[market];
+    const stock = activeStock();
+    return stock ? stock.state : states[market];
   }
 
-  // 画面の入力を、選んでいるお気に入り（なければ市場ごとの入力）へ書き戻す
+  // 画面の入力を、選んでいる銘柄（なければ市場ごとの入力）へ書き戻す
   function storeCurrent() {
-    const fav = activeFavorite();
-    if (fav) fav.state = snapshot();
+    const stock = activeStock();
+    if (stock) stock.state = snapshot();
     else states[market] = snapshot();
   }
 
@@ -1813,20 +1825,20 @@
     updateHolding();
     updateBreakeven();
     update();
-    renderFavorites();
+    renderStocks();
     save();
     renderClose();
     fetchActiveClose();
   }
 
-  function selectFavorite(id) {
+  function selectStock(id) {
     // 取得に失敗した銘柄をもう一度押したら、選択を外さずに取り直す
-    if (activeFav[market] === id && quoteStatus[id] === "error") {
-      fetchUsClose(activeFavorite(), true);
+    if (activeStockIds[market] === id && quoteStatus[id] === "error") {
+      fetchUsClose(activeStock(), true);
       return;
     }
     storeCurrent();
-    activeFav[market] = activeFav[market] === id ? null : id;
+    activeStockIds[market] = activeStockIds[market] === id ? null : id;
     restore(currentState());
     refreshAfterRestore();
   }
@@ -1834,23 +1846,26 @@
   const svg = (path) =>
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
 
-  function renderFavorites() {
+  function renderStocks() {
     // 計算画面のチップ（今の市場の銘柄だけ）
-    const chips = get("fav-chips");
+    const chips = get("stock-chips");
     chips.replaceChildren();
-    const inMarket = favorites.filter((f) => f.market === market);
-    for (const fav of inMarket) {
+    const inMarket = stocks.filter((f) => f.market === market);
+    for (const stock of inMarket) {
       const chip = document.createElement("button");
       chip.type = "button";
-      chip.className = "fav-chip";
+      chip.className = "stock-chip";
       chip.setAttribute("role", "radio");
-      chip.setAttribute("aria-checked", String(activeFav[market] === fav.id));
-      chip.dataset.id = fav.id;
+      chip.setAttribute(
+        "aria-checked",
+        String(activeStockIds[market] === stock.id),
+      );
+      chip.dataset.id = stock.id;
       const code = document.createElement("span");
-      code.className = "fav-chip-code";
-      code.textContent = fav.code;
+      code.className = "stock-chip-code";
+      code.textContent = stock.code;
       const held = document.createElement("span");
-      held.className = "fav-chip-held";
+      held.className = "stock-chip-held";
       held.textContent = " ●";
       held.hidden = true;
       const heldText = document.createElement("span");
@@ -1859,139 +1874,158 @@
       held.append(heldText);
       code.append(held);
       const name = document.createElement("span");
-      name.className = "fav-chip-name";
-      name.textContent = fav.name || fav.code;
+      name.className = "stock-chip-name";
+      name.textContent = stock.name || stock.code;
       chip.append(code, name);
       attachLongPress(
         chip,
-        () => openSheet(fav.id),
-        () => selectFavorite(fav.id),
+        () => openSheet(stock.id),
+        () => selectStock(stock.id),
       );
       chips.append(chip);
     }
-    const add = get("fav-add");
+    const add = get("stock-add");
     add.classList.toggle("is-wide", inMarket.length === 0);
     add.innerHTML = inMarket.length
-      ? '<span class="fav-add-icon" aria-hidden="true">+</span>'
-      : "＋ お気に入りに追加";
+      ? '<span class="stock-add-icon" aria-hidden="true">+</span>'
+      : "＋ 銘柄を追加";
     chips.hidden = inMarket.length === 0;
     markHeldChips();
     updateChipFade();
 
     // 並べ替え・編集の一覧（今の市場の銘柄だけ）
-    get("favorites-title").textContent =
-      `お気に入りの編集（${MARKET_NAMES[market]}）`;
-    const list = get("fav-list");
+    get("stocks-title").textContent = `銘柄の編集（${MARKET_NAMES[market]}）`;
+    const list = get("stock-list");
     list.replaceChildren();
-    for (const fav of inMarket) {
+    for (const stock of inMarket) {
       const row = document.createElement("li");
-      row.className = "fav-row";
-      row.dataset.id = fav.id;
+      row.className = "stock-row";
+      row.dataset.id = stock.id;
       const handle = document.createElement("button");
       handle.type = "button";
-      handle.className = "fav-handle";
+      handle.className = "stock-handle";
       handle.setAttribute(
         "aria-label",
-        `${fav.name || fav.code}を並べ替え（上下キーで移動）`,
+        `${stock.name || stock.code}を並べ替え（上下キーで移動）`,
       );
       handle.innerHTML = svg("M5 9h14M5 15h14");
       attachDrag(handle, row);
       const mark = document.createElement("button");
       mark.type = "button";
-      mark.className = "fav-check";
+      mark.className = "stock-check";
       mark.tabIndex = -1;
       mark.setAttribute("aria-hidden", "true");
-      mark.innerHTML = '<span class="select-mark"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>';
-      mark.addEventListener("click", () => toggleSelected(fav.id));
-      row.setAttribute("aria-selected", String(selectedFavs.has(fav.id)));
+      mark.innerHTML =
+        '<span class="select-mark"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>';
+      mark.addEventListener("click", () => toggleSelected(stock.id));
+      row.setAttribute("aria-selected", String(selectedStocks.has(stock.id)));
       const open = document.createElement("button");
       open.type = "button";
-      open.className = "fav-row-open";
+      open.className = "stock-row-open";
       const text = document.createElement("span");
-      text.className = "fav-row-text";
+      text.className = "stock-row-text";
       const line = document.createElement("span");
-      line.className = "fav-row-line";
+      line.className = "stock-row-line";
       const code = document.createElement("span");
-      code.className = "fav-row-code";
-      code.textContent = fav.code;
+      code.className = "stock-row-code";
+      code.textContent = stock.code;
       const name = document.createElement("span");
-      name.className = "fav-row-name";
-      name.textContent = fav.name || fav.code;
+      name.className = "stock-row-name";
+      name.textContent = stock.name || stock.code;
       line.append(code, name);
       text.append(line);
       open.append(text);
       open.insertAdjacentHTML("beforeend", svg("M9 6l6 6-6 6"));
-      open.setAttribute("aria-label", `${fav.name || fav.code}を編集`);
-      open.addEventListener("click", () => (selectingFavs ? toggleSelected(fav.id) : openSheet(fav.id)));
+      open.setAttribute("aria-label", `${stock.name || stock.code}を編集`);
+      open.addEventListener("click", () =>
+        selectingStocks ? toggleSelected(stock.id) : openSheet(stock.id),
+      );
       row.append(mark, handle, open);
       list.append(row);
     }
-    get("fav-empty").hidden = inMarket.length > 0;
+    get("stock-empty").hidden = inMarket.length > 0;
     applySelecting();
   }
 
   // ---- まとめて削除: 「選択」で選ぶモードにして、下のバーから削除する ----
-  let selectingFavs = false;
-  const selectedFavs = new Set();
-  const FAV_HINT = "「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。";
+  let selectingStocks = false;
+  const selectedStocks = new Set();
+  const STOCK_HINT =
+    "「≡」を長押しして上下に動かすと並べ替え。行をタップすると編集できます。";
   function applySelecting() {
-    const inMarket = favorites.filter((f) => f.market === market);
+    const inMarket = stocks.filter((f) => f.market === market);
     // 今の市場にない銘柄は選択から外す
-    for (const id of [...selectedFavs]) if (!inMarket.some((f) => f.id === id)) selectedFavs.delete(id);
-    if (!inMarket.length) selectingFavs = false;
-    get("favorites-view").classList.toggle("is-selecting", selectingFavs);
-    get("fav-select").textContent = selectingFavs ? "完了" : "選択";
-    get("fav-select").setAttribute("aria-pressed", String(selectingFavs));
-    get("fav-select").disabled = !inMarket.length;
-    get("fav-hint").textContent = selectingFavs ? "削除する銘柄をタップして選ぶ" : FAV_HINT;
-    get("select-bar").hidden = !selectingFavs;
-    for (const row of get("fav-list").querySelectorAll(".fav-row")) {
-      row.setAttribute("aria-selected", String(selectedFavs.has(row.dataset.id)));
+    for (const id of [...selectedStocks])
+      if (!inMarket.some((f) => f.id === id)) selectedStocks.delete(id);
+    if (!inMarket.length) selectingStocks = false;
+    get("stocks-view").classList.toggle("is-selecting", selectingStocks);
+    get("stock-select").textContent = selectingStocks ? "完了" : "選択";
+    get("stock-select").setAttribute("aria-pressed", String(selectingStocks));
+    get("stock-select").disabled = !inMarket.length;
+    get("stock-hint").textContent = selectingStocks
+      ? "削除する銘柄をタップして選ぶ"
+      : STOCK_HINT;
+    get("select-bar").hidden = !selectingStocks;
+    for (const row of get("stock-list").querySelectorAll(".stock-row")) {
+      row.setAttribute(
+        "aria-selected",
+        String(selectedStocks.has(row.dataset.id)),
+      );
       // 選ぶモードでは行のボタンが「選ぶ」になるので、選んだかどうかを読み上げられるようにする
-      const open = row.querySelector(".fav-row-open");
-      if (selectingFavs) open.setAttribute("aria-pressed", String(selectedFavs.has(row.dataset.id)));
+      const open = row.querySelector(".stock-row-open");
+      if (selectingStocks)
+        open.setAttribute(
+          "aria-pressed",
+          String(selectedStocks.has(row.dataset.id)),
+        );
       else open.removeAttribute("aria-pressed");
     }
-    const count = selectedFavs.size;
+    const count = selectedStocks.size;
     get("delete-selected").disabled = count === 0;
     get("delete-selected").textContent = count ? `${count}件を削除` : "削除";
-    get("select-all").setAttribute("aria-pressed", String(count > 0 && count === inMarket.length));
+    get("select-all").setAttribute(
+      "aria-pressed",
+      String(count > 0 && count === inMarket.length),
+    );
   }
   function setSelecting(on) {
-    selectingFavs = on;
-    selectedFavs.clear();
+    selectingStocks = on;
+    selectedStocks.clear();
     if (on) hideToast();
     applySelecting();
   }
   function toggleSelected(id) {
-    if (!selectingFavs) return;
-    if (selectedFavs.has(id)) selectedFavs.delete(id);
-    else selectedFavs.add(id);
+    if (!selectingStocks) return;
+    if (selectedStocks.has(id)) selectedStocks.delete(id);
+    else selectedStocks.add(id);
     applySelecting();
   }
-  get("fav-select").addEventListener("click", () => setSelecting(!selectingFavs));
+  get("stock-select").addEventListener("click", () =>
+    setSelecting(!selectingStocks),
+  );
   get("select-all").addEventListener("click", () => {
-    const inMarket = favorites.filter((f) => f.market === market);
-    if (selectedFavs.size === inMarket.length) selectedFavs.clear();
-    else for (const f of inMarket) selectedFavs.add(f.id);
+    const inMarket = stocks.filter((f) => f.market === market);
+    if (selectedStocks.size === inMarket.length) selectedStocks.clear();
+    else for (const f of inMarket) selectedStocks.add(f.id);
     applySelecting();
   });
   get("delete-selected").addEventListener("click", () => {
-    if (!selectedFavs.size) return;
+    if (!selectedStocks.size) return;
     storeCurrent();
-    const before = favorites.slice();
-    const beforeActive = { ...activeFav };
-    const gone = new Set(selectedFavs);
-    favorites = favorites.filter((f) => !gone.has(f.id));
-    for (const key of Object.keys(activeFav)) if (gone.has(activeFav[key])) activeFav[key] = null;
-    selectingFavs = false;
-    selectedFavs.clear();
+    const before = stocks.slice();
+    const beforeActive = { ...activeStockIds };
+    const gone = new Set(selectedStocks);
+    stocks = stocks.filter((f) => !gone.has(f.id));
+    for (const key of Object.keys(activeStockIds))
+      if (gone.has(activeStockIds[key])) activeStockIds[key] = null;
+    selectingStocks = false;
+    selectedStocks.clear();
     restore(currentState());
     refreshAfterRestore();
     showToast(`${gone.size}件を削除しました`, () => {
       storeCurrent();
-      favorites = before;
-      Object.assign(activeFav, beforeActive);
+      stocks = before;
+      Object.assign(activeStockIds, beforeActive);
       restore(currentState());
       refreshAfterRestore();
     });
@@ -1999,12 +2033,14 @@
 
   // 保有の買値が入っている銘柄のチップに「●」を出す（選んでいる銘柄は画面の入力で判断する）
   function markHeldChips() {
-    for (const chip of get("fav-chips").querySelectorAll(".fav-chip")) {
-      const fav = favorites.find((f) => f.id === chip.dataset.id);
-      if (!fav) continue;
+    for (const chip of get("stock-chips").querySelectorAll(".stock-chip")) {
+      const stock = stocks.find((f) => f.id === chip.dataset.id);
+      if (!stock) continue;
       const buy =
-        activeFav[market] === fav.id ? hold.buy.value : fav.state.holdBuy;
-      chip.querySelector(".fav-chip-held").hidden = buy.trim() === "";
+        activeStockIds[market] === stock.id
+          ? hold.buy.value
+          : stock.state.holdBuy;
+      chip.querySelector(".stock-chip-held").hidden = buy.trim() === "";
     }
   }
 
@@ -2053,12 +2089,12 @@
   // ---- 並べ替え: 「≡」をつかんで上下に動かす。キーボードは上下キー ----
   function applyMarketOrder(order) {
     // 今の市場の銘柄が並んでいた位置に、新しい順番で入れ直す
-    const queue = order.map((id) => favorites.find((f) => f.id === id));
-    favorites = favorites.map((f) => (f.market === market ? queue.shift() : f));
+    const queue = order.map((id) => stocks.find((f) => f.id === id));
+    stocks = stocks.map((f) => (f.market === market ? queue.shift() : f));
   }
 
-  function moveFavorite(id, delta) {
-    const order = favorites.filter((f) => f.market === market).map((f) => f.id);
+  function moveStock(id, delta) {
+    const order = stocks.filter((f) => f.market === market).map((f) => f.id);
     const index = order.indexOf(id);
     const target = index + delta;
     if (index < 0 || target < 0 || target >= order.length) return false;
@@ -2072,12 +2108,13 @@
     handle.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
       event.preventDefault();
-      if (!moveFavorite(row.dataset.id, event.key === "ArrowUp" ? -1 : 1))
-        return;
+      if (!moveStock(row.dataset.id, event.key === "ArrowUp" ? -1 : 1)) return;
       save();
-      renderFavorites();
-      get("fav-list")
-        .querySelector(`[data-id="${CSS.escape(row.dataset.id)}"] .fav-handle`)
+      renderStocks();
+      get("stock-list")
+        .querySelector(
+          `[data-id="${CSS.escape(row.dataset.id)}"] .stock-handle`,
+        )
         .focus();
     });
     // 長押しでメニューが出ると指の追跡が切れるので止める
@@ -2085,7 +2122,7 @@
     handle.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
       event.preventDefault();
-      const list = get("fav-list");
+      const list = get("stock-list");
       const pointer = event.pointerId;
       // 行のどこをつかんだか。指の位置からこの分だけ上に行を描く
       const grab = event.clientY - row.getBoundingClientRect().top;
@@ -2126,7 +2163,7 @@
         row.style.transform = "";
         applyMarketOrder([...list.children].map((item) => item.dataset.id));
         save();
-        renderFavorites();
+        renderStocks();
       };
       window.addEventListener("pointermove", onMove, { passive: false });
       window.addEventListener("pointerup", onEnd);
@@ -2136,19 +2173,19 @@
 
   // ---- 追加・編集シート ----
   function applySheetMarket() {
-    for (const button of document.querySelectorAll("[data-fav-market]")) {
+    for (const button of document.querySelectorAll("[data-stock-market]")) {
       button.setAttribute(
         "aria-pressed",
-        String(button.dataset.favMarket === sheetMarket),
+        String(button.dataset.stockMarket === sheetMarket),
       );
     }
-    get("fav-code-label").textContent = FAV_CODE_RULES[sheetMarket].label;
+    get("stock-code-label").textContent = STOCK_CODE_RULES[sheetMarket].label;
     // 日本株のコードはほとんど数字なので数字のキーボードから。「ABC」で英字（130A などの A）に切り替える。
     // 英字は email にする。text だと日本語入力で開き、毎回「あA」で英字に切り替えることになる（Galaxy の標準キーボードで確認。Simeji は変わらない）
     const jp = sheetMarket === "jp";
-    get("fav-code").inputMode = jp && !codeLetters ? "numeric" : "email";
-    get("fav-code").placeholder = jp ? "7203" : "INTC";
-    const mode = get("fav-code-mode");
+    get("stock-code").inputMode = jp && !codeLetters ? "numeric" : "email";
+    get("stock-code").placeholder = jp ? "7203" : "INTC";
+    const mode = get("stock-code-mode");
     mode.hidden = !jp;
     mode.textContent = codeLetters ? "123" : "ABC";
     mode.setAttribute(
@@ -2158,34 +2195,34 @@
   }
 
   function showSheet(open) {
-    const sheet = get("fav-sheet");
+    const sheet = get("stock-sheet");
     if (sheet.hidden === !open) return;
     sheet.hidden = !open;
     document.body.classList.toggle("has-sheet", open);
     if (open) {
       // 入力欄にフォーカスするとキーボードが出てシートが押し上げられるので、見出しに置く
-      get("fav-sheet-title").focus({ preventScroll: true });
+      get("stock-sheet-title").focus({ preventScroll: true });
     } else if (sheetReturnFocus && document.contains(sheetReturnFocus)) {
       sheetReturnFocus.focus({ preventScroll: true });
     }
   }
 
   function openSheet(id) {
-    // 前の削除のお知らせがシートの「お気に入りから削除」に重なるので、シートを開いたら消す
+    // 前の削除のお知らせがシートの「この銘柄を削除」に重なるので、シートを開いたら消す
     hideToast();
     sheetReturnFocus = document.activeElement;
-    sheetFavId = id;
-    const fav = favorites.find((f) => f.id === id);
-    sheetMarket = fav ? fav.market : market;
-    get("fav-sheet-title").textContent = fav
-      ? `${fav.name || fav.code}を編集`
-      : "お気に入りに追加";
-    get("fav-code").value = fav ? fav.code : "";
-    get("fav-name").value = fav ? fav.name : "";
-    get("fav-error").textContent = "";
-    get("fav-code").setAttribute("aria-invalid", "false");
-    get("fav-delete").hidden = !fav;
-    get("fav-duplicate").hidden = !fav;
+    sheetStockId = id;
+    const stock = stocks.find((f) => f.id === id);
+    sheetMarket = stock ? stock.market : market;
+    get("stock-sheet-title").textContent = stock
+      ? `${stock.name || stock.code}を編集`
+      : "銘柄を追加";
+    get("stock-code").value = stock ? stock.code : "";
+    get("stock-name").value = stock ? stock.name : "";
+    get("stock-error").textContent = "";
+    get("stock-code").setAttribute("aria-invalid", "false");
+    get("stock-delete").hidden = !stock;
+    get("stock-duplicate").hidden = !stock;
     codeLetters = false;
     applySheetMarket();
     history.pushState(
@@ -2200,54 +2237,54 @@
     else showSheet(false);
   }
 
-  for (const button of document.querySelectorAll("[data-fav-market]")) {
+  for (const button of document.querySelectorAll("[data-stock-market]")) {
     button.addEventListener("click", () => {
-      sheetMarket = button.dataset.favMarket;
+      sheetMarket = button.dataset.stockMarket;
       applySheetMarket();
     });
   }
   for (const closer of document.querySelectorAll("[data-sheet-close]"))
     closer.addEventListener("click", closeSheet);
-  get("fav-sheet").addEventListener("keydown", (event) => {
+  get("stock-sheet").addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeSheet();
   });
-  get("fav-name").addEventListener("keydown", (event) => {
+  get("stock-name").addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229)
-      get("fav-save").click();
+      get("stock-save").click();
   });
   // コードは英字を大文字にそろえる（全角も半角に）。打っている途中のカーソル位置は保つ
-  get("fav-code").addEventListener("input", (event) => {
+  get("stock-code").addEventListener("input", (event) => {
     if (event.isComposing) return;
-    const input = get("fav-code");
+    const input = get("stock-code");
     const fixed = input.value.normalize("NFKC").toUpperCase();
     if (fixed === input.value) return;
     const caret = input.selectionStart;
     input.value = fixed;
     input.setSelectionRange(caret, caret);
   });
-  get("fav-code").addEventListener("compositionend", () =>
-    get("fav-code").dispatchEvent(new Event("input")),
+  get("stock-code").addEventListener("compositionend", () =>
+    get("stock-code").dispatchEvent(new Event("input")),
   );
-  get("fav-code-mode").addEventListener("pointerdown", (event) =>
+  get("stock-code-mode").addEventListener("pointerdown", (event) =>
     event.preventDefault(),
   );
-  get("fav-code-mode").addEventListener("click", () => {
+  get("stock-code-mode").addEventListener("click", () => {
     codeLetters = !codeLetters;
     applySheetMarket();
     // キーボードの種類は、入力欄に入り直したときに切り替わる
-    const input = get("fav-code");
+    const input = get("stock-code");
     input.blur();
     input.focus();
   });
-  get("fav-code").addEventListener("keydown", (event) => {
+  get("stock-code").addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229)
-      get("fav-name").focus();
+      get("stock-name").focus();
   });
 
-  get("fav-save").addEventListener("click", () => {
-    const code = get("fav-code").value.normalize("NFKC").trim().toUpperCase();
-    let name = get("fav-name").value.normalize("NFKC").trim();
-    const editing = favorites.find((f) => f.id === sheetFavId);
+  get("stock-save").addEventListener("click", () => {
+    const code = get("stock-code").value.normalize("NFKC").trim().toUpperCase();
+    let name = get("stock-name").value.normalize("NFKC").trim();
+    const editing = stocks.find((f) => f.id === sheetStockId);
     // 編集でコード（か市場）を変えて、表示名は触っていなければ、新しい銘柄の名前を取り直す
     if (
       editing &&
@@ -2258,10 +2295,11 @@
     // 表示名を空にしたら、終値と一緒に取れた銘柄名を入れる（米国株は GAS、日本株は株探で取得）
     let autoName = name === "";
     let autoPrefix = "";
-    const rule = FAV_CODE_RULES[sheetMarket];
+    const rule = STOCK_CODE_RULES[sheetMarket];
     // 同じコードがもうあって表示名が空なら、取れた名前の先頭に「(2)」「(3)」のように空いている番号を付ける
-    const sameCode = favorites.filter(
-      (f) => f.market === sheetMarket && f.code === code && f.id !== sheetFavId,
+    const sameCode = stocks.filter(
+      (f) =>
+        f.market === sheetMarket && f.code === code && f.id !== sheetStockId,
     );
     if (!name && sameCode.length) {
       let number = 2;
@@ -2281,33 +2319,33 @@
     if (!code) error = `${rule.label}を入れてください。`;
     else if (!rule.pattern.test(code))
       error = `${rule.label}は${rule.example}で入れてください。`;
-    // 同じコードでも表示名が違えば別のお気に入りにできる（表示名が空ならコードを表示名として比べる）
+    // 同じコードでも表示名が違えば別の銘柄にできる（表示名が空ならコードを表示名として比べる）
     else if (
-      favorites.some(
+      stocks.some(
         (f) =>
           f.market === sheetMarket &&
           f.code === code &&
           (f.name || f.code) === (name || code) &&
-          f.id !== sheetFavId,
+          f.id !== sheetStockId,
       )
     )
       error =
-        "同じ表示名の銘柄がもうお気に入りにあります。表示名を変えると追加できます。";
-    get("fav-error").textContent = error;
-    get("fav-code").setAttribute("aria-invalid", String(Boolean(error)));
+        "同じ表示名の銘柄が既に登録されています。表示名を変えると追加できます。";
+    get("stock-error").textContent = error;
+    get("stock-code").setAttribute("aria-invalid", String(Boolean(error)));
     if (error) {
-      get("fav-code").focus();
+      get("stock-code").focus();
       return;
     }
     storeCurrent();
-    const existing = favorites.find((f) => f.id === sheetFavId);
+    const existing = stocks.find((f) => f.id === sheetStockId);
     // 新しく追加したときと、コード（か市場）を変えたときは終値と名前を取りに行く。日本株は保存したらそのまま株探を開く
     let fetchFor = null;
     if (existing) {
       if (existing.code !== code || existing.market !== sheetMarket) {
         fetchFor = existing;
         // 前の銘柄の終値は使わない
-        const state = activeFavorite() === existing ? null : existing.state;
+        const state = activeStock() === existing ? null : existing.state;
         if (state) Object.assign(state, { closeDate: "", closeAt: 0 });
         else {
           closeDate = "";
@@ -2317,10 +2355,10 @@
       }
       if (
         existing.market !== sheetMarket &&
-        activeFav[existing.market] === existing.id
+        activeStockIds[existing.market] === existing.id
       ) {
         // 市場を変えたら、元の市場では選択を外す
-        activeFav[existing.market] = null;
+        activeStockIds[existing.market] = null;
       }
       existing.code = code;
       existing.name = name;
@@ -2329,7 +2367,7 @@
       existing.market = sheetMarket;
     } else {
       // 追加するときは全部の欄を空にして、そのまま選んだ状態にする（米国株は前日終値だけ自動で入る）
-      const fav = {
+      const stock = {
         id: `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
         market: sheetMarket,
         code,
@@ -2339,9 +2377,9 @@
         state: emptyState(),
       };
       // 新しい銘柄は一番左（先頭）に置く
-      favorites.unshift(fav);
-      activeFav[sheetMarket] = fav.id;
-      fetchFor = fav;
+      stocks.unshift(stock);
+      activeStockIds[sheetMarket] = stock.id;
+      fetchFor = stock;
     }
     restore(currentState());
     if (fetchFor && fetchFor.market === "jp") pendingKabutan = fetchFor;
@@ -2349,37 +2387,37 @@
     refreshAfterRestore();
     if (fetchFor && fetchFor.market === "us") fetchUsClose(fetchFor, true);
     // シートを閉じる戻る操作が終わってから開く（popstate）。履歴を使わずに閉じたときはここで開く
-    if (pendingKabutan && get("fav-sheet").hidden) openPendingKabutan();
+    if (pendingKabutan && get("stock-sheet").hidden) openPendingKabutan();
   });
 
-  get("fav-delete").addEventListener("click", () => {
-    const fav = favorites.find((f) => f.id === sheetFavId);
-    if (!fav) return;
+  get("stock-delete").addEventListener("click", () => {
+    const stock = stocks.find((f) => f.id === sheetStockId);
+    if (!stock) return;
     // 確認は出さずにすぐ消して、下のお知らせの「元に戻す」で戻せるようにする
     storeCurrent();
-    const index = favorites.indexOf(fav);
-    const wasActive = activeFav[fav.market] === fav.id;
-    favorites = favorites.filter((f) => f.id !== fav.id);
-    if (wasActive) activeFav[fav.market] = null;
+    const index = stocks.indexOf(stock);
+    const wasActive = activeStockIds[stock.market] === stock.id;
+    stocks = stocks.filter((f) => f.id !== stock.id);
+    if (wasActive) activeStockIds[stock.market] = null;
     restore(currentState());
     closeSheet();
     refreshAfterRestore();
-    showToast(`${fav.name || fav.code}を削除しました`, () => {
+    showToast(`${stock.name || stock.code}を削除しました`, () => {
       storeCurrent();
-      favorites.splice(Math.min(index, favorites.length), 0, fav);
-      if (wasActive) activeFav[fav.market] = fav.id;
+      stocks.splice(Math.min(index, stocks.length), 0, stock);
+      if (wasActive) activeStockIds[stock.market] = stock.id;
       restore(currentState());
       refreshAfterRestore();
     });
   });
 
   // 複製: コード・市場と入力（前日終値・保有・口座・売値など）を全部コピーして、新規と同じく一番左に「(2)」付きで足し、複製したほうを選ぶ
-  get("fav-duplicate").addEventListener("click", () => {
-    const fav = favorites.find((f) => f.id === sheetFavId);
-    if (!fav) return;
+  get("stock-duplicate").addEventListener("click", () => {
+    const stock = stocks.find((f) => f.id === sheetStockId);
+    if (!stock) return;
     storeCurrent();
-    const sameCode = favorites.filter(
-      (f) => f.market === fav.market && f.code === fav.code,
+    const sameCode = stocks.filter(
+      (f) => f.market === stock.market && f.code === stock.code,
     );
     let number = 2;
     while (
@@ -2391,37 +2429,38 @@
     )
       number += 1;
     const prefix = `(${number})`;
-    const base = (fav.name || fav.code).replace(/^\(\d{1,3}\)/, "");
+    const base = (stock.name || stock.code).replace(/^\(\d{1,3}\)/, "");
     const copy = {
       id: `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      market: fav.market,
-      code: fav.code,
+      market: stock.market,
+      code: stock.code,
       // 名前がまだ取れていなければ、取れたときに番号を付ける
-      name: `${prefix}${fav.autoName ? fav.code : base}`.slice(0, 60),
-      autoName: fav.autoName,
-      autoPrefix: fav.autoName ? prefix : "",
-      state: structuredClone(fav.state),
+      name: `${prefix}${stock.autoName ? stock.code : base}`.slice(0, 60),
+      autoName: stock.autoName,
+      autoPrefix: stock.autoName ? prefix : "",
+      state: structuredClone(stock.state),
     };
-    const previous = activeFav[fav.market];
-    favorites.unshift(copy);
-    activeFav[fav.market] = copy.id;
+    const previous = activeStockIds[stock.market];
+    stocks.unshift(copy);
+    activeStockIds[stock.market] = copy.id;
     restore(currentState());
     closeSheet();
     refreshAfterRestore();
-    showToast(`${fav.name || fav.code}を複製しました`, () => {
+    showToast(`${stock.name || stock.code}を複製しました`, () => {
       storeCurrent();
-      favorites = favorites.filter((f) => f.id !== copy.id);
-      if (activeFav[copy.market] === copy.id) activeFav[copy.market] = previous;
+      stocks = stocks.filter((f) => f.id !== copy.id);
+      if (activeStockIds[copy.market] === copy.id)
+        activeStockIds[copy.market] = previous;
       restore(currentState());
       refreshAfterRestore();
     });
   });
 
-  // ---- バックアップ: お気に入り（入力ごと）・市場ごとの入力・設定を書き出し、読み込む。米国株の GAS のリンクは入れない ----
+  // ---- バックアップ: 銘柄（入力ごと）・市場ごとの入力・設定を書き出し、読み込む。米国株の GAS のリンクは入れない ----
   const BACKUP_VERSION = 1;
   let pendingImport = null;
-  // 書き出すもの。お気に入りには市場ごとの入力もいっしょに入れる
-  const exportParts = { favorites: true, settings: true };
+  // 書き出すもの。銘柄には市場ごとの入力もいっしょに入れる
+  const exportParts = { stocks: true, settings: true, records: true };
   function backupData() {
     storeCurrent();
     const data = {
@@ -2431,21 +2470,25 @@
       exportedAt: new Date().toISOString(),
     };
     if (exportParts.settings) data.settings = { ...settings };
-    if (exportParts.favorites) {
+    if (exportParts.stocks) {
       data.inputs = { market, jp: states.jp, us: states.us };
-      data.favorites = { list: favorites, active: activeFav };
+      data.stocks = { list: stocks, active: activeStockIds };
     }
+    if (exportParts.records) data.records = { list: records };
     return data;
   }
   function backupFileName() {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
+    // 全部なら tickshift-日付、一部なら tickshift-stocks-records-日付 のように入っているものを並べる
+    const names = {
+      stocks: "stocks",
+      settings: "settings",
+      records: "records",
+    };
+    const chosen = Object.keys(names).filter((k) => exportParts[k]);
     const part =
-      exportParts.favorites && exportParts.settings
-        ? ""
-        : exportParts.favorites
-          ? "-favorites"
-          : "-settings";
+      chosen.length === 3 ? "" : `-${chosen.map((k) => names[k]).join("-")}`;
     return `tickshift${part}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
   }
   function applyExportParts() {
@@ -2454,7 +2497,8 @@
         "aria-pressed",
         String(exportParts[chip.dataset.exportPart]),
       );
-    const none = !exportParts.favorites && !exportParts.settings;
+    const none =
+      !exportParts.stocks && !exportParts.settings && !exportParts.records;
     get("backup-save").disabled = none;
     get("backup-copy").disabled = none;
   }
@@ -2505,14 +2549,16 @@
       data.version !== BACKUP_VERSION
     )
       return null;
-    const hasFavorites =
-      isObject(data.favorites) && Array.isArray(data.favorites.list);
-    const list = hasFavorites ? readFavorites(data.favorites.list) : [];
+    // 前の版のバックアップは銘柄を favorites の名前で持っている
+    if (!isObject(data.stocks) && isObject(data.favorites))
+      data.stocks = data.favorites;
+    const hasStocks = isObject(data.stocks) && Array.isArray(data.stocks.list);
+    const list = hasStocks ? readStocks(data.stocks.list) : [];
     const active = {};
     for (const key of Object.keys(MARKETS)) {
       const id =
-        isObject(data.favorites) && isObject(data.favorites.active)
-          ? data.favorites.active[key]
+        isObject(data.stocks) && isObject(data.stocks.active)
+          ? data.stocks.active[key]
           : null;
       active[key] = list.some((f) => f.id === id && f.market === key)
         ? id
@@ -2531,11 +2577,17 @@
           ? readState(data.inputs[key])
           : emptyState();
     const hasSettings = Object.keys(nextSettings).length > 0;
-    if (!hasFavorites && !hasSettings) return null;
+    const hasRecords =
+      isObject(data.records) &&
+      Array.isArray(data.records.list) &&
+      data.records.list.length > 0;
+    if (!hasStocks && !hasSettings && !hasRecords) return null;
     const at = new Date(data.exportedAt);
     return {
-      hasFavorites,
+      hasStocks,
       hasSettings,
+      hasRecords,
+      records: hasRecords ? readRecords(data.records.list) : [],
       hasInputs: isObject(data.inputs),
       list,
       active,
@@ -2550,7 +2602,7 @@
       get(`${id}-sheet`).hidden = id !== name;
     document.body.classList.toggle(
       "has-sheet",
-      Boolean(name) || !get("fav-sheet").hidden,
+      Boolean(name) || !get("stock-sheet").hidden,
     );
     if (name) get(`${name}-title`).focus({ preventScroll: true });
   }
@@ -2572,7 +2624,12 @@
   }
   for (const closer of document.querySelectorAll("[data-backup-close]"))
     closer.addEventListener("click", closeBackupSheet);
-  for (const id of ["paste-sheet", "import-sheet", "sell-sheet", "record-sheet"]) {
+  for (const id of [
+    "paste-sheet",
+    "import-sheet",
+    "sell-sheet",
+    "record-sheet",
+  ]) {
     get(id).addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeBackupSheet();
     });
@@ -2581,17 +2638,22 @@
   function openImport(backup) {
     pendingImport = backup;
     const count = (key) => backup.list.filter((f) => f.market === key).length;
-    get("import-fav-count").textContent = backup.hasFavorites
+    get("import-stock-count").textContent = backup.hasStocks
       ? `日本株 ${count("jp")}件・米国株 ${count("us")}件`
-      : "このバックアップにはお気に入りが入っていない";
+      : "このバックアップには銘柄情報が含まれていません";
     get("import-settings-note").textContent = backup.hasSettings
-      ? "今の設定と入れ替わる"
-      : "このバックアップには設定が入っていない";
-    importParts.favorites = backup.hasFavorites;
+      ? "現在の設定と置き換えます"
+      : "このバックアップには設定情報が含まれていません";
+    get("import-records-count").textContent = backup.hasRecords
+      ? `${backup.records.length}件（今の記録に足す。同じ記録はスキップ）`
+      : "このバックアップには実現損益が含まれていません";
+    importParts.stocks = backup.hasStocks;
     importParts.settings = backup.hasSettings;
-    get("import-sheet").querySelector(
-      '[data-import-part="favorites"]',
-    ).disabled = !backup.hasFavorites;
+    importParts.records = backup.hasRecords;
+    get("import-sheet").querySelector('[data-import-part="records"]').disabled =
+      !backup.hasRecords;
+    get("import-sheet").querySelector('[data-import-part="stocks"]').disabled =
+      !backup.hasStocks;
     get("import-sheet").querySelector(
       '[data-import-part="settings"]',
     ).disabled = !backup.hasSettings;
@@ -2604,15 +2666,16 @@
     setImportMode("add");
     openBackupSheet("import");
   }
-  const importParts = { favorites: true, settings: true };
+  const importParts = { stocks: true, settings: true, records: true };
   function applyImportParts() {
     for (const button of document.querySelectorAll("[data-import-part]"))
       button.setAttribute(
         "aria-pressed",
         String(importParts[button.dataset.importPart]),
       );
-    get("import-mode-block").hidden = !importParts.favorites;
-    get("import-go").disabled = !importParts.favorites && !importParts.settings;
+    get("import-mode-block").hidden = !importParts.stocks;
+    get("import-go").disabled =
+      !importParts.stocks && !importParts.settings && !importParts.records;
   }
   for (const button of document.querySelectorAll("[data-import-part]")) {
     button.addEventListener("click", () => {
@@ -2679,52 +2742,66 @@
     storeCurrent();
     // 元に戻す用に今の状態を取っておく
     const before = {
-      favorites: favorites.slice(),
-      active: { ...activeFav },
+      stocks: stocks.slice(),
+      active: { ...activeStockIds },
       states: { jp: { ...states.jp }, us: { ...states.us } },
       settings: { ...settings },
+      records: records.slice(),
     };
-    const withFavorites = importParts.favorites && backup.hasFavorites;
+    const withStocks = importParts.stocks && backup.hasStocks;
     const withSettings = importParts.settings && backup.hasSettings;
-    if (!withFavorites && !withSettings) return;
-    let message = "";
-    if (withFavorites && replace) {
-      favorites = backup.list;
-      Object.assign(activeFav, backup.active);
+    const withRecords = importParts.records && backup.hasRecords;
+    if (!withStocks && !withSettings && !withRecords) return;
+    // 何をしたかを「銘柄を2件追加し、実現損益を3件追加し、設定を読み込みました」のようにつなげる
+    const done = [];
+    const notes = [];
+    if (withStocks && replace) {
+      stocks = backup.list;
+      Object.assign(activeStockIds, backup.active);
       if (backup.hasInputs) {
         states.jp = backup.inputs.jp;
         states.us = backup.inputs.us;
       }
-      message = withSettings
-        ? "お気に入りと設定を置き換えました"
-        : "お気に入りを置き換えました";
-    } else if (withFavorites) {
+      done.push("銘柄を置き換え");
+    } else if (withStocks) {
       let added = 0;
       let skipped = 0;
-      for (const fav of backup.list) {
-        const same = favorites.some(
+      for (const stock of backup.list) {
+        const same = stocks.some(
           (f) =>
-            f.market === fav.market &&
-            f.code === fav.code &&
-            (f.name || f.code) === (fav.name || fav.code),
+            f.market === stock.market &&
+            f.code === stock.code &&
+            (f.name || f.code) === (stock.name || stock.code),
         );
         if (same) {
           skipped += 1;
           continue;
         }
-        if (favorites.some((f) => f.id === fav.id))
-          fav.id = `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-        favorites.push(fav);
+        if (stocks.some((f) => f.id === stock.id))
+          stock.id = `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        stocks.push(stock);
         added += 1;
       }
-      message = withSettings
-        ? `お気に入りを${added}件追加して、設定を読み込みました`
-        : `${added}件を追加しました`;
-      if (skipped) message += `（同じ銘柄の${skipped}件は足していません）`;
-    } else {
-      message = "設定を読み込みました";
+      done.push(`銘柄を${added}件追加し`);
+      if (skipped) notes.push(`同じ銘柄の${skipped}件`);
     }
-    if (withSettings) Object.assign(settings, backup.settings);
+    if (withRecords) {
+      // 実現損益は今の記録に足すだけ（同じ記録＝同じ ID はスキップ）
+      const have = new Set(records.map((r) => r.id));
+      const fresh = backup.records.filter((r) => !have.has(r.id));
+      records = records.concat(fresh);
+      saveRecords();
+      renderRecords();
+      done.push(`実現損益を${fresh.length}件追加し`);
+      if (backup.records.length > fresh.length)
+        notes.push(`同じ記録の${backup.records.length - fresh.length}件`);
+    }
+    if (withSettings) {
+      Object.assign(settings, backup.settings);
+      done.push("設定を読み込み");
+    }
+    let message = `${done.join("、")}ました`;
+    if (notes.length) message += `（${notes.join("・")}はスキップ）`;
     pendingImport = null;
     restore(currentState());
     applySettings();
@@ -2732,11 +2809,14 @@
     closeBackupSheet();
     refreshAfterRestore();
     showToast(message, () => {
-      favorites = before.favorites;
-      Object.assign(activeFav, before.active);
+      stocks = before.stocks;
+      Object.assign(activeStockIds, before.active);
       states.jp = before.states.jp;
       states.us = before.states.us;
       Object.assign(settings, before.settings);
+      records = before.records;
+      saveRecords();
+      renderRecords();
       restore(currentState());
       applySettings();
       saveSettings();
@@ -2755,27 +2835,38 @@
     try {
       const saved = JSON.parse(localStorage.getItem(RECORDS_KEY));
       if (!isObject(saved) || !Array.isArray(saved.list)) return;
-      records = saved.list
-        .filter((r) => isObject(r) && typeof r.id === "string" && Object.hasOwn(MARKETS, r.market) && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && [r.buy, r.sell, r.qty, r.gain].every(Number.isFinite))
-        .slice(0, 5000)
-        .map((r) => ({
-          id: r.id.slice(0, 40),
-          date: r.date,
-          market: r.market,
-          code: typeof r.code === "string" ? r.code.slice(0, 12) : "",
-          name: typeof r.name === "string" ? r.name.slice(0, 60) : "",
-          account: SETTING_VALUES.account.includes(r.account) ? r.account : "",
-          buy: r.buy,
-          sell: r.sell,
-          qty: r.qty,
-          fees: Number.isFinite(r.fees) ? r.fees : null,
-          gain: r.gain,
-          memo: typeof r.memo === "string" ? r.memo.slice(0, 100) : "",
-          at: Number.isFinite(r.at) ? r.at : 0,
-        }));
+      records = readRecords(saved.list);
     } catch {
       // 読めない記録は無視する
     }
+  }
+
+  function readRecords(list) {
+    return list
+      .filter(
+        (r) =>
+          isObject(r) &&
+          typeof r.id === "string" &&
+          Object.hasOwn(MARKETS, r.market) &&
+          /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+          [r.buy, r.sell, r.qty, r.gain].every(Number.isFinite),
+      )
+      .slice(0, 5000)
+      .map((r) => ({
+        id: r.id.slice(0, 40),
+        date: r.date,
+        market: r.market,
+        code: typeof r.code === "string" ? r.code.slice(0, 12) : "",
+        name: typeof r.name === "string" ? r.name.slice(0, 60) : "",
+        account: SETTING_VALUES.account.includes(r.account) ? r.account : "",
+        buy: r.buy,
+        sell: r.sell,
+        qty: r.qty,
+        fees: Number.isFinite(r.fees) ? r.fees : null,
+        gain: r.gain,
+        memo: typeof r.memo === "string" ? r.memo.slice(0, 100) : "",
+        at: Number.isFinite(r.at) ? r.at : 0,
+      }));
   }
 
   function saveRecords() {
@@ -2800,7 +2891,10 @@
   // 記録の市場に合わせた金額の書き方（今の画面の市場とは別）
   function recordMoney(rec, value) {
     // 米国株はセントまでの値ならセントで、それより細かく入れた値はそのまま出す
-    if (rec.market === "us") return Math.abs(value * 100 - Math.round(value * 100)) < 1e-9 ? centsText(toCents(value)) : `$${formatNumber(value, MARKETS.us.priceDigits)}`;
+    if (rec.market === "us")
+      return Math.abs(value * 100 - Math.round(value * 100)) < 1e-9
+        ? centsText(toCents(value))
+        : `$${formatNumber(value, MARKETS.us.priceDigits)}`;
     return `${formatNumber(value, MARKETS.jp.priceDigits)}円`;
   }
   function recordGain(market, gain) {
@@ -2814,7 +2908,9 @@
 
   function showDate(id) {
     const value = get(id).value;
-    get(`${id}-text`).textContent = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value.replaceAll("-", "/")}(${WEEKDAYS[new Date(...value.split("-").map((n, i) => Number(n) - (i === 1 ? 1 : 0))).getDay()]})` : "日付を選ぶ";
+    get(`${id}-text`).textContent = /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? `${value.replaceAll("-", "/")}(${WEEKDAYS[new Date(...value.split("-").map((n, i) => Number(n) - (i === 1 ? 1 : 0))).getDay()]})`
+      : "日付を選ぶ";
   }
   for (const id of ["sold-date", "record-date"]) {
     get(`${id}-button`).addEventListener("click", () => {
@@ -2837,11 +2933,14 @@
     const { buy, qty } = holdValues();
     if (buy === null || price === null) return;
     storeCurrent();
-    const fav = activeFavorite();
+    const stock = activeStock();
     sellDraft = { buy, heldQty: qty };
-    get("sell-sheet-code").textContent = fav ? fav.code : "";
-    get("sell-sheet-name").textContent = fav ? fav.name || fav.code : "お気に入り外の銘柄";
-    get("sell-sheet-market").textContent = market === "us" ? `米国株・${ACCOUNT_LABELS[account]}` : "日本株";
+    get("sell-sheet-code").textContent = stock ? stock.code : "";
+    get("sell-sheet-name").textContent = stock
+      ? stock.name || stock.code
+      : "銘柄なし";
+    get("sell-sheet-market").textContent =
+      market === "us" ? `米国株・${ACCOUNT_LABELS[account]}` : "日本株";
     get("sold-date").value = todayText();
     showDate("sold-date");
     tickIndex.sold = 0;
@@ -2850,7 +2949,8 @@
     get("sold-qty").value = qty === null ? "" : formatNumber(qty, 4);
     get("sold-memo").value = "";
     get("sold-error").textContent = "";
-    for (const el of document.querySelectorAll(".sell-unit")) el.textContent = MARKETS[market].symbol;
+    for (const el of document.querySelectorAll(".sell-unit"))
+      el.textContent = MARKETS[market].symbol;
     updateSellSheet();
     openBackupSheet("sell");
   }
@@ -2860,11 +2960,16 @@
     const price = parseNumber(get("sold-price").value);
     const qty = parseNumber(get("sold-qty").value);
     const date = get("sold-date").value;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "売った日を入れてください。" };
-    if (price === null || price <= 0 || price > 1e9) return { error: "売値を入れてください。" };
-    if (qty === null || qty <= 0 || qty > 1e9) return { error: "株数を入れてください。" };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+      return { error: "売った日を入れてください。" };
+    if (price === null || price <= 0 || price > 1e9)
+      return { error: "売値を入れてください。" };
+    if (qty === null || qty <= 0 || qty > 1e9)
+      return { error: "株数を入れてください。" };
     if (sellDraft.heldQty !== null && qty > sellDraft.heldQty + 1e-9)
-      return { error: `株数は保有（${formatNumber(sellDraft.heldQty, 4)}株）以下で入れてください。` };
+      return {
+        error: `株数は保有（${formatNumber(sellDraft.heldQty, 4)}株）以下で入れてください。`,
+      };
     const pnl = pnlOf(price, qty);
     if (!pnl) return { error: "保有の買値を入れてください。" };
     return { date, price, qty, pnl };
@@ -2885,22 +2990,33 @@
       get("sold-rate").textContent = `${signed(read.pnl.rate, 2)}%`;
       renderFeeNote(get("sold-note"), read.pnl);
     }
-    get("sold-label").textContent = market === "us" ? "実現損益（手数料引後）" : "実現損益";
+    get("sold-label").textContent =
+      market === "us" ? "実現損益（手数料引後）" : "実現損益";
     const qtyNow = parseNumber(get("sold-qty").value);
     get("sold-qty-down").disabled = qtyNow === null || qtyNow <= 0;
-    get("sold-qty-up").disabled = qtyNow !== null && sellDraft.heldQty !== null && qtyNow >= sellDraft.heldQty;
+    get("sold-qty-up").disabled =
+      qtyNow !== null &&
+      sellDraft.heldQty !== null &&
+      qtyNow >= sellDraft.heldQty;
     get("sold-qty-up").setAttribute("aria-label", `${qtyUnit()}株増やす`);
     get("sold-qty-down").setAttribute("aria-label", `${qtyUnit()}株減らす`);
     const priceNow = parseNumber(get("sold-price").value);
     get("sold-down").disabled = priceNow === null || priceNow <= 0;
   }
   // 売る株数の上下: 日本株は100株、米国株は1株ずつ（保有より多くはしない）
-  for (const [id, direction] of [["sold-qty-up", 1], ["sold-qty-down", -1]]) {
+  for (const [id, direction] of [
+    ["sold-qty-up", 1],
+    ["sold-qty-down", -1],
+  ]) {
     get(id).addEventListener("click", () => {
-      const now = get("sold-qty").value.trim() === "" ? 0 : parseNumber(get("sold-qty").value);
+      const now =
+        get("sold-qty").value.trim() === ""
+          ? 0
+          : parseNumber(get("sold-qty").value);
       if (now === null || now < 0) return;
       let next = now + direction * qtyUnit();
-      if (sellDraft && sellDraft.heldQty !== null) next = Math.min(next, sellDraft.heldQty);
+      if (sellDraft && sellDraft.heldQty !== null)
+        next = Math.min(next, sellDraft.heldQty);
       get("sold-qty").value = next > 0 ? formatNumber(next, 4) : "";
       updateSellSheet();
     });
@@ -2912,8 +3028,12 @@
     });
   }
 
-  get("confirm-sell").addEventListener("click", () => openSellSheet(parseNumber(sell.price.value)));
-  get("confirm-target").addEventListener("click", () => openSellSheet(lastTargetPrice));
+  get("confirm-sell").addEventListener("click", () =>
+    openSellSheet(parseNumber(sell.price.value)),
+  );
+  get("confirm-target").addEventListener("click", () =>
+    openSellSheet(lastTargetPrice),
+  );
 
   get("sold-go").addEventListener("click", () => {
     const read = readSellSheet();
@@ -2922,15 +3042,17 @@
       return;
     }
     storeCurrent();
-    // 元に戻す用に、お気に入り・入力・記録を丸ごと写しておく
-    const before = JSON.parse(JSON.stringify({ favorites, activeFav, states, records }));
-    const fav = activeFavorite();
+    // 元に戻す用に、銘柄・入力・記録を丸ごと写しておく
+    const before = JSON.parse(
+      JSON.stringify({ stocks, activeStockIds, states, records }),
+    );
+    const stock = activeStock();
     const rec = {
       id: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
       date: read.date,
       market,
-      code: fav ? fav.code : "",
-      name: fav ? fav.name || fav.code : "",
+      code: stock ? stock.code : "",
+      name: stock ? stock.name || stock.code : "",
       account: market === "us" ? account : "",
       buy: sellDraft.buy,
       sell: read.price,
@@ -2942,16 +3064,16 @@
     };
     records.unshift(rec);
     saveRecords();
-    // 保有を減らす。全部売ったら、設定に合わせて保有を空にするか、お気に入りから消す
+    // 保有を減らす。全部売ったら、設定に合わせて保有を空にするか、銘柄一覧から消す
     const left = sellDraft.heldQty === null ? 0 : sellDraft.heldQty - read.qty;
     let message = "売却を記録しました";
     if (left > 1e-9) {
       hold.qty.value = formatNumber(left, 4);
-    } else if (fav && settings.afterSell === "remove") {
-      favorites = favorites.filter((f) => f.id !== fav.id);
-      activeFav[market] = null;
+    } else if (stock && settings.afterSell === "remove") {
+      stocks = stocks.filter((f) => f.id !== stock.id);
+      activeStockIds[market] = null;
       restore(currentState());
-      message = `売却を記録して、${fav.name || fav.code}をお気に入りから消しました`;
+      message = `売却を記録し、${stock.name || stock.code}を銘柄一覧から削除しました`;
     } else {
       hold.buy.value = "";
       hold.qty.value = "";
@@ -2966,8 +3088,8 @@
     refreshAfterRestore();
     renderRecords();
     showToast(message, () => {
-      favorites = before.favorites;
-      Object.assign(activeFav, before.activeFav);
+      stocks = before.stocks;
+      Object.assign(activeStockIds, before.activeStockIds);
       states.jp = before.states.jp;
       states.us = before.states.us;
       records = before.records;
@@ -2986,9 +3108,14 @@
     const totals = get("records-totals");
     totals.replaceChildren();
     for (const key of Object.keys(MARKETS)) {
-      const inMonth = records.filter((r) => r.market === key && r.date.startsWith(month));
+      const inMonth = records.filter(
+        (r) => r.market === key && r.date.startsWith(month),
+      );
       if (!inMonth.length) continue;
-      const sum = key === "us" ? inMonth.reduce((s, r) => s + toCents(r.gain), 0) / 100 : inMonth.reduce((s, r) => s + r.gain, 0);
+      const sum =
+        key === "us"
+          ? inMonth.reduce((s, r) => s + toCents(r.gain), 0) / 100
+          : inMonth.reduce((s, r) => s + r.gain, 0);
       const row = document.createElement("div");
       row.className = `records-total ${sum > 0 ? "is-up" : sum < 0 ? "is-down" : ""}`;
       const label = document.createElement("span");
@@ -3007,7 +3134,11 @@
     // 日付ごと（新しい順）
     const list = get("records-list");
     list.replaceChildren();
-    const sorted = records.slice().sort((a, b) => (a.date === b.date ? b.at - a.at : a.date < b.date ? 1 : -1));
+    const sorted = records
+      .slice()
+      .sort((a, b) =>
+        a.date === b.date ? b.at - a.at : a.date < b.date ? 1 : -1,
+      );
     let group = null;
     for (const rec of sorted) {
       if (!group || group.dataset.date !== rec.date) {
@@ -3029,10 +3160,10 @@
       const name = document.createElement("span");
       name.className = "record-name";
       const code = document.createElement("span");
-      code.className = "fav-row-code";
+      code.className = "stock-row-code";
       code.textContent = rec.code || MARKET_NAMES[rec.market];
       const title = document.createElement("b");
-      title.textContent = rec.name || "お気に入り外の銘柄";
+      title.textContent = rec.name || "銘柄なし";
       name.append(code, title);
       const sub = document.createElement("span");
       sub.className = "record-sub";
@@ -3052,10 +3183,15 @@
     const rec = records.find((r) => r.id === id);
     if (!rec) return;
     recordEditId = id;
-    get("record-name").textContent = rec.name || "お気に入り外の銘柄";
+    get("record-name").textContent = rec.name || "銘柄なし";
     get("record-code").textContent = rec.code || MARKET_NAMES[rec.market];
     const lines = [
-      ["市場", rec.market === "us" ? `米国株${rec.account ? `・${ACCOUNT_LABELS[rec.account]}` : ""}` : "日本株"],
+      [
+        "市場",
+        rec.market === "us"
+          ? `米国株${rec.account ? `・${ACCOUNT_LABELS[rec.account]}` : ""}`
+          : "日本株",
+      ],
       ["買値", recordMoney(rec, rec.buy)],
       ["売値", recordMoney(rec, rec.sell)],
       ["株数", `${formatNumber(rec.qty, 4)}株`],
@@ -3129,17 +3265,17 @@
     if (undo) undo();
   });
 
-  get("fav-list-add").addEventListener("click", () => openSheet(null));
-  get("fav-add").addEventListener("click", () => openSheet(null));
+  get("stock-list-add").addEventListener("click", () => openSheet(null));
+  get("stock-add").addEventListener("click", () => openSheet(null));
 
   // チップが＋ボタンの手前で途切れるときは、右端をふわっと透かして続きがあることを見せる
   function updateChipFade() {
-    const chips = get("fav-chips");
+    const chips = get("stock-chips");
     const more = chips.scrollWidth - chips.clientWidth - chips.scrollLeft > 1;
     chips.classList.toggle("is-fading", more);
     chips.classList.toggle("is-fading-left", chips.scrollLeft > 1);
   }
-  get("fav-chips").addEventListener("scroll", updateChipFade, {
+  get("stock-chips").addEventListener("scroll", updateChipFade, {
     passive: true,
   });
   window.addEventListener("resize", updateChipFade);
@@ -3219,7 +3355,7 @@
   // 株探を開いてからこの時間内に戻ったときだけクリップボードを読む（関係ないときに許可を聞かない）
   const CLIP_WAIT_MS = 10 * 60 * 1000;
   const quotes = { gas: "", lastClip: "", kabutanAt: 0, kabutanCode: "" };
-  const quoteStatus = {}; // お気に入りの id → "loading" | "error" | "manual"
+  const quoteStatus = {}; // 銘柄の id → "loading" | "error" | "manual"
 
   function loadQuotes() {
     try {
@@ -3232,7 +3368,7 @@
       if (Number.isFinite(saved.kabutanAt)) quotes.kabutanAt = saved.kabutanAt;
       if (
         typeof saved.kabutanCode === "string" &&
-        FAV_CODE_RULES.jp.pattern.test(saved.kabutanCode)
+        STOCK_CODE_RULES.jp.pattern.test(saved.kabutanCode)
       )
         quotes.kabutanCode = saved.kabutanCode;
     } catch {
@@ -3271,10 +3407,10 @@
     return `${p.year}-${p.month}-${p.day}`;
   }
 
-  function closeOf(fav) {
-    return activeFavorite() === fav
+  function closeOf(stock) {
+    return activeStock() === stock
       ? { baseline: fields.baseline.value, closeDate, closeAt }
-      : fav.state;
+      : stock.state;
   }
 
   function kabutanUrl(code) {
@@ -3287,8 +3423,8 @@
   }
 
   function renderClose() {
-    const fav = activeFavorite();
-    const status = fav ? quoteStatus[fav.id] : "";
+    const stock = activeStock();
+    const status = stock ? quoteStatus[stock.id] : "";
     const hasValue = fields.baseline.value.trim() !== "";
     const tag = get("close-tag");
     const note = get("close-note");
@@ -3318,24 +3454,24 @@
     tag.hidden = tag.childNodes.length === 0;
     // 米国株は取り直すボタン。手で打った値やエラーのあとでも、押せば GAS に問い合わせる
     get("close-refresh").hidden = !(
-      fav &&
+      stock &&
       market === "us" &&
       quotes.gas &&
       status !== "loading"
     );
     const link = get("kabutan-link");
-    link.hidden = !(fav && market === "jp");
+    link.hidden = !(stock && market === "jp");
     if (!link.hidden) {
-      link.href = kabutanUrl(fav.code);
+      link.href = kabutanUrl(stock.code);
       link.target = link.href.startsWith("intent:") ? "_self" : "_blank";
     }
   }
 
   // 表示名が空で登録された銘柄に、取れた銘柄名を入れる。米国株の名前は会社の種類などを省いて短くする
-  function applyName(fav, name) {
-    if (!fav.autoName || typeof name !== "string") return;
+  function applyName(stock, name) {
+    if (!stock.autoName || typeof name !== "string") return;
     let text = name.normalize("NFKC").replace(/\s+/g, " ").trim();
-    if (fav.market === "us")
+    if (stock.market === "us")
       text = text
         .replace(
           /,? (Inc|Corp|Corporation|Co|Ltd|Plc|PLC|Holdings|Group|N\.?V|S\.?A|Class [A-C])\.?$/g,
@@ -3346,24 +3482,24 @@
     text = text.slice(0, 60).trim();
     if (!text) return;
     // 同じ銘柄の2つ目以降は「(2)ハイブリッドテクノロジーズ」のように番号を先頭に
-    fav.name = `${fav.autoPrefix || ""}${text}`.slice(0, 60);
-    fav.autoName = false;
-    fav.autoPrefix = "";
+    stock.name = `${stock.autoPrefix || ""}${text}`.slice(0, 60);
+    stock.autoName = false;
+    stock.autoPrefix = "";
     save();
-    renderFavorites();
+    renderStocks();
   }
 
-  function applyClose(fav, close, date) {
-    const value = formatNumber(close, MARKETS[fav.market].priceDigits);
-    delete quoteStatus[fav.id];
-    if (activeFavorite() === fav) {
+  function applyClose(stock, close, date) {
+    const value = formatNumber(close, MARKETS[stock.market].priceDigits);
+    delete quoteStatus[stock.id];
+    if (activeStock() === stock) {
       fields.baseline.value = value;
       closeDate = date;
       closeAt = Date.now();
       update();
       save();
     } else {
-      Object.assign(fav.state, {
+      Object.assign(stock.state, {
         baseline: value,
         closeDate: date,
         closeAt: Date.now(),
@@ -3373,35 +3509,35 @@
     renderClose();
   }
 
-  async function fetchUsClose(fav, force = false) {
+  async function fetchUsClose(stock, force = false) {
     if (
-      !fav ||
-      fav.market !== "us" ||
+      !stock ||
+      stock.market !== "us" ||
       !quotes.gas ||
-      quoteStatus[fav.id] === "loading"
+      quoteStatus[stock.id] === "loading"
     )
       return;
-    const known = closeOf(fav);
+    const known = closeOf(stock);
     // 今開いている間に手で打った値は上書きしない。同じ終値の期間のうちは取り直さない
-    if (!force && quoteStatus[fav.id] === "manual") return;
+    if (!force && quoteStatus[stock.id] === "manual") return;
     if (
       !force &&
-      !fav.autoName &&
+      !stock.autoName &&
       known.baseline.trim() !== "" &&
       known.closeDate &&
       latestCloseKey("us", known.closeAt) === latestCloseKey("us", Date.now())
     )
       return;
-    quoteStatus[fav.id] = "loading";
+    quoteStatus[stock.id] = "loading";
     renderClose();
     try {
       const response = await fetch(
-        `${quotes.gas}?codes=${encodeURIComponent(`US:${fav.code}`)}`,
+        `${quotes.gas}?codes=${encodeURIComponent(`US:${stock.code}`)}`,
       );
       const body = await response.json();
       const quote =
         isObject(body) && isObject(body.quotes)
-          ? body.quotes[`US:${fav.code}`]
+          ? body.quotes[`US:${stock.code}`]
           : null;
       if (
         !isObject(quote) ||
@@ -3409,19 +3545,19 @@
         !/^\d{4}-\d{2}-\d{2}$/.test(quote.date)
       )
         throw new Error("no quote");
-      if (favorites.includes(fav)) {
-        applyName(fav, quote.name);
-        applyClose(fav, quote.close, quote.date);
+      if (stocks.includes(stock)) {
+        applyName(stock, quote.name);
+        applyClose(stock, quote.close, quote.date);
       }
     } catch {
-      quoteStatus[fav.id] = "error";
+      quoteStatus[stock.id] = "error";
       renderClose();
     }
   }
 
   function fetchActiveClose() {
-    const fav = activeFavorite();
-    if (fav && fav.market === "us") fetchUsClose(fav);
+    const stock = activeStock();
+    if (stock && stock.market === "us") fetchUsClose(stock);
   }
 
   async function importClipboard(attempt = 0) {
@@ -3443,31 +3579,32 @@
     // 「株探で取得」を押した銘柄のコピーだけ入れる（前に別の銘柄でコピーした値を入れない）
     if (!match || match[1] !== quotes.kabutanCode || text === quotes.lastClip)
       return;
-    // 同じコードのお気に入りが複数あるときは、選んでいる銘柄を優先する
-    const sameCode = favorites.filter(
+    // 同じコードの銘柄が複数あるときは、選んでいる銘柄を優先する
+    const sameCode = stocks.filter(
       (f) => f.market === "jp" && f.code === match[1],
     );
-    const fav = sameCode.find((f) => f.id === activeFav.jp) || sameCode[0];
-    if (!fav) return;
+    const stock =
+      sameCode.find((f) => f.id === activeStockIds.jp) || sameCode[0];
+    if (!stock) return;
     quotes.lastClip = text;
     quotes.kabutanAt = 0;
     saveQuotes();
     if (market !== "jp")
       document.querySelector('[data-market-select="jp"]').click();
-    if (activeFav.jp !== fav.id) selectFavorite(fav.id);
+    if (activeStockIds.jp !== stock.id) selectStock(stock.id);
     if (match[4]) {
       try {
-        applyName(fav, decodeURIComponent(match[4]));
+        applyName(stock, decodeURIComponent(match[4]));
       } catch {
         // 名前が壊れていたら終値だけ入れる
       }
     }
-    applyClose(fav, Number(match[2]), match[3]);
+    applyClose(stock, Number(match[2]), match[3]);
   }
 
   function renderQuotesSettings() {
     get("quotes-us-desc").textContent = quotes.gas
-      ? "設定済み（お気に入りを選ぶと自動で入る）"
+      ? "設定済み（銘柄を選ぶと自動で入る）"
       : "未設定（設定用リンクを開くと使える）";
     get("quotes-us-clear").hidden = !quotes.gas;
   }
@@ -3494,17 +3631,17 @@
   }
 
   fields.baseline.addEventListener("input", () => {
-    const fav = activeFavorite();
-    if (closeDate || (fav && quoteStatus[fav.id] === "error")) {
+    const stock = activeStock();
+    if (closeDate || (stock && quoteStatus[stock.id] === "error")) {
       closeDate = "";
       closeAt = 0;
-      if (fav) quoteStatus[fav.id] = "manual";
+      if (stock) quoteStatus[stock.id] = "manual";
       save();
       renderClose();
     }
   });
   get("close-refresh").addEventListener("click", () =>
-    fetchUsClose(activeFavorite(), true),
+    fetchUsClose(activeStock(), true),
   );
   // 株探を開いた記録。自分で株探を開いたなら、同じ銘柄・同じ日の値でももう一度入れる
   function markKabutan(code) {
@@ -3514,13 +3651,13 @@
     saveQuotes();
   }
   get("kabutan-link").addEventListener("click", () =>
-    markKabutan(activeFavorite() ? activeFavorite().code : ""),
+    markKabutan(activeStock() ? activeStock().code : ""),
   );
 
-  function openKabutan(fav) {
-    markKabutan(fav.code);
+  function openKabutan(stock) {
+    markKabutan(stock.code);
     const link = document.createElement("a");
-    link.href = kabutanUrl(fav.code);
+    link.href = kabutanUrl(stock.code);
     link.target = link.href.startsWith("intent:") ? "_self" : "_blank";
     link.rel = "noopener";
     link.click();
@@ -3543,7 +3680,7 @@
   // 読み直さずに保存すると、古い入力で上書きしてしまう
   let staleStorage = false;
   window.addEventListener("storage", (event) => {
-    if ([STORAGE_KEY, FAVORITES_KEY, QUOTES_KEY].includes(event.key))
+    if ([STORAGE_KEY, STOCKS_KEY, QUOTES_KEY].includes(event.key))
       staleStorage = true;
   });
   // アプリに戻ってきたとき: 株探から戻ったならクリップボードを読み、米国株は新しい終値が出ていれば取り直す
@@ -3573,7 +3710,7 @@
   const setUp = readSetupLink();
   load();
   applyMarket();
-  renderFavorites();
+  renderStocks();
   setCostPanel(breakeven.cost.value.trim() !== "");
   normalizeRateInput();
   normalizeTargetInput();
