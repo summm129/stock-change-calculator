@@ -1779,6 +1779,44 @@ details[open] > .disclosure .chevron,
 .stock-hint {
   margin: 0 4px;
 }
+/* ---- 売る 01: 前日終値から（買値から） ----
+   言葉・数字・うち手数料の行は全部 11px。数字は右そろえで、閉じかっこ「)」は外にはみ出す
+   （手数料の金額のうしろに見えない「)」を置いて、「%」と「9」の末尾をそろえる） */
+.delta-row.rate-pair {
+  font-size: 11px;
+}
+.delta-row.rate-pair strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rate-pair-gap {
+  display: inline-block;
+  width: 6px;
+}
+.delta-row .rate-pair-sub,
+.delta-row .rate-pair-sub span {
+  color: var(--result-sub);
+  font-weight: 400;
+}
+/* 前日終値からは自分の上がり下がりで色を付ける（損益の色とは別） */
+#sell-close-rate {
+  color: var(--result-sub);
+}
+#sell-close-rate.is-up {
+  color: var(--up);
+}
+#sell-close-rate.is-down {
+  color: var(--down);
+}
+#sell-panel .pnl-note {
+  margin-top: 8px;
+}
+#sell-panel .pnl-note > span:last-child::after {
+  content: ")";
+  visibility: hidden;
+}
+
 /* ---- 実現損益（B24） ---- */
 /* 売る 01・02 の結果の見出しの行の右に「売却を記録」。見出しの行の高さに収めて枠は広げない
    （見出しが長いときは見出しのほうが折り返す） */

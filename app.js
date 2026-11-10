@@ -453,7 +453,7 @@
     if (result) {
       setDirection(get("sell-panel"), result.gain);
       get("sell-result-value").textContent = gainText(result.gain);
-      get("sell-rate").textContent = `${signed(result.rate, 2)}%`;
+      get("sell-rate").textContent = pct2(result.rate);
     } else {
       setDirection(get("sell-panel"), 0);
       get("sell-result-value").textContent = "—";
@@ -461,6 +461,13 @@
     }
     renderFeeNote(get("sell-note"), result);
     get("confirm-sell").disabled = !result;
+    // 前日終値から: 売値 ÷ 前日終値 − 1。手数料は関係なく、株価の動きだけ
+    const close = validBaseline();
+    const closeRate = result && close !== null ? (price / close - 1) * 100 : null;
+    const closeEl = get("sell-close-rate");
+    closeEl.textContent = closeRate === null ? "—" : pct2(closeRate);
+    closeEl.classList.toggle("is-up", closeRate !== null && closeRate > 0);
+    closeEl.classList.toggle("is-down", closeRate !== null && closeRate < 0);
 
     // 02
     const sign = get("target-sign");
@@ -744,6 +751,13 @@
   function setCostPanel(open) {
     get("cost-panel").hidden = !open;
     get("cost-toggle").setAttribute("aria-expanded", String(open));
+  }
+
+  // 率を「+3.00%」のように小数2桁まで（0 を残す）。売る 01 の2つの率をそろえるため
+  function pct2(value) {
+    const text = Math.abs(value).toFixed(2);
+    if (text === "0.00") return "0.00%";
+    return `${value < 0 ? "−" : "+"}${text}%`;
   }
 
   function signed(value, digits = 6) {
