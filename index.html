@@ -368,7 +368,7 @@
                   <div id="sell-label" class="result-label">損益</div>
                   <output id="sell-result" class="main-result" for="hold-buy hold-qty sell-price"><span
                       id="sell-result-value">—</span></output>
-                  <div class="delta-row rate-pair"><span>前日終値から（買値から）</span><strong><span id="sell-close-rate">—</span><span class="rate-pair-gap"></span><span class="rate-pair-sub">(<span id="sell-rate">—</span>)</span></strong></div>
+                  <div class="delta-row rate-pair"><span>買値から（前日終値から）</span><strong><span id="sell-rate">—</span><span class="rate-pair-gap"></span><span class="rate-pair-sub">(<span id="sell-close-rate">—</span>)</span></strong></div>
                   <p id="sell-note" class="pnl-note"></p>
                 </div>
               </section>
@@ -572,6 +572,16 @@
                   <path d="M5 12l5 5 9-10" />
                 </svg></span></span>
           </button>
+        </div>
+        <div class="settings-row tick-dir-row">
+          <div>
+            <div class="settings-row-title">Tick の並び</div>
+            <div class="settings-row-desc">1・0.1・0.01 を縦に並べるか、横に並べるか</div>
+          </div>
+          <div class="segmented segmented-sm" role="group" aria-label="Tick の並び">
+            <button type="button" data-setting="tickDir" data-value="v" aria-pressed="false">縦</button>
+            <button type="button" data-setting="tickDir" data-value="h" aria-pressed="true">横</button>
+          </div>
         </div>
       </section>
 

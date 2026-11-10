@@ -20,6 +20,7 @@
     keypad: ["standard", "simeji"],
     fine: ["both", "tick", "ruler"],
     afterSell: ["keep", "remove"],
+    tickDir: ["h", "v"],
   };
   const ACCOUNT_LABELS = {
     tokutei: "楽天・特定",
@@ -86,6 +87,7 @@
     keypad: "standard",
     fine: "both",
     afterSell: "keep",
+    tickDir: "h",
   };
   // 上下ボタンの刻み（Tick）。0=1、1=0.1、2=0.01。画面を開くたびに1から
   const tickIndex = { rate: 0, price: 0, sell: 0, target: 0, sold: 0 };
@@ -466,12 +468,12 @@
     const closeRate = result && close !== null ? (price / close - 1) * 100 : null;
     const closeEl = get("sell-close-rate");
     closeEl.textContent = closeRate === null ? "—" : pct2(closeRate);
-    closeEl.classList.toggle("is-up", closeRate !== null && closeRate > 0);
-    closeEl.classList.toggle("is-down", closeRate !== null && closeRate < 0);
-    // 買値から（かっこの中）も、自分の上がり下がりで色を付ける
-    const buyEl = document.querySelector(".rate-pair-sub");
-    buyEl.classList.toggle("is-up", Boolean(result) && result.rate > 0);
-    buyEl.classList.toggle("is-down", Boolean(result) && result.rate < 0);
+    // 買値からも前日終値からも、それぞれ自分の上がり下がりで色を付ける
+    const buyRate = result ? result.rate : null;
+    for (const [el, value] of [[get("sell-rate"), buyRate], [closeEl, closeRate]]) {
+      el.classList.toggle("is-up", value !== null && value > 0);
+      el.classList.toggle("is-down", value !== null && value < 0);
+    }
 
     // 02
     const sign = get("target-sign");
@@ -1640,6 +1642,7 @@
     root.dataset.theme = settings.theme;
     root.dataset.layout = settings.layout;
     root.dataset.fine = settings.fine;
+    root.dataset.tickdir = settings.tickDir;
     applyTicks();
     document
       .querySelector('meta[name="theme-color"]')
