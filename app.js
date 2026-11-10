@@ -468,6 +468,10 @@
     closeEl.textContent = closeRate === null ? "—" : pct2(closeRate);
     closeEl.classList.toggle("is-up", closeRate !== null && closeRate > 0);
     closeEl.classList.toggle("is-down", closeRate !== null && closeRate < 0);
+    // 買値から（かっこの中）も、自分の上がり下がりで色を付ける
+    const buyEl = document.querySelector(".rate-pair-sub");
+    buyEl.classList.toggle("is-up", Boolean(result) && result.rate > 0);
+    buyEl.classList.toggle("is-down", Boolean(result) && result.rate < 0);
 
     // 02
     const sign = get("target-sign");

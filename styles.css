@@ -1799,7 +1799,15 @@ details[open] > .disclosure .chevron,
   color: var(--result-sub);
   font-weight: 400;
 }
-/* 前日終値からは自分の上がり下がりで色を付ける（損益の色とは別） */
+.delta-row .rate-pair-sub.is-up,
+.delta-row .rate-pair-sub.is-up span {
+  color: var(--up);
+}
+.delta-row .rate-pair-sub.is-down,
+.delta-row .rate-pair-sub.is-down span {
+  color: var(--down);
+}
+/* 前日終値からも買値からも、それぞれ自分の上がり下がりで色を付ける（損益の色とは別） */
 #sell-close-rate {
   color: var(--result-sub);
 }
