@@ -843,12 +843,21 @@
             <path d="M15 6l-6 6 6 6" />
           </svg></button>
         <h1 id="records-title" tabindex="-1">実現損益</h1>
+        <button id="record-select" class="select-toggle" type="button" aria-pressed="false">選択</button>
       </header>
       <section class="card records-summary" aria-labelledby="records-month">
         <h2 id="records-month" class="settings-title">今月の実現損益</h2>
         <div id="records-totals" class="records-totals"></div>
       </section>
       <div id="records-list" class="records-list"></div>
+      <!-- 選んでいるあいだだけ下に出る -->
+      <div id="record-select-bar" class="select-bar" hidden>
+        <button id="record-select-all" class="select-all" type="button" aria-pressed="false"><span class="select-mark"
+            aria-hidden="true"><svg viewBox="0 0 24 24">
+              <path d="M5 12l5 5 9-10" />
+            </svg></span>すべて選択</button>
+        <button id="record-delete-selected" class="delete-selected" type="button" disabled>削除</button>
+      </div>
     </div>
   </div>
 
@@ -964,16 +973,22 @@
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sell-title">
       <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="sheet-head">
-        <h2 id="sell-title" tabindex="-1">売却を記録</h2>
+        <h2 id="sell-title" tabindex="-1">売却を記録<span id="sell-sheet-market" class="sheet-head-market"></span></h2>
         <button class="link-button" type="button" data-backup-close>キャンセル</button>
       </div>
-      <div class="sell-target">
-        <span id="sell-sheet-code" class="stock-row-code"></span><b id="sell-sheet-name"></b>
-        <span id="sell-sheet-market" class="sell-target-market"></span>
+      <div class="id-row">
+        <div>
+          <span class="field-label">証券コード</span>
+          <div class="code-box"><span id="sell-sheet-code"></span><span class="sr-only">（変更できません）</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg></div>
+        </div>
+        <div>
+          <label class="field-label" for="sold-name">表示名</label>
+          <input id="sold-name" class="sheet-input sheet-input-sm" type="text" autocomplete="off" maxlength="60">
+        </div>
       </div>
       <div class="sell-grid">
         <div>
-          <span id="sold-date-label" class="field-label">売った日</span>
+          <span id="sold-date-label" class="field-label">売却日</span>
           <div class="date-field">
             <button id="sold-date-button" class="sheet-input date-button" type="button"
               aria-describedby="sold-date-label"><span id="sold-date-text"></span><svg viewBox="0 0 24 24" fill="none"
@@ -1000,39 +1015,38 @@
           </div>
         </div>
       </div>
-      <div>
-        <label class="field-label" for="sold-price">売値</label>
-        <div class="entry-row">
-          <div class="field">
-            <span class="input-unit" aria-hidden="true">円</span>
-            <input id="sold-price" type="text" inputmode="decimal" autocomplete="off" maxlength="24">
+      <div class="price-pair">
+        <div>
+          <label class="field-label" for="sold-buy">買値</label>
+          <div class="field sheet-price">
+            <button class="field-clear" type="button" data-sheet-clear="sold-buy" aria-label="買値をクリア" hidden><span
+                aria-hidden="true"><svg viewBox="0 0 24 24">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg></span></button>
+            <span class="sheet-unit sell-unit" aria-hidden="true">円</span>
+            <input id="sold-buy" type="text" inputmode="decimal" autocomplete="off" maxlength="24">
           </div>
-          <div class="stepper-grid price-steppers tick-steppers" data-tick-for="sold">
-            <div class="tick-stack price-tick" role="radiogroup" aria-label="売値の Tick">
-              <button type="button" role="radio" data-tick="0" aria-checked="true">1</button>
-              <button type="button" role="radio" data-tick="1" aria-checked="false">0.1</button>
-              <button type="button" role="radio" data-tick="2" aria-checked="false">0.01</button>
-            </div>
-            <div class="stepper-col" role="group" aria-label="売値を調整">
-              <button id="sold-up" type="button" aria-label="1増やす"><svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 15l6-6 6 6" />
-                </svg></button>
-              <button id="sold-down" type="button" aria-label="1減らす"><svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 9l6 6 6-6" />
-                </svg></button>
-            </div>
+        </div>
+        <div>
+          <label class="field-label" for="sold-price">売値</label>
+          <div class="field sheet-price">
+            <button class="field-clear" type="button" data-sheet-clear="sold-price" aria-label="売値をクリア" hidden><span
+                aria-hidden="true"><svg viewBox="0 0 24 24">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg></span></button>
+            <span class="sheet-unit sell-unit" aria-hidden="true">円</span>
+            <input id="sold-price" type="text" inputmode="decimal" autocomplete="off" maxlength="24">
           </div>
         </div>
       </div>
       <div id="sold-panel" class="result-panel is-flat" aria-live="polite">
         <div id="sold-label" class="result-label">実現損益</div>
         <output class="main-result"><span id="sold-gain">—</span></output>
-        <div class="delta-row"><span>買値から</span><strong id="sold-rate">—</strong></div>
         <p id="sold-note" class="pnl-note"></p>
       </div>
       <div>
         <label class="field-label" for="sold-memo">メモ（任意）</label>
-        <input id="sold-memo" class="sheet-input sheet-input-sm" type="text" autocomplete="off" maxlength="100">
+        <textarea id="sold-memo" class="sheet-input memo-area" rows="2" autocomplete="off" maxlength="100"></textarea>
       </div>
       <p id="sold-error" class="field-error" aria-live="polite"></p>
       <button id="sold-go" class="primary-button sheet-primary" type="button">記録する</button>
@@ -1044,18 +1058,26 @@
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="record-title">
       <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="sheet-head">
-        <h2 id="record-title" tabindex="-1">記録</h2>
+        <h2 id="record-title" tabindex="-1">記録<span id="record-market" class="sheet-head-market"></span></h2>
         <button class="link-button" type="button" data-backup-close>キャンセル</button>
       </div>
-      <div class="sell-target"><span id="record-code" class="stock-row-code"></span><b id="record-name"></b></div>
-      <div id="record-detail" class="record-detail"></div>
+      <div class="id-row">
+        <div>
+          <span class="field-label">証券コード</span>
+          <div class="code-box"><span id="record-code"></span><span class="sr-only">（変更できません）</span><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg></div>
+        </div>
+        <div>
+          <label class="field-label" for="record-name">表示名</label>
+          <input id="record-name" class="sheet-input sheet-input-sm" type="text" autocomplete="off" maxlength="60">
+        </div>
+      </div>
       <div class="sell-grid">
         <div>
-          <span id="record-date-label" class="field-label">売った日</span>
+          <span id="record-date-label" class="field-label">売却日</span>
           <div class="date-field">
             <button id="record-date-button" class="sheet-input date-button" type="button"
-              aria-describedby="record-date-label"><span id="record-date-text"></span><svg viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-describedby="record-date-label"><span id="record-date-text"></span><svg viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 aria-hidden="true">
                 <rect x="4" y="5" width="16" height="15" rx="3" />
                 <path d="M8 3v4M16 3v4M4 10h16" />
@@ -1064,9 +1086,51 @@
           </div>
         </div>
         <div>
-          <label class="field-label" for="record-memo">メモ</label>
-          <input id="record-memo" class="sheet-input sheet-input-sm" type="text" autocomplete="off" maxlength="100">
+          <label class="field-label" for="record-qty">株数</label>
+          <div class="field field-sm sold-qty-field">
+            <input id="record-qty" type="text" inputmode="decimal" autocomplete="off" maxlength="16">
+            <span class="field-suffix" aria-hidden="true">株</span>
+            <div class="qty-steps" role="group" aria-label="株数を調整"><button id="record-qty-up" type="button"
+                aria-label="増やす"><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 15l6-6 6 6" />
+                </svg></button><button id="record-qty-down" type="button" aria-label="減らす"><svg viewBox="0 0 24 24"
+                  aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" />
+                </svg></button></div>
+          </div>
         </div>
+      </div>
+      <div class="price-pair">
+        <div>
+          <label class="field-label" for="record-buy">買値</label>
+          <div class="field sheet-price">
+            <button class="field-clear" type="button" data-sheet-clear="record-buy" aria-label="買値をクリア" hidden><span
+                aria-hidden="true"><svg viewBox="0 0 24 24">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg></span></button>
+            <span class="sheet-unit record-unit" aria-hidden="true">円</span>
+            <input id="record-buy" type="text" inputmode="decimal" autocomplete="off" maxlength="24">
+          </div>
+        </div>
+        <div>
+          <label class="field-label" for="record-sell">売値</label>
+          <div class="field sheet-price">
+            <button class="field-clear" type="button" data-sheet-clear="record-sell" aria-label="売値をクリア" hidden><span
+                aria-hidden="true"><svg viewBox="0 0 24 24">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg></span></button>
+            <span class="sheet-unit record-unit" aria-hidden="true">円</span>
+            <input id="record-sell" type="text" inputmode="decimal" autocomplete="off" maxlength="24">
+          </div>
+        </div>
+      </div>
+      <div id="record-panel" class="result-panel is-flat" aria-live="polite">
+        <div id="record-label" class="result-label">実現損益</div>
+        <output class="main-result"><span id="record-gain">—</span></output>
+      </div>
+      <div>
+        <label class="field-label" for="record-memo">メモ（任意）</label>
+        <textarea id="record-memo" class="sheet-input memo-area" rows="2" autocomplete="off" maxlength="100"></textarea>
       </div>
       <p id="record-error" class="field-error" aria-live="polite"></p>
       <button id="record-save" class="primary-button sheet-primary" type="button">保存する</button>

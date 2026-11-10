@@ -20,6 +20,7 @@
   --sum-bg: #e6e0d8;
   --sum-fg: #1c1c1a;
   --sum-sub: #6b6964;
+  --edit-line: #d3cfc8;
   --seg-on: #ffffff;
   --seg-on-text: #1c1c1a;
   --seg-shadow: 0 1px 3px rgba(28, 28, 26, 0.12);
@@ -70,6 +71,7 @@
   --sum-bg: #2d2a26;
   --sum-fg: #f2f1ee;
   --sum-sub: #b3aca1;
+  --edit-line: #4a4844;
   --seg-on: #e8e2d6;
   --seg-on-text: #141414;
   --seg-shadow: none;
@@ -2198,24 +2200,6 @@ details[open] > .disclosure .chevron,
   font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
-.record-detail {
-  display: grid;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--field);
-  color: var(--sub);
-  font-size: 13px;
-}
-.record-detail div {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.record-detail b {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
 
 /* ---- まとめて削除（並べ替え・編集の「選択」） ---- */
 .select-toggle {
@@ -2278,16 +2262,27 @@ details[open] > .disclosure .chevron,
   visibility: hidden;
 }
 .stock-row[aria-selected="true"] .select-mark,
+.record-row[aria-pressed="true"] .select-mark,
 .select-all[aria-pressed="true"] .select-mark {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
 }
 .stock-row[aria-selected="true"] .select-mark svg,
+.record-row[aria-pressed="true"] .select-mark svg,
 .select-all[aria-pressed="true"] .select-mark svg {
   visibility: visible;
 }
+/* 記録を選ぶときは、行の左に丸いチェック */
+.record-check {
+  display: none;
+  flex-shrink: 0;
+}
+#records-view.is-selecting .record-check {
+  display: grid;
+}
 /* 下のバー（すべて選択 / 〇件を削除） */
+#records-view.is-selecting,
 #stocks-view.is-selecting {
   padding-bottom: 88px;
 }
@@ -2848,4 +2843,175 @@ body.has-sheet {
   .presets {
     gap: 4px;
   }
+}
+
+/* ---- 売却を記録・記録のシート（小さめ。直せる欄は白地に枠線、直せない欄はグレー地に鍵） ---- */
+:is(#sell-sheet, #record-sheet) .sheet-panel {
+  gap: 8px;
+  padding-top: 8px;
+}
+:is(#sell-sheet, #record-sheet) .sheet-head h2 {
+  font-size: 16px;
+}
+.sheet-head-market {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+:is(#sell-sheet, #record-sheet) .field-label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+:is(#sell-sheet, #record-sheet) :is(.sheet-input, .field) {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--edit-line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: none;
+}
+:is(#sell-sheet, #record-sheet) :is(.sheet-input:focus, .field:focus-within) {
+  border-color: var(--accent);
+  outline: none;
+}
+:is(#sell-sheet, #record-sheet) .sheet-input {
+  font-size: 15px;
+}
+:is(#sell-sheet, #record-sheet) .sheet-input-sm {
+  font-size: 14px;
+}
+:is(#sell-sheet, #record-sheet) .date-button {
+  padding: 0 10px 0 12px;
+  font-size: clamp(14px, 4.2vw, 16px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+:is(#sell-sheet, #record-sheet) .field input {
+  font-size: 18px;
+}
+:is(#sell-sheet, #record-sheet) .field-suffix {
+  font-size: 13px;
+}
+:is(#sell-sheet, #record-sheet) .qty-steps button {
+  height: 16px;
+}
+:is(#sell-sheet, #record-sheet) textarea.memo-area {
+  display: block;
+  width: 100%;
+  height: 60px;
+  padding: 9px 12px;
+  resize: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+/* 証券コード（直せない）｜表示名 */
+.id-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 8px;
+}
+.code-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lock {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  color: var(--unit);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* 買値｜売値。単位は数字のすぐ隣（円は後ろ、$ は前） */
+.price-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+:is(#sell-sheet, #record-sheet) .sheet-price {
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  padding: 0 10px 0 12px;
+}
+.sheet-price .field-clear {
+  width: 26px;
+  margin-left: -6px;
+  margin-right: auto;
+}
+.sheet-price input {
+  order: 1;
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 2ch;
+  max-width: 100%;
+  field-sizing: content;
+  text-align: right;
+}
+.sheet-unit {
+  order: 2;
+  color: var(--unit);
+  font-size: 13px;
+  font-weight: 500;
+}
+.price-pair.is-us .sheet-unit {
+  order: 0;
+}
+/* 損益は1段: 左に見出し、右に金額 */
+:is(#sell-sheet, #record-sheet) .result-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 2px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+}
+:is(#sell-sheet, #record-sheet) .result-label {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 11px;
+}
+:is(#sell-sheet, #record-sheet) .main-result {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+}
+:is(#sell-sheet, #record-sheet) .main-result > span {
+  font-size: 22px;
+}
+:is(#sell-sheet, #record-sheet) .pnl-note {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 11px;
+}
+:is(#sell-sheet, #record-sheet) .sheet-primary {
+  min-height: 44px;
+}
+:is(#sell-sheet, #record-sheet) .sheet-delete {
+  margin-top: -2px;
+}
+:is(#sell-sheet, #record-sheet) .field-error:empty {
+  display: none;
 }
