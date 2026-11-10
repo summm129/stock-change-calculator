@@ -17,6 +17,9 @@
   --tile: #e6e0d8;
   --on-tile: #1c1c1a;
   --tile-sub: #6b6964;
+  --sum-bg: #e6e0d8;
+  --sum-fg: #1c1c1a;
+  --sum-sub: #6b6964;
   --seg-on: #ffffff;
   --seg-on-text: #1c1c1a;
   --seg-shadow: 0 1px 3px rgba(28, 28, 26, 0.12);
@@ -64,6 +67,9 @@
   --tile: #e8e2d6;
   --on-tile: #141414;
   --tile-sub: #4a463e;
+  --sum-bg: #2d2a26;
+  --sum-fg: #f2f1ee;
+  --sum-sub: #b3aca1;
   --seg-on: #e8e2d6;
   --seg-on-text: #141414;
   --seg-shadow: none;
@@ -1036,6 +1042,21 @@ details[open] > .disclosure .chevron,
 }
 .stock-chip[aria-checked="true"] .stock-chip-held {
   color: inherit;
+}
+/* 売却の記録がある銘柄のレシートの絵 */
+.stock-chip-rec:not([hidden]) {
+  display: inline-flex;
+  margin-left: 4px;
+  vertical-align: -1px;
+}
+.stock-chip-rec svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ---- 保有（買値・株数）と損益 ---- */
@@ -2061,6 +2082,14 @@ details[open] > .disclosure .chevron,
   flex-direction: column;
   gap: 12px;
 }
+/* 月の合計はベージュ（ダークは暖かいグレー）のカード */
+.records-summary {
+  background: var(--sum-bg);
+  color: var(--sum-fg);
+}
+.records-summary .settings-title {
+  color: var(--sum-fg);
+}
 .records-totals {
   display: grid;
   gap: 6px;
@@ -2070,11 +2099,11 @@ details[open] > .disclosure .chevron,
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  color: var(--sub);
+  color: var(--sum-sub);
   font-size: 13px;
 }
 .records-total strong {
-  color: var(--text);
+  color: var(--sum-fg);
   font-size: 22px;
   font-variant-numeric: tabular-nums;
 }
@@ -2088,20 +2117,36 @@ details[open] > .disclosure .chevron,
 }
 .records-none {
   margin: 0;
-  color: var(--muted);
+  color: var(--sum-sub);
   font-size: 13px;
 }
 .records-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  margin-top: 4px;
 }
+/* 明細は日付をカードの外の見出しにして、月の合計のカードと形を変える */
 .records-day {
-  padding-top: 12px;
-  padding-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.records-day .record-row {
+  padding: 8px 18px;
+  background: var(--card);
+}
+.records-date + .record-row {
+  border-radius: 20px 20px 0 0;
+}
+.records-day .record-row:last-child {
+  border-radius: 0 0 20px 20px;
+}
+.records-date + .record-row:last-child {
+  border-radius: 20px;
 }
 .records-date {
-  margin: 0 0 4px;
+  margin: 4px 6px 6px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;

@@ -1893,7 +1893,13 @@
       heldText.className = "sr-only";
       heldText.textContent = "（保有あり）";
       held.append(heldText);
-      code.append(held);
+      // 売却の記録がある銘柄は、右上の実現損益ボタンと同じレシートの絵を出す
+      const rec = document.createElement("span");
+      rec.className = "stock-chip-rec";
+      rec.hidden = true;
+      rec.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg><span class="sr-only">（記録あり）</span>';
+      code.append(held, rec);
       const name = document.createElement("span");
       name.className = "stock-chip-name";
       name.textContent = stock.name || stock.code;
@@ -1912,6 +1918,7 @@
       : "＋ 銘柄を追加";
     chips.hidden = inMarket.length === 0;
     markHeldChips();
+    markRecordChips();
     updateChipFade();
 
     // 並べ替え・編集の一覧（今の市場の銘柄だけ）
@@ -2062,6 +2069,17 @@
           ? hold.buy.value
           : stock.state.holdBuy;
       chip.querySelector(".stock-chip-held").hidden = buy.trim() === "";
+    }
+  }
+
+  // 売却の記録がある銘柄のチップにレシートの絵を出す（市場と銘柄コードで照らし合わせる）
+  function markRecordChips() {
+    for (const chip of get("stock-chips").querySelectorAll(".stock-chip")) {
+      const stock = stocks.find((f) => f.id === chip.dataset.id);
+      if (!stock) continue;
+      chip.querySelector(".stock-chip-rec").hidden = !records.some(
+        (r) => r.market === stock.market && r.code === stock.code,
+      );
     }
   }
 
@@ -3123,6 +3141,7 @@
 
   // ---- 一覧 ----
   function renderRecords() {
+    markRecordChips();
     const now = new Date();
     const month = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
     get("records-month").textContent = `${now.getMonth() + 1}月の実現損益`;
@@ -3164,7 +3183,7 @@
     for (const rec of sorted) {
       if (!group || group.dataset.date !== rec.date) {
         group = document.createElement("section");
-        group.className = "card records-day";
+        group.className = "records-day";
         group.dataset.date = rec.date;
         const head = document.createElement("h2");
         head.className = "records-date";
