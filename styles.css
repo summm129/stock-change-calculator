@@ -588,6 +588,59 @@ body {
 [data-market="jp"] .tick-stack.price-tick {
   display: none;
 }
+/* 上の段に 1・0.1・0.01 を横に、下の段に ‹ ›（‹ で減らす、› で増やす）。
+   Tick が出ないとき（日本株の株価・売値、設定がルーラーだけ）は ‹ › を縦いっぱいに */
+.stepper-grid.tick-steppers {
+  display: grid;
+  grid-template-columns: 112px;
+  grid-template-rows: 24px 24px;
+  gap: 4px;
+}
+.tick-steppers .tick-stack {
+  grid-row: 1;
+  display: flex;
+  gap: 2px;
+  width: auto;
+  height: 24px;
+  padding: 2px;
+  border-radius: 8px;
+}
+.tick-steppers .tick-stack button {
+  flex: 1;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.tick-steppers .stepper-col {
+  grid-row: 2;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 4px;
+}
+.tick-steppers .stepper-col button {
+  flex: 1;
+  width: auto;
+  height: 24px;
+}
+.tick-steppers .stepper-col svg {
+  transform: rotate(90deg);
+}
+[data-fine="ruler"] .tick-steppers,
+[data-market="jp"] .tick-steppers:has(.price-tick) {
+  grid-template-columns: 84px;
+  grid-template-rows: 52px;
+}
+[data-fine="ruler"] .tick-steppers .stepper-col,
+[data-market="jp"] .tick-steppers:has(.price-tick) .stepper-col {
+  grid-row: 1;
+}
+[data-fine="ruler"] .tick-steppers .stepper-col button,
+[data-market="jp"] .tick-steppers:has(.price-tick) .stepper-col button {
+  height: 52px;
+}
+[data-fine="ruler"] .tick-steppers .tick-stack,
+[data-market="jp"] .tick-steppers .tick-stack.price-tick {
+  display: none;
+}
 /* ルーラー: 入力の行の下。左右になぞると最小単位ずつ動く */
 .ruler {
   position: relative;
