@@ -592,11 +592,11 @@
     return Math.max(1, Math.ceil(amountCents * RAKUTEN_US.secFeeRate - 1e-9));
   }
 
-  // moomoo の手数料（買付・売却とも）: 税抜0.12%を1セント未満切り捨て（最低1セント、上限20ドル）、消費税10%も切り捨て。
-  // 明細（45.47→0.05、43.67→0.05、91.90→0.11＋税0.01）と一致
+  // moomoo の手数料（買付・売却とも）: 税抜0.12%を1セント未満四捨五入（最低1セント、上限20ドル）、消費税10%は切り捨て。
+  // 明細（45.47→0.05、43.67→0.05、91.90→0.11＋税0.01、172.00→0.21＋税0.02、174.50→0.21＋税0.02）と一致
   function moomooCommissionCents(amountCents) {
     const base = Math.min(
-      Math.max(1, Math.floor(amountCents * MOOMOO_US.commissionRate + 1e-9)),
+      Math.max(1, Math.floor(amountCents * MOOMOO_US.commissionRate + 0.5 + 1e-9)),
       MOOMOO_US.capCents,
     );
     return base + Math.floor(base * MOOMOO_US.taxRate + 1e-9);
@@ -666,7 +666,7 @@
     rakuten:
       "楽天証券・米国株。1株あたり・外貨決済の概算。特定口座の手数料は税込0.495%（買付は切り捨て、売却は四捨五入）、上限は税込22ドル。SEC Feeは売却代金×0.0000206ドル、最低0.01ドル。",
     moomoo:
-      "moomoo証券・米国株（ベーシックコース）。1株あたり・外貨決済の概算。手数料は税抜0.12%と消費税10%をそれぞれ1セント未満切り捨て（最低0.01ドル）、上限は税込22ドル。SEC Feeはかからない。",
+      "moomoo証券・米国株（ベーシックコース）。1株あたり・外貨決済の概算。手数料は税抜0.12%を1セント未満四捨五入（最低0.01ドル）、消費税10%は1セント未満切り捨て、上限は税込22ドル。SEC Feeはかからない。",
   };
 
   function applyAccount() {
